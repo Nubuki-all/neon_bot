@@ -467,7 +467,7 @@ async def delete_notes(event, args, client):
         else:
             chat_name = "Pm"
             admin_user = False
-        )
+
         if not (notes := bot.notes_dict.get(chat)):
             return await event.reply(f"_No notes found for chat:_ *{chat_name}*!")
         if args.casefold() == "all":
