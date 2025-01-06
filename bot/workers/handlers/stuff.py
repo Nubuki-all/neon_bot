@@ -1,7 +1,12 @@
 from bot.config import bot, conf
 from bot.utils.bot_utils import get_date_from_ts, get_json
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import pm_is_allowed, user_is_admin, user_is_allowed, user_is_owner
+from bot.utils.msg_utils import (
+    pm_is_allowed,
+    user_is_admin,
+    user_is_allowed,
+    user_is_owner,
+)
 
 meme_list = []
 
