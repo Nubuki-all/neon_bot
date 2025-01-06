@@ -239,6 +239,7 @@ async def pick_random(event, args, client):
         -s: Change delimiter, default="\\n" (new lines)
 
     """
+    user = event.from_user.id
     if not user_is_owner(user):
         if not pm_is_allowed(event):
             return
@@ -288,15 +289,23 @@ async def list_notes(event, args, client):
         chat_name = (
             (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
             if event.chat.is_group
-            else event.from_user.name
+            else "Pm"
         )
         if not (notes := bot.notes_dict.get(chat)):
             return await event.reply(f"*No notes found for chat: {chat_name}!*")
         reply = await event.reply("_Fetching notes…_")
-        msg = f"*List of notes in {chat_name}*"
+        user = event.from_user.id
+        filter_ = True if args.casefold() in ("my notes", "me") else False
+        msg = f"*{'Your l' if filter_ else 'L'}ist of notes in {chat_name}*"
+        msg_ = str()
         for i, title in zip(itertools.count(1), list(notes.keys())):
-            user = notes[title].get("user_name")
-            msg += f"\n{i}. *{title}*{f' added by *{user}*' if event.chat.is_group else str()}"
+            if filter_ and notes[title].get("user") != user:
+                break
+            user_name = notes[title].get("user_name")
+            msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if event.chat.is_group and not filter_ else str()}"
+        if not msg_:
+            return await event.reply(f"*You currently have no saved notes in {chat_name}*!")
+        msg += msg_
 
         chain_reply = None
         for text in split_text(msg):
@@ -327,7 +336,7 @@ async def save_notes(event, args, client):
     try:
         if not event.quoted_msg:
             return await event.reply("Can only save replied text or media.")
-        if args.casefold() in ("all", "notes"):
+        if args.casefold() in ("all", "notes", "my notes", "me"):
             return await event.reply(f"Given note_name *{args}* is blocked.")
         if not bot.notes_dict.get(chat):
             bot.notes_dict[chat] = {}
@@ -383,7 +392,7 @@ async def get_notes(event, args, client):
         if not user_is_allowed(user):
             return
     try:
-        if not args or (args and args.casefold() == "all"):
+        if not args or (args and args.casefold() == "all", "me", "notes", "my note"):
             return await list_notes(event, args, client)
         chat = event.chat.id
         chat_name = (
@@ -487,6 +496,8 @@ async def get_notes2(event, args, client):
             return
         if event.text[1:].casefold() == "notes":
             return await get_notes(event, None, None)
+        if event.text[1:].casefold() == "my notes":
+            return await list_notes(event, event.text[1:], None)
         if note := notes.get(event.text[1:]):
             return await get_notes(event, event.text[1:], None)
     except Exception:
