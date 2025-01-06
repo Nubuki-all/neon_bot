@@ -1,6 +1,6 @@
 import pickle
 
-from bot import bot, local_budb, local_gdb, local_ndb, local_rdb
+from bot import bot, local_budb, local_ndb, local_rdb
 
 from .bot_utils import list_to_str
 from .os_utils import file_exists
@@ -11,7 +11,6 @@ def load_local_db():
         with open(local_rdb, "rb") as file:
             local_dict = pickle.load(file)
         bot.rss_dict.update(local_dict)
-
 
     if file_exists(local_ndb):
         with open(local_ndb, "rb") as file:

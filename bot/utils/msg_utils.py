@@ -2,7 +2,6 @@ import argparse
 import asyncio
 import copy
 import inspect
-import itertools
 import os
 import re
 from functools import partial
@@ -416,7 +415,6 @@ def construct_message(chat_id, user_id, msg_id, text, server="s.whatsapp.net"):
             ),
         ),
     )
-
 
 
 async def send_presence(online=True):
