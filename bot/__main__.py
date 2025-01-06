@@ -23,7 +23,7 @@ from .workers.handlers.manage import (
     rss_handler,
     update_handler,
 )
-from .workers.handlers.stuff import getcmds, getmeme, hello
+from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello,
 from .workers.handlers.wa import (
     delete_notes,
     get_notes,
@@ -68,7 +68,7 @@ async def _(client: NewAClient, message: Event):
 
 @bot.register("eval")
 async def _(client: NewAClient, message: Event):
-    await event_handler(message, eval_message, require_args=True)
+    await event_handler(message, eval_message, bot.client, require_args=True)
 
 
 @bot.register("bash")
@@ -124,6 +124,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("rss")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, rss_handler, require_args=True)
+
+
+@bot.register("gc_info")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, gc_info, bot.client)
 
 
 @bot.register("update")

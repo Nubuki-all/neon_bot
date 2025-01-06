@@ -351,6 +351,12 @@ def user_is_owner(user: str | int):
     return user in conf.OWNER
 
 
+def user_is_admin(user: str, members: list):
+    for member in members:
+        if user == member.JID.User:
+            return member.IsAdmin
+
+
 def user_is_dev(user: str):
     user = int(user)
     return user == conf.DEV

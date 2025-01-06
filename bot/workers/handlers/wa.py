@@ -28,6 +28,7 @@ from bot.utils.msg_utils import (
     download_replied_media,
     get_args,
     pm_is_allowed,
+    user_is_admin,
     user_is_allowed,
     user_is_owner,
 )
@@ -196,6 +197,8 @@ async def upscale_image(event, args, client):
             return await sticker_reply(event, args, client, True)
         turn().append(turn_id)
         status_msg = await event.reply("*…*")
+        if event.quoted_image.caption.startswith("Upscaled image:"):
+            return await event.reply("What?, initial upscale not good enough for you? 😒")
         file = await download_replied_media(event.quoted, mtype="image")
 
         if waiting_for_turn():
@@ -215,9 +218,9 @@ async def upscale_image(event, args, client):
         sr_image.save(output, format="png")
         output.name = f"upscaled_image.png"
         raw = output.getvalue()
-        msg = await event.reply_photo(raw)
+        msg = await event.reply_photo(raw, "Upscaled image: Raw")
         raw = await png_to_jpg(raw)
-        await msg.reply_photo(raw, enquip4())
+        await msg.reply_photo(raw, "Upscaled image: Jpeg")
     except Exception as e:
         await logger(Exception)
         await status_msg.edit(f"*Error:*\n{e}")
@@ -295,14 +298,16 @@ async def list_notes(event, args, client):
             return await event.reply(f"*No notes found for chat: {chat_name}!*")
         reply = await event.reply("_Fetching notes…_")
         user = event.from_user.id
-        filter_ = True if args.casefold() in ("my notes", "me") else False
+        filter_ = True if args and args.casefold() in ("my notes", "me") else False
         msg = f"*{'Your l' if filter_ else 'L'}ist of notes in {chat_name}*"
         msg_ = str()
-        for i, title in zip(itertools.count(1), list(notes.keys())):
+        i = 1
+        for title in list(notes.keys()):
             if filter_ and notes[title].get("user") != user:
                 break
             user_name = notes[title].get("user_name")
             msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if event.chat.is_group and not filter_ else str()}"
+            i += 1
         if not msg_:
             return await event.reply(
                 f"*You currently have no saved notes in {chat_name}*!"
@@ -454,15 +459,19 @@ async def delete_notes(event, args, client):
             return
     try:
         chat = event.chat.id
-        chat_name = (
-            (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
-            if event.chat.is_group
-            else event.from_user.name
+        if event.chat.is_group:
+            group_info = await bot.client.get_group_info(event.chat.jid)
+            chat_name = group_info.GroupName.Name
+            admin_user = user_is_admin(user, group_info.Participants)
+
+        else:
+            chat_name = "Pm"
+            admin_user = False
         )
         if not (notes := bot.notes_dict.get(chat)):
             return await event.reply(f"_No notes found for chat:_ *{chat_name}*!")
         if args.casefold() == "all":
-            if not user_is_owner(user) and event.chat.is_group:
+            if not (user_is_owner(user) or admin_user) and event.chat.is_group:
                 return await event.reply(f"*Permission denied.*")
             bot.notes_dict.pop(chat)
             await save2db2(bot.notes_dict, "note")
@@ -473,7 +482,7 @@ async def delete_notes(event, args, client):
             return await event.reply(
                 f"Note with name: *{args}* not found in *{chat_name}!*"
             )
-        if not user_is_owner(user) and user != notes[args]["user"]:
+        if not (user_is_owner(user) or admin_user) and user != notes[args]["user"]:
             return await event.reply(
                 "You can't delete this note; Most likely because *you* did not add it."
             )
