@@ -399,10 +399,12 @@ async def on_message(client: NewAClient, message: MessageEv):
             # await func(client, event)
             future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
             future.result()
+    func_list = []
     for func in function_dict[None]:
-        # await func(client, event)
-        future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
-        future.result()
+        func_list.append(func(client, event))
+    func = asyncio.gather(*func_list)
+    future = asyncio.run_coroutine_threadsafe(func, bot.loop)
+    future.result()
 
 
 def construct_event(message: MessageEv, add_replied=True):
