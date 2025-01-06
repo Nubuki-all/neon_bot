@@ -23,7 +23,7 @@ from .workers.handlers.manage import (
     rss_handler,
     update_handler,
 )
-from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello,
+from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello
 from .workers.handlers.wa import (
     delete_notes,
     get_notes,
