@@ -304,7 +304,9 @@ async def list_notes(event, args, client):
             user_name = notes[title].get("user_name")
             msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if event.chat.is_group and not filter_ else str()}"
         if not msg_:
-            return await event.reply(f"*You currently have no saved notes in {chat_name}*!")
+            return await event.reply(
+                f"*You currently have no saved notes in {chat_name}*!"
+            )
         msg += msg_
 
         chain_reply = None
