@@ -113,13 +113,15 @@ async def gc_info(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        return 
+        return
     try:
         group_info = await client.get_group_info(event.chat.jid)
-        return await event.reply(f"*Owner:* @{group_info.OwnerJID.User}\n*Created at:* {get_date_from_ts(group_info.GroupCreated)}")
+        return await event.reply(
+            f"*Owner:* @{group_info.OwnerJID.User}\n*Created at:* {get_date_from_ts(group_info.GroupCreated)}"
+        )
     except Exception:
         await logger(Exception)
-        
+
 
 async def hello(event, args, client):
     try:

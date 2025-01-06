@@ -1,7 +1,6 @@
 import asyncio
 import copy
 import io
-import itertools
 import random
 
 import torch
@@ -198,7 +197,9 @@ async def upscale_image(event, args, client):
         turn().append(turn_id)
         status_msg = await event.reply("*…*")
         if event.quoted_image.caption.startswith("Upscaled image:"):
-            return await event.reply("What?, initial upscale not good enough for you? 😒")
+            return await event.reply(
+                "What?, initial upscale not good enough for you? 😒"
+            )
         file = await download_replied_media(event.quoted, mtype="image")
 
         if waiting_for_turn():
