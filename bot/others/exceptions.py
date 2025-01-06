@@ -1,0 +1,2 @@
+class ArgumentParserError(Exception):
+    pass
