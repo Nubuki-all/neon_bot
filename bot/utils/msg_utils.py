@@ -385,10 +385,10 @@ def register(key: str | None = None):
 
 bot.register = register
 
+
 async def helper(funcs):
     await asyncio.sleep(1)
     await asyncio.gather(*funcs)
-    
 
 
 async def on_message(client: NewAClient, message: MessageEv):
