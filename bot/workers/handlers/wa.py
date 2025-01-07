@@ -6,11 +6,11 @@ import random
 import torch
 from clean_links.clean import clean_url
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
-    Message,
+    DeviceListMetadata,
     FutureProofMessage,
     InteractiveMessage,
+    Message,
     MessageContextInfo,
-    DeviceListMetadata,
 )
 from PIL import Image
 from RealESRGAN import RealESRGAN
@@ -525,9 +525,9 @@ async def get_notes2(event, args, client):
     except Exception:
         await logger(Exception)
 
+
 async def button(event, args, function):
-    """
-    """
+    """ """
     try:
         message = event.message
         await client.send_message(
@@ -588,4 +588,4 @@ async def button(event, args, function):
             ),
         )
     except Exception:
-       await logger (Exception)
+        await logger(Exception)

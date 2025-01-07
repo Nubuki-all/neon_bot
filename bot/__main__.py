@@ -25,7 +25,7 @@ from .workers.handlers.manage import (
 )
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello
 from .workers.handlers.wa import (
-    button, 
+    button,
     delete_notes,
     get_notes,
     get_notes2,
