@@ -305,7 +305,7 @@ async def list_notes(event, args, client):
         i = 1
         for title in list(notes.keys()):
             if filter_ and notes[title].get("user") != user:
-                break
+                continue
             user_name = notes[title].get("user_name")
             msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if event.chat.is_group and not filter_ else str()}"
             i += 1
@@ -400,7 +400,7 @@ async def get_notes(event, args, client):
         if not user_is_allowed(user):
             return
     try:
-        if not args or (args and args.casefold() == "all", "me", "notes", "my note"):
+        if not args or (args and args.casefold() in ("all", "me", "notes", "my note")):
             return await list_notes(event, args, client)
         chat = event.chat.id
         chat_name = (
