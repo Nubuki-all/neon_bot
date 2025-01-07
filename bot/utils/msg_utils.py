@@ -386,7 +386,7 @@ def register(key: str | None = None):
 bot.register = register
 
 
-async def handle_helper(funcs):
+async def handler_helper(funcs):
     await asyncio.sleep(1)
     await asyncio.gather(*funcs)
 
@@ -407,7 +407,7 @@ async def on_message(client: NewAClient, message: MessageEv):
     func_list = []
     for func in function_dict[None]:
         func_list.append(func(client, event))
-    future = asyncio.run_coroutine_threadsafe(asyncio.gather(*func_list), bot.loop)
+    future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
     future.result()
 
 
