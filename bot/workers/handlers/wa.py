@@ -15,6 +15,7 @@ from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
     png_to_jpg,
     split_text,
+    sync_to_async,
     turn,
     wait_for_turn,
     waiting_for_turn,
@@ -216,7 +217,7 @@ async def upscale_image(event, args, client):
         model = RealESRGAN(device, scale=4)
         model.load_weights("weights/RealESRGAN_x4.pth", download=True)
         image = Image.open(io.BytesIO(file)).convert("RGB")
-        sr_image = model.predict(image)
+        sr_image = await sync_to_async(model.predict, image)
         output = io.BytesIO()
         sr_image.save(output, format="png")
         output.name = f"upscaled_image.png"
