@@ -526,7 +526,7 @@ async def get_notes2(event, args, client):
         await logger(Exception)
 
 
-async def button(event, args, function):
+async def button(event, args, client):
     """ """
     try:
         message = event.message
