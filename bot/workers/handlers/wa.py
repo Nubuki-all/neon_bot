@@ -210,7 +210,9 @@ async def upscale_image(event, args, client):
         # async with heavy_proc_lock:
         # Lock works now but eh i like the current implementation better
         await status_msg.edit("*Upscaling please wait…*")
-        device = torch.device("cuda" if torch.cuda.is_available() and not conf.NO_GPU else "cpu")
+        device = torch.device(
+            "cuda" if torch.cuda.is_available() and not conf.NO_GPU else "cpu"
+        )
         model = RealESRGAN(device, scale=4)
         model.load_weights("weights/RealESRGAN_x4.pth", download=True)
         image = Image.open(io.BytesIO(file)).convert("RGB")
