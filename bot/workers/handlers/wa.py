@@ -531,7 +531,7 @@ async def button(event, args, client):
     try:
         message = event.message
         await client.send_message(
-            message.Info.MessageSource.Clhat,
+            message.Info.MessageSource.Chat,
             Message(
                 viewOnceMessage=FutureProofMessage(
                     message=Message(
