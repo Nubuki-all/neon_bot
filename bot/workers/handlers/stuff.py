@@ -1,3 +1,5 @@
+from datetime import datetime as dt
+
 from bot.config import bot, conf
 from bot.utils.bot_utils import get_date_from_ts, get_json
 from bot.utils.log_utils import logger
@@ -101,6 +103,7 @@ async def getcmds(event, args, client):
 {pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}
 {pre}bash - *[Dev.] Run bash commands*
 {pre}eval - *[Dev.] Evaluate python commands*
+{pre}ping - *Check if bot is alive*
 {pre}rss - *[Owner] Setup bot to auto post RSS feeds*
 {pre}update - *[Owner] Update & restarts bot*
 {pre}restart - *[Owner] Restarts bot*
@@ -136,3 +139,23 @@ async def hello(event, args, client):
         await event.reply("Hi!")
     except Exception:
         await logger(Exception)
+
+
+async def up(event, args, client):
+    """ping bot!"""
+    user = event.from_user.id
+    if not user_is_owner(user):
+        if not pm_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return
+    ist = dt.now()
+    msg = await event.reply("…")
+    st = dt.now()
+    ims = (st - ist).microseconds / 1000
+    msg1 = "**Pong! ——** `{}`__ms__"
+    st = dt.now()
+    await msg.edit(msg1.format(ims))
+    ed = dt.now()
+    ms = (ed - st).microseconds / 1000
+    await msg.edit(f"1. {msg1.format(ims)}\n2. {msg1.format(ms)}")

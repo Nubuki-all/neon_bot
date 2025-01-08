@@ -23,7 +23,7 @@ from .workers.handlers.manage import (
     rss_handler,
     update_handler,
 )
-from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello
+from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
 from .workers.handlers.wa import (
     button,
     delete_notes,
@@ -65,6 +65,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("logs")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, get_logs)
+
+
+@bot.register("ping")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, up)
 
 
 @bot.register("eval")
