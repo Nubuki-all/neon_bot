@@ -153,7 +153,7 @@ async def up(event, args, client):
     msg = await event.reply("…")
     st = dt.now()
     ims = (st - ist).microseconds / 1000
-    msg1 = "**Pong! ——** `{}`__ms__"
+    msg1 = "*Pong! ——* _{}ms_"
     st = dt.now()
     await msg.edit(msg1.format(ims))
     ed = dt.now()
