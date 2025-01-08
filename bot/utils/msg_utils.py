@@ -78,9 +78,9 @@ class Event:
         # To do expand quoted; has members [stanzaID, participant,
         # quotedMessage.conversation]
         self.quoted = self.ext_msg.contextInfo if add_replied else None
-        self.quoted_audio = self.quoted_document = self.quoted_image = self.quoted_video = (
-            self.quoted_viewonce
-        ) = None
+        self.quoted_audio = self.quoted_document = self.quoted_image = (
+            self.quoted_video
+        ) = self.quoted_viewonce = None
         if self.quoted:
             self.quoted_audio = (
                 self.quoted.quotedMessage.audioMessage

@@ -431,7 +431,7 @@ async def get_notes(event, args, client):
             u_note.get("note_type"),
         )
         if note_type == str:
-            msg = note # + f"\n\nBy: @{user}"
+            msg = note  # + f"\n\nBy: @{user}"
             return await clean_reply(event, event.reply_to_message, "reply", msg)
         elif note_type == bytes:
             return await clean_reply(
