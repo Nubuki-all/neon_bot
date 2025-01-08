@@ -431,7 +431,7 @@ async def get_notes(event, args, client):
             u_note.get("note_type"),
         )
         if note_type == str:
-            msg = note + f"\n\nBy: @{user}"
+            msg = note # + f"\n\nBy: @{user}"
             return await clean_reply(event, event.reply_to_message, "reply", msg)
         elif note_type == bytes:
             return await clean_reply(
@@ -439,13 +439,14 @@ async def get_notes(event, args, client):
                 event.reply_to_message,
                 "reply_photo",
                 note[0],
-                (note[1] + f"\n\nBy: @{user}").lstrip("\n"),
+                note[1],
+                # (note[1] + f"\n\nBy: @{user}").lstrip("\n"),
             )
         elif note_type == Message:
             note = copy.deepcopy(note)
             newlines = "\n\n"
-            note.caption += f"{ newlines if note.caption else str()}By: @{user}"
-            note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
+            # note.caption += f"{ newlines if note.caption else str()}By: @{user}"
+            # note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
             if hasattr(note, "viewOnce"):
                 note.viewOnce = False
             return await clean_reply(
