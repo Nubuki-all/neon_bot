@@ -170,15 +170,14 @@ async def _(client: NewAClient, message: MessageEv):
 ########### Start ############
 
 try:
-    loop = asyncio.get_event_loop()
-    bot.loop = loop
-    loop.create_task(on_startup())
+    bot.loop = asyncio.get_event_loop()
+    bot.loop.create_task(on_startup())
     if not bot.initialized_client:
-        loop.run_until_complete(
+        bot.loop.run_until_complete(
             bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
         )
     else:
-        loop.run_until_complete(bot.client.connect())
+        bot.loop.run_until_complete(bot.client.connect())
 except Exception:
     LOGS.critical(traceback.format_exc())
     LOGS.critical("Cannot recover from error, exiting…")

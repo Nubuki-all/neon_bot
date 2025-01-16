@@ -162,7 +162,7 @@ async def stickerize_image(event, args, client):
             rate = f"{rate}k"
         forced = False if m_type == "image" else forced
         await event.send_typing_status()
-        file = await download_replied_media(event.quoted, mtype=m_type)
+        file = await download_replied_media(event)
         me = await bot.client.get_me()
         return await event.reply_sticker(
             file,
@@ -208,7 +208,7 @@ async def upscale_image(event, args, client):
             return await event.reply(
                 "What?, initial upscale not good enough for you? 😒"
             )
-        file = await download_replied_media(event.quoted, mtype="image")
+        file = await download_replied_media(event)
 
         if waiting_for_turn():
             w_msg = await status_msg.edit(
@@ -370,7 +370,7 @@ async def save_notes(event, args, client):
             note = event.quoted_text
         elif event.quoted_image:
             if event.quoted_image.fileLength < 5000000:
-                note = await download_replied_media(event.quoted, mtype="image")
+                note = await download_replied_media(event)
                 note = [note, event.quoted_image.caption]
                 note_type = bytes
             else:
