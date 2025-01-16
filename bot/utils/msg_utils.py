@@ -337,8 +337,8 @@ async def download_replied_media(event) -> bytes:
         mtype = "document"
         media_type = MediaType.MediaDocument
     else:
-        raise Exception (
-        f"""Expected either:
+        raise Exception(
+            f"""Expected either:
         ImageMessage
         VideoMessage
         AudioMessage
