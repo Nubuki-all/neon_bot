@@ -377,7 +377,7 @@ async def save_notes(event, args, client):
         elif event.quoted_image:
             if event.quoted_image.fileLength < 5000000:
                 note = await download_replied_media(event)
-                note = [note, event.quoted_image.caption]
+                note = [note, (event.quoted_image.caption if not arg.c else str())]
                 note_type = bytes
             else:
                 note = event.quoted_image
