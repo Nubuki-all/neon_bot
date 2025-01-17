@@ -69,10 +69,10 @@ async def getmeme(event, args, client):
             return await event.reply("*Request Failed!*")
         if url.endswith(".gif"):
             return await event.reply_gif(
-                caption=caption,
-                gif=url,
-                viewonce=nsfw,
-                as_gif=True,
+            caption=caption,
+            gif=url,
+            viewonce=nsfw,
+            as_gif=True,
             )
         await event.reply_photo(
             caption=caption,
