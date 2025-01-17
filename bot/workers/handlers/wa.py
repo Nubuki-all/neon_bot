@@ -343,6 +343,7 @@ async def save_notes(event, args, client):
     Can be retrieved with get {note_name}
     Argument:
         note_name: name to save note as
+        -c: clean caption
     """
     chat = event.chat.id
     user = event.from_user.id
@@ -363,6 +364,11 @@ async def save_notes(event, args, client):
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
+        arg, args = get_args(
+            ["-c", "store_true"],
+            to_parse=args,
+            get_unknown=True,
+        )
         status_msg = await event.reply("…")
         # note gen:
         note_type = str
@@ -379,6 +385,8 @@ async def save_notes(event, args, client):
         elif event.quoted_msg:
             note = event.quoted_msg
             note_type = Message
+        if note_type == Message and arg.c:
+            note.caption = str()
         data = {
             args: {
                 "user": user,
