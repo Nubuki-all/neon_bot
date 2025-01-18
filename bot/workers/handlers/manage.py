@@ -475,7 +475,7 @@ async def ban(event, args, client):
     try:
         if args and not (args := args.lstrip("@")).isdigit():
             return await event.reply("*Please supply a valid id to ban*")
-        elif not event.reply_to_message:
+        elif not (args or event.reply_to_message):
             return await event.reply(
                 "*Reply to a message or supply an id to ban the user from using the bot.*"
             )
@@ -510,7 +510,7 @@ async def unban(event, args, client):
     try:
         if args and not (args := args.lstrip("@")).isdigit():
             return await event.reply("*Please supply a valid id to unban*")
-        elif not event.reply_to_message:
+        elif not (args or event.reply_to_message):
             return await event.reply(
                 "*Reply to a message or supply an id to unban the user from using the bot.*"
             )
@@ -634,9 +634,9 @@ async def sudoers(event, args, client):
             )
         else:
             return await event.reply(getdoc(sudoers))
-        if args and (args := args.lstrip("@")).isdigit():
+        if args and not (args := args.lstrip("@")).isdigit():
             return await event.reply(msg1)
-        elif not event.reply_to_message:
+        elif not (args or event.reply_to_message):
             return await event.reply(msg2)
         _id = args or event.reply_to_message.from_user.id
         if user_is_owner(_id):
