@@ -19,6 +19,7 @@ db_cluster = {
     "note": nfdb,
     "rss": rssdb,
     "users": userdb,
+    "groups": userdb,
 }
 
 

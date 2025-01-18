@@ -1,20 +1,25 @@
 import pickle
 
-from bot import bot, local_ndb, local_rdb, local_udb
+from bot import bot, local_gcdb, local_ndb, local_rdb, local_udb
 
 from .os_utils import file_exists
 
 
 def load_local_db():
-    if file_exists(local_rdb):
-        with open(local_rdb, "rb") as file:
+    if file_exists(local_gcdb):
+        with open(local_gcdb, "rb") as file:
             local_dict = pickle.load(file)
-        bot.rss_dict.update(local_dict)
+        bot.group_dict.update(local_dict)
 
     if file_exists(local_ndb):
         with open(local_ndb, "rb") as file:
             local_dict = pickle.load(file)
         bot.notes_dict.update(local_dict)
+
+    if file_exists(local_rdb):
+        with open(local_rdb, "rb") as file:
+            local_dict = pickle.load(file)
+        bot.rss_dict.update(local_dict)
 
     if file_exists(local_udb):
         with open(local_udb, "rb") as file:
@@ -23,12 +28,15 @@ def load_local_db():
 
 
 def save2db_lcl2(db):
-    if db is "users":
-        with open(local_udb, "wb") as file:
-            pickle.dump(bot.user_dict, file)
-    elif db == "rss":
+    if db == "groups":
         with open(local_rdb, "wb") as file:
-            pickle.dump(bot.rss_dict, file)
+            pickle.dump(bot.group_dict, file)
     elif db == "note":
         with open(local_ndb, "wb") as file:
             pickle.dump(bot.notes_dict, file)
+    elif db == "rss":
+        with open(local_rdb, "wb") as file:
+            pickle.dump(bot.rss_dict, file)
+    elif db is "users":
+        with open(local_udb, "wb") as file:
+            pickle.dump(bot.user_dict, file)

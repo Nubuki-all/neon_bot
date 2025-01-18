@@ -4,7 +4,7 @@ from bot.config import bot, conf
 from bot.utils.bot_utils import get_date_from_ts, get_json
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
-    pm_is_allowed,
+    chat_is_allowed,
     user_is_admin,
     user_is_allowed,
     user_is_owner,
@@ -54,7 +54,7 @@ async def getmeme(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -93,7 +93,7 @@ async def getcmds(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -108,13 +108,18 @@ async def getcmds(event, args, client):
 {pre}del_note - *Delete a saved item*
 {pre}random - *Get a random choice*
 {pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}
+{pre}ping - *Check if bot is alive*
 {pre}bash - *[Dev.] Run bash commands*
 {pre}eval - *[Dev.] Evaluate python commands*
-{pre}ping - *Check if bot is alive*
-{pre}rss - *[Owner] Setup bot to auto post RSS feeds*
-{pre}update - *[Owner] Update & restarts bot*
-{pre}restart - *[Owner] Restarts bot*
-{pre}pause - *[Owner] Pauses bot*"""
+{pre}ban - *[Owner] prevent a user from using bot*
+{pre}uban - *[Owner] unban a user*
+{pre}sudo - *[Owner] Promote a user to sudoers*
+{pre}rss - *[Owner | Sudo] Setup bot to auto post RSS feeds*
+{pre}update - *[Owner | Sudo] Update & restarts bot*
+{pre}restart - *[Owner | Sudo] Restarts bot*
+{pre}disable - *[Owner | Sudo] Disable bot replies in a GC*
+{pre}enable - *[Owner | Sudo] Enable bot replies in a GC*
+{pre}pause - *[Owner | Sudo] Pauses bot*"""
         await event.reply(msg)
     except Exception as e:
         await logger(Exception)
@@ -152,7 +157,7 @@ async def up(event, args, client):
     """ping bot!"""
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return

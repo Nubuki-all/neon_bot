@@ -18,9 +18,14 @@ from .utils.msg_utils import Event, event_handler, on_message
 from .utils.os_utils import re_x, s_remove
 from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.manage import (
+    ban,
+    disable,
+    enable,
     pause_handler,
     restart_handler,
     rss_handler,
+    sudoers,
+    unban,
     update_handler,
 )
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
@@ -137,9 +142,34 @@ async def _(client: NewAClient, message: Event):
     await event_handler(message, rss_handler, require_args=True)
 
 
+@bot.register("ban")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, ban)
+
+
+@bot.register("unban")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, unban)
+
+
 @bot.register("gc_info")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, gc_info, bot.client)
+
+
+@bot.register("sudo")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, sudoers, bot.client)
+
+
+@bot.register("disable")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, disable, bot.client)
+
+
+@bot.register("enable")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, enable, bot.client)
 
 
 @bot.register("update")

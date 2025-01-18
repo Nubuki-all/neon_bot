@@ -53,8 +53,9 @@ from neonize.utils import jid, log
 from .config import bot, conf
 
 heavy_proc_lock = asyncio.Lock()
+local_gcdb = ".local_groups.pkl"
 local_rdb = ".local_rssdb.pkl"
-local_budb = ".local_users.pkl"
+local_udb = ".local_users.pkl"
 local_ndb = ".local_notedb.pkl"
 log_file_name = "logs.txt"
 rss_dict_lock = asyncio.Lock()

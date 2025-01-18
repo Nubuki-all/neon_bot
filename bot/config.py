@@ -34,7 +34,7 @@ class Config:
 
             self.CMD_PREFIX = config("CMD_PREFIX", default="")
             self.DATABASE_URL = config("DATABASE_URL", default=None)
-            self.DBNAME = config("DBNAME", default="Qiqi")
+            self.DBNAME = config("DBNAME", default="Neon")
             self.DEBUG = config("DEBUG", default=False, cast=bool)
             self.DEV = config("DEV", default=0, cast=str)
             self.DYNO = config("DYNO", default=None)
@@ -70,6 +70,7 @@ class Runtime_Config:
         self.client = None
         self.disable_cic = False
         self.docker_deployed = False
+        self.group_dict = {}
         self.ignore_pm = False
         self.max_message_length = 4096
         self.offline = False

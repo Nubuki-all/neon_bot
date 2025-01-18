@@ -34,7 +34,7 @@ from bot.utils.msg_utils import (
     clean_reply,
     download_replied_media,
     get_args,
-    pm_is_allowed,
+    chat_is_allowed,
     user_is_admin,
     user_is_allowed,
     user_is_owner,
@@ -86,7 +86,7 @@ async def sanitize_url(event, args, client):
     status_msg = None
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -132,7 +132,7 @@ async def stickerize_image(event, args, client):
     max_sticker_filesize = 512000
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -189,7 +189,7 @@ async def upscale_image(event, args, client):
     turn_id = f"{event.chat.id}:{event.id}"
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -256,7 +256,7 @@ async def pick_random(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -349,7 +349,7 @@ async def save_notes(event, args, client):
     chat = event.chat.id
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -414,7 +414,7 @@ async def get_notes(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
@@ -474,7 +474,7 @@ async def delete_notes(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        if not pm_is_allowed(event):
+        if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return
