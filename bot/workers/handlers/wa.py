@@ -37,6 +37,7 @@ from bot.utils.msg_utils import (
     get_args,
     user_is_admin,
     user_is_allowed,
+    user_is_privileged,
     user_is_owner,
 )
 
@@ -85,7 +86,7 @@ async def sanitize_url(event, args, client):
     """
     status_msg = None
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -131,7 +132,7 @@ async def stickerize_image(event, args, client):
     """
     max_sticker_filesize = 512000
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -188,7 +189,7 @@ async def upscale_image(event, args, client):
     status_msg = None
     turn_id = f"{event.chat.id}:{event.id}"
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -255,7 +256,7 @@ async def pick_random(event, args, client):
 
     """
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -299,6 +300,12 @@ async def list_notes(event, args, client):
     Fetches the list of notes in a chat:
     Arguments: [None]
     """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return
     try:
         chat = event.chat.id
         chat_name = (
@@ -309,7 +316,6 @@ async def list_notes(event, args, client):
         if not (notes := bot.notes_dict.get(chat)):
             return await event.reply(f"*No notes found for chat: {chat_name}!*")
         reply = await event.reply("_Fetching notes…_")
-        user = event.from_user.id
         filter_ = True if args and args.casefold() in ("my notes", "me") else False
         msg = f"*{'Your l' if filter_ else 'L'}ist of notes in {chat_name}*"
         msg_ = str()
@@ -348,7 +354,7 @@ async def save_notes(event, args, client):
     """
     chat = event.chat.id
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -413,7 +419,7 @@ async def get_notes(event, args, client):
     *Can also get notes through #note_name
     """
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -473,7 +479,7 @@ async def delete_notes(event, args, client):
         all: (Owner) delete all notes for this chat
     """
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):

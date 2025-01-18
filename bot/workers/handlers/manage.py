@@ -464,8 +464,10 @@ async def ban(event, args, client):
     """
     Ban the user from using the bot:
     Argument:
-        user_id/@mentions
+        *user_id/@mentions
         or reply to the user's message
+
+    *user_id: user's phone number with country code without spaces or the initial '+'
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -497,8 +499,10 @@ async def unban(event, args, client):
     """
     Unban previously banned user:
     Argument:
-        user_id/@mentions
+        *user_id/@mentions
         or reply to the user's message
+
+    *user_id: user's phone number with country code without spaces or the initial '+'
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -581,6 +585,7 @@ async def enable(event, args, client):
 
 
 async def list_sudoers(event, args, client):
+    "Lists the sudoers."
     msg = str()
     for user in bot.user_dict.keys():
         if not bot.user_dict.get(user, {}).get("sudoer", False):
@@ -598,18 +603,27 @@ async def list_sudoers(event, args, client):
 
 
 async def sudoers(event, args, client):
+    """
+    Modify sudoers
+    Arguments:
+        -a: Add user to sudoers
+        -rm Remove user from sudoers
+        {user_id}: ID* of user of user to add to sudoers (can also be specified through a tag); Replying the user message also works
+
+    *ID: user's phone number with country code without spaces or the initial '+'
+    """
     user = event.from_user.id
     if not user_is_owner(user):
         return
     try:
+        if not args:
+            return await list_sudoers(event, args, client)
         arg, args = get_args(
             ["-a", "store_true"],
             ["-rm", "store_true"],
             to_parse=args,
             get_unknown=True,
         )
-        if not args:
-            return await list_sudoers(event, args, client)
         if arg.a:
             msg1 = "*Please supply a valid id to add to sudoers*"
             msg2 = "*Reply to a message or supply an id to add the user to sudoers.*"
@@ -620,7 +634,7 @@ async def sudoers(event, args, client):
             )
         else:
             return await event.reply(getdoc(sudoers))
-        if (args := args.lstrip("@")).isdigit():
+        if args and (args := args.lstrip("@")).isdigit():
             return await event.reply(msg1)
         elif not event.reply_to_message:
             return await event.reply(msg2)

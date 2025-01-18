@@ -7,6 +7,7 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     user_is_admin,
     user_is_allowed,
+    user_is_privileged,
     user_is_owner,
 )
 
@@ -53,7 +54,7 @@ async def getmeme(event, args, client):
     subreddit - custom subreddit
     """
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -92,7 +93,7 @@ async def getcmds(event, args, client):
         None
     """
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
@@ -112,7 +113,7 @@ async def getcmds(event, args, client):
 {pre}bash - *[Dev.] Run bash commands*
 {pre}eval - *[Dev.] Evaluate python commands*
 {pre}ban - *[Owner] prevent a user from using bot*
-{pre}uban - *[Owner] unban a user*
+{pre}unban - *[Owner] unban a user*
 {pre}sudo - *[Owner] Promote a user to sudoers*
 {pre}rss - *[Owner | Sudo] Setup bot to auto post RSS feeds*
 {pre}update - *[Owner | Sudo] Update & restarts bot*
@@ -136,7 +137,7 @@ async def gc_info(event, args, client):
     try:
         group_info = await client.get_group_info(event.chat.jid)
         user = event.from_user.id
-        if not user_is_owner(user):
+        if not user_is_privileged(user):
             if not user_is_admin(user, group_info.Participants):
                 return
         return await event.reply(
@@ -156,7 +157,7 @@ async def hello(event, args, client):
 async def up(event, args, client):
     """ping bot!"""
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
