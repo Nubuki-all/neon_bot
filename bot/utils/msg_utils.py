@@ -405,7 +405,6 @@ def user_is_sudoer(user: str | int):
     return bot.user_dict.get(user, {}).get("sudoer", False)
 
 
-
 function_dict = {None: []}
 
 
