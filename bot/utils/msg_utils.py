@@ -337,15 +337,17 @@ async def download_replied_media(event) -> bytes:
         mtype = "document"
         media_type = MediaType.MediaDocument
     else:
-        raise Exception(inspect.cleandoc(
-            f"""Expected either:
+        raise Exception(
+            inspect.cleandoc(
+                f"""Expected either:
         ImageMessage
         VideoMessage
         AudioMessage
         DocumentMessage
         not {type(event.quoted_msg).__name__}
         """
-        ))
+            )
+        )
 
     direct_path = item.directPath
     enc_file_hash = item.fileEncSHA256
@@ -362,7 +364,6 @@ async def download_replied_media(event) -> bytes:
         media_type,
         mms_type,
     )
-
 
 
 def user_is_admin(user: str, members: list):
