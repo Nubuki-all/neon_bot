@@ -8,7 +8,15 @@ from bot import bot, jid, rss_dict_lock
 from bot.utils.bot_utils import list_to_str, split_text
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import chat_is_allowed, event_handler, get_args, user_is_allowed, user_is_privileged, user_is_sudoer, user_is_owner
+from bot.utils.msg_utils import (
+    chat_is_allowed,
+    event_handler,
+    get_args,
+    user_is_allowed,
+    user_is_owner,
+    user_is_privileged,
+    user_is_sudoer,
+)
 from bot.utils.os_utils import re_x, updater
 from bot.utils.rss_utils import schedule_rss, scheduler
 
@@ -451,6 +459,7 @@ async def rss_sub(event, args, client):
         schedule_rss()
         scheduler.start()
 
+
 async def ban(event, args, client):
     """
     Ban the user from using the bot:
@@ -465,14 +474,18 @@ async def ban(event, args, client):
         if args and not (args := args.lstrip("@")).isdigit():
             return await event.reply("*Please supply a valid id to ban*")
         elif not event.reply_to_message:
-            return await event.reply("*Reply to a message or supply an id to ban the user from using the bot.*")
+            return await event.reply(
+                "*Reply to a message or supply an id to ban the user from using the bot.*"
+            )
         ban_id = args or event.reply_to_message.from_user.id
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
             return await event.reply(f"@{ban_id} *is a Sudoer.*")
         if not user_is_allowed(ban_id):
-            return await event.reply(f"@{ban_id} *has already been banned from using the bot.*")
+            return await event.reply(
+                f"@{ban_id} *has already been banned from using the bot.*"
+            )
         bot.user_dict.setdefault(ban_id, {}).update(banned=True)
         await save2db2(bot.user_dict, "users")
         return await event.reply(f"@{ban_id} *has been banned from using the bot.*")
@@ -494,14 +507,18 @@ async def unban(event, args, client):
         if args and not (args := args.lstrip("@")).isdigit():
             return await event.reply("*Please supply a valid id to unban*")
         elif not event.reply_to_message:
-            return await event.reply("*Reply to a message or supply an id to unban the user from using the bot.*")
+            return await event.reply(
+                "*Reply to a message or supply an id to unban the user from using the bot.*"
+            )
         ban_id = args or event.reply_to_message.from_user.id
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
             return await event.reply(f"@{ban_id} *is a Sudoer.*")
         if user_is_allowed(ban_id):
-            return await event.reply(f"@{ban_id} *was never banned from using the bot.*")
+            return await event.reply(
+                f"@{ban_id} *was never banned from using the bot.*"
+            )
         bot.user_dict.setdefault(ban_id, {}).update(banned=False)
         await save2db2(bot.user_dict, "users")
         return await event.reply(f"@{ban_id} *ban has been lifted.*")
@@ -527,7 +544,9 @@ async def disable(event, args, client):
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
         if not chat_is_allowed(chat_id):
-            return await event.reply("Bot has already been disabled in this Group chat.")
+            return await event.reply(
+                "Bot has already been disabled in this Group chat."
+            )
         bot.group_dict.setdefault(chat_id, {}).update(disabled=True)
         await save2db2(bot.group_dict, "groups")
         await event.reply(f"Successfully disabled bot replies in group; {chat_name}")
@@ -577,6 +596,7 @@ async def list_sudoers(event, args, client):
     for text in split_text(resp):
         event = await event.reply(text)
 
+
 async def sudoers(event, args, client):
     user = event.from_user.id
     if not user_is_owner(user):
@@ -595,7 +615,9 @@ async def sudoers(event, args, client):
             msg2 = "*Reply to a message or supply an id to add the user to sudoers.*"
         elif arg.rm:
             msg1 = "*Please supply a valid id to remove from sudoers*"
-            msg2 = "*Reply to a message or supply an id to remove the user from sudoers.*"
+            msg2 = (
+                "*Reply to a message or supply an id to remove the user from sudoers.*"
+            )
         else:
             return await event.reply(getdoc(sudoers))
         if (args := args.lstrip("@")).isdigit():
@@ -614,6 +636,8 @@ async def sudoers(event, args, client):
                 return await event.reply(f"@{_id} *is not a Sudoer.*")
             bot.user_dict.setdefault(_id, {}).update(sudoer=False)
         await save2db2(bot.user_dict, "users")
-        await event.reply(f"@{_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*")
+        await event.reply(
+            f"@{_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*"
+        )
     except Exception:
         await logger(Exception)

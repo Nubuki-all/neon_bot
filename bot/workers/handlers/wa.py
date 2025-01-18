@@ -31,10 +31,10 @@ from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
     Message,
+    chat_is_allowed,
     clean_reply,
     download_replied_media,
     get_args,
-    chat_is_allowed,
     user_is_admin,
     user_is_allowed,
     user_is_owner,

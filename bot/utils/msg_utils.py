@@ -392,6 +392,7 @@ def user_is_owner(user: str | int):
 def user_is_privileged(user):
     return user_is_owner(user) or user_is_sudoer(user)
 
+
 def user_is_sudoer(user: str | int):
     user = str(user)
     return bot.user_dict.get(user, {}).get("sudoer", False)
