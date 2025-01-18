@@ -1,8 +1,7 @@
 import pickle
 
-from bot import bot, local_budb, local_ndb, local_rdb
+from bot import bot, local_ndb, local_rdb, local_udb
 
-from .bot_utils import list_to_str
 from .os_utils import file_exists
 
 
@@ -17,18 +16,16 @@ def load_local_db():
             local_dict = pickle.load(file)
         bot.notes_dict.update(local_dict)
 
-    if file_exists(local_budb):
-        with open(local_budb, "rb") as file:
-            local_b_users = pickle.load(file)
-        for user in local_b_users:
-            if user not in bot.banned:
-                bot.banned.append(user)
+    if file_exists(local_udb):
+        with open(local_udb, "rb") as file:
+            local_dict = pickle.load(file)
+        bot.user_dict.update(local_dict)
 
 
 def save2db_lcl2(db):
-    if db is None:
-        with open(local_budb, "wb") as file:
-            pickle.dump(list_to_str(bot.banned), file)
+    if db is "users":
+        with open(local_udb, "wb") as file:
+            pickle.dump(bot.user_dict, file)
     elif db == "rss":
         with open(local_rdb, "wb") as file:
             pickle.dump(bot.rss_dict, file)

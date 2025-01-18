@@ -24,8 +24,8 @@ class Config:
                 "ALWAYS_DEPLOY_LATEST", default=False, cast=bool
             )
             self.ALLOWED_CHATS = config("ALLOWED_CHATS", default="")
-            self.BANNED = config(
-                "BANNED",
+            self.BANNED_USERS = config(
+                "BANNED_USERS",
                 default=str(),
             )
             self.BLOCK_NSFW = config("BLOCK_NSFW", default=True, cast=bool)
@@ -66,7 +66,6 @@ class Runtime_Config:
         self.initialized_client = False
         self.author = None
         self.author_url = None
-        self.banned = []
         self.block_nsfw = False
         self.client = None
         self.disable_cic = False
@@ -79,6 +78,7 @@ class Runtime_Config:
         self.notes_dict = {}
         self.rss_dict = {}
         self.rss_ran_once = False
+        self.user_dict = {}
         self.version = None
 
 

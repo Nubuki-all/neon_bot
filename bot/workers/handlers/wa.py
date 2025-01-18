@@ -158,6 +158,7 @@ async def stickerize_image(event, args, client):
                 rate = max_sticker_filesize // 6
                 trim = True if forced else False
             else:
+                seconds = 1 if not seconds else seconds
                 rate = max_sticker_filesize // seconds
             rate = f"{rate}k"
         forced = False if m_type == "image" else forced
