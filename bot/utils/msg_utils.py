@@ -340,12 +340,12 @@ async def download_replied_media(event) -> bytes:
         raise Exception(
             inspect.cleandoc(
                 f"""Expected either:
-        ImageMessage
-        VideoMessage
-        AudioMessage
-        DocumentMessage
-        not {type(event.quoted_msg).__name__}
-        """
+                ImageMessage
+                VideoMessage
+                AudioMessage
+                DocumentMessage
+                not {type(event.quoted_msg).__name__}
+                """
             )
         )
 
