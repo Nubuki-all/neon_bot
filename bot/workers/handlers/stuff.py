@@ -119,7 +119,7 @@ async def getcmds(event, args, client):
 {pre}restart - *[Owner | Sudo] Restarts bot*
 {pre}disable - *[Owner | Sudo] Disable bot replies in a GC*
 {pre}enable - *[Owner | Sudo] Enable bot replies in a GC*
-{pre}pause - *[Owner | Sudo] Pauses bot*"""
+{pre}pause - *[Owner] Pauses bot*"""
         await event.reply(msg)
     except Exception as e:
         await logger(Exception)

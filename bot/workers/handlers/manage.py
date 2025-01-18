@@ -547,7 +547,7 @@ async def disable(event, args, client):
                 )
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
-        if not chat_is_allowed(chat_id):
+        if not chat_is_allowed(event):
             return await event.reply(
                 "Bot has already been disabled in this Group chat."
             )
@@ -575,7 +575,7 @@ async def enable(event, args, client):
                 )
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
-        if chat_is_allowed(chat_id):
+        if chat_is_allowed(event):
             return await event.reply("Bot not disabled in this Group chat.")
         bot.group_dict.setdefault(chat_id, {}).update(disabled=False)
         await save2db2(bot.group_dict, "groups")
@@ -592,7 +592,7 @@ async def list_sudoers(event, args, client):
             continue
         info = await client.contact.get_contact(jid.build_jid(user))
         name = info.FullName or info.PushName
-        msg = f"\n- {name}"
+        msg += f"\n- {name}"
     if not msg:
         resp = "*No sudoers found.*"
     else:
