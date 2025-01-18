@@ -366,6 +366,13 @@ async def download_replied_media(event) -> bytes:
     )
 
 
+def chat_is_allowed(event: Event):
+    if not event.chat.is_group:
+        return not bot.ignore_pm
+    else:
+        return not bot.group_dict.get(event.chat.id, {}).get("disabled", False)
+
+
 def user_is_admin(user: str, members: list):
     for member in members:
         if user == member.JID.User:
@@ -397,12 +404,6 @@ def user_is_sudoer(user: str | int):
     user = str(user)
     return bot.user_dict.get(user, {}).get("sudoer", False)
 
-
-def chat_is_allowed(event: Event):
-    if not event.chat.is_group:
-        return not bot.ignore_pm
-    else:
-        return not bot.group_dict.get(event.chat.id, {}).get("disabled", False)
 
 
 function_dict = {None: []}

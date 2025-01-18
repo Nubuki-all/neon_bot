@@ -553,7 +553,7 @@ async def disable(event, args, client):
             )
         bot.group_dict.setdefault(chat_id, {}).update(disabled=True)
         await save2db2(bot.group_dict, "groups")
-        await event.reply(f"Successfully disabled bot replies in group; {chat_name}")
+        await event.reply(f"Successfully disabled bot replies in group: *{chat_name}*")
     except Exception:
         await logger(Exception)
 
@@ -576,10 +576,10 @@ async def enable(event, args, client):
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
         if chat_is_allowed(event):
-            return await event.reply("Bot not disabled in this Group chat.")
+            return await event.reply("Bot is already enabled in this Group chat.")
         bot.group_dict.setdefault(chat_id, {}).update(disabled=False)
         await save2db2(bot.group_dict, "groups")
-        await event.reply(f"Successfully enable bot replies in group; {chat_name}")
+        await event.reply(f"Successfully enabled bot replies in group: *{chat_name}*")
     except Exception:
         await logger(Exception)
 
