@@ -367,6 +367,8 @@ async def download_replied_media(event) -> bytes:
 
 
 def chat_is_allowed(event: Event):
+    if conf.ALLOWED_CHATS:
+        return event.chat.id in conf.ALLOWED_CHATS
     if not event.chat.is_group:
         return not bot.ignore_pm
     else:
