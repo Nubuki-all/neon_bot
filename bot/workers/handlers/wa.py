@@ -406,8 +406,8 @@ async def save_notes(event, args, client):
         notes.update(data)
         await save2db2(bot.notes_dict, "note")
         await status_msg.edit(f"_Saved replied message to notes with name:_ *{args}*")
-   except DownloadError:
-       await status_msg.edit("*Download Failed!*\nPlease ask that it be resent.")
+    except DownloadError:
+        await status_msg.edit("*Download Failed!*\nPlease ask that it be resent.")
     except Exception:
         await logger(Exception)
 
