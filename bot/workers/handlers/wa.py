@@ -542,6 +542,7 @@ async def get_notes2(event, args, client):
             return await list_notes(event, event.text[1:], None)
         if note := notes.get(event.text[1:]):
             return await get_notes(event, event.text[1:], None)
+        await event.react("❓")
     except Exception:
         await logger(Exception)
 

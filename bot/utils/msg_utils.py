@@ -8,6 +8,7 @@ from functools import partial
 
 import httpx
 from bs4 import BeautifulSoup
+from neonize.types import MessageWithContextInfo
 from neonize.utils.enum import ChatPresence, ChatPresenceMedia, MediaType, Presence
 
 from bot import (
@@ -160,7 +161,7 @@ class Event:
         quote: bool = True,
         link_preview: bool = True,
         reply_privately: bool = False,
-        message: Message = None,
+        message: MessageWithContextInfo = None,
     ):
         if not self.constructed:
             return
