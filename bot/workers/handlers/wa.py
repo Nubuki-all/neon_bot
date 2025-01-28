@@ -558,7 +558,12 @@ async def tag_all_admins(event, args, client):
             return
         group_info = await client.get_group_info(event.chat.jid)
         tags = tag_admins(group_info.Participants)
-        await clean_reply(event, event.reply_to_message, "reply", tags if event.text.endswith("s") else tags.split()[0])
+        await clean_reply(
+            event,
+            event.reply_to_message,
+            "reply",
+            tags if event.text.endswith("s") else tags.split()[0],
+        )
     except Exception:
         await logger(Exception)
 
