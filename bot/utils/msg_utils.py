@@ -144,9 +144,11 @@ class Event:
         response = await self.client.edit_message(self.chat.jid, self.id, msg)
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
-    
+
     async def react(self, emoji: str):
-        reaction = await self.client.build_reaction(self.chat.jid, self.from_user.jid, self.id, emoji)
+        reaction = await self.client.build_reaction(
+            self.chat.jid, self.from_user.jid, self.id, emoji
+        )
         return self.client.send_message(self.chat.jid, reaction)
 
     async def reply(
@@ -321,9 +323,9 @@ class Event:
     def get_quoted_msg(self):
         if not (self.quoted and self.quoted.stanzaID):
             return
-        #msg = self.gen_new_msg(
-            #self.quoted.stanzaID, (self.quoted.participant.split("@"))[0], self.chat.id, self.text, self.chat.jid.Server
-        #)
+        # msg = self.gen_new_msg(
+        # self.quoted.stanzaID, (self.quoted.participant.split("@"))[0], self.chat.id, self.text, self.chat.jid.Server
+        # )
         msg = construct_message(
             self.chat.id,
             (self.quoted.participant.split("@"))[0],
@@ -475,7 +477,9 @@ def construct_event(message: MessageEv, add_replied=True):
     return msg.construct(message, add_replied=add_replied)
 
 
-def construct_message(chat_id, user_id, msg_id, text, server="s.whatsapp.net", Msg=None):
+def construct_message(
+    chat_id, user_id, msg_id, text, server="s.whatsapp.net", Msg=None
+):
     if text:
         message = Message(conversation=text)
     else:
