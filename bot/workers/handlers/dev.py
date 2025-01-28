@@ -74,7 +74,7 @@ async def bash(event, cmd, client):
         with io.BytesIO(str.encode(OUTPUT)) as out_file:
             out_file.name = "exec.text"
             await event.reply_document(
-                document=out_file,
+                document=out_file.getvalue(),
                 quote=True,
                 caption=cmd,
             )
