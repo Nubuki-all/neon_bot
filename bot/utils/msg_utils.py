@@ -332,7 +332,7 @@ class Event:
             self.quoted.stanzaID,
             None,
             self.chat.jid.Server,
-            self.quoted_msg,
+            self.quoted.quotedMessage,
         )
         return construct_event(msg, False)
 
