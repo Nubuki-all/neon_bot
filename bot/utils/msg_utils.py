@@ -453,23 +453,26 @@ async def handler_helper(funcs):
 
 
 async def on_message(client: NewAClient, message: MessageEv):
-    event = construct_event(message)
-    if event.type == "text":
-        command, args = (
-            event.text.split(maxsplit=1)
-            if len(event.text.split()) > 1
-            else (event.text, None)
-        )
-        func = function_dict.get(command)
-        if func:
-            # await func(client, event)
-            future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
-            future.result()
-    func_list = []
-    for func in function_dict[None]:
-        func_list.append(func(client, event))
-    future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
-    future.result()
+    try:
+        event = construct_event(message)
+        if event.type == "text":
+            command, args = (
+                event.text.split(maxsplit=1)
+                if len(event.text.split()) > 1
+                else (event.text, None)
+            )
+            func = function_dict.get(command)
+            if func:
+                # await func(client, event)
+                future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
+                future.result()
+        func_list = []
+        for func in function_dict[None]:
+            func_list.append(func(client, event))
+        future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
+        future.result()
+    except Exception:
+        await logger(Exception)
 
 
 def construct_event(message: MessageEv, add_replied=True):
