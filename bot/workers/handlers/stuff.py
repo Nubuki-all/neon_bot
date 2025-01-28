@@ -145,7 +145,7 @@ async def gc_info(event, args, client):
         tags = str()
         for tag in tag_admins(group_info.Participants):
             tags += f"- {tag}\n"
-        tags = tags.rstrip('\n')
+        tags = tags.rstrip("\n")
         return await event.reply(
             f"*Owner:* {gc_owner}\n"
             f"*Created at:* {get_date_from_ts(group_info.GroupCreated)}\n"
