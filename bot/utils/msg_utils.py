@@ -149,7 +149,7 @@ class Event:
         reaction = await self.client.build_reaction(
             self.chat.jid, self.from_user.jid, self.id, emoji
         )
-        return self.client.send_message(self.chat.jid, reaction)
+        return await self.client.send_message(self.chat.jid, reaction)
 
     async def reply(
         self,
