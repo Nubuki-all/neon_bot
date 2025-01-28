@@ -72,9 +72,9 @@ async def bash(event, cmd, client):
     OUTPUT = f"QUERY:\n__Command:__\n{cmd} \n__PID:__\n{process.pid}\n\nstderr: \n{e}\nOutput:\n{o}"
     if len(OUTPUT) > 4000:
         with io.BytesIO(str.encode(OUTPUT)) as out_file:
-            out_file.name = "exec.text"
             await event.reply_document(
                 document=out_file.getvalue(),
+                file_name="exec.text",
                 quote=True,
                 caption=cmd,
             )
