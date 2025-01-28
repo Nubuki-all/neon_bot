@@ -143,7 +143,7 @@ async def gc_info(event, args, client):
                 return
         gc_owner = f"@{group_info.OwnerJID.User}" if group_info.OwnerJID.User else "MIA"
         tags = str()
-        for tag in tag_admins(group_info.Participants):
+        for tag in tag_admins(group_info.Participants).split():
             tags += f"- {tag}\n"
         tags = tags.rstrip("\n")
         return await event.reply(
