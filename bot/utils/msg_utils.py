@@ -327,7 +327,7 @@ class Event:
         msg = construct_message(
             self.chat.id,
             (self.quoted.participant.split("@"))[0],
-            self.quoted.stanzaID
+            self.quoted.stanzaID,
             None,
             self.chat.jid.Server,
             self.quoted_msg,
