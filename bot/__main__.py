@@ -39,6 +39,7 @@ from .workers.handlers.wa import (
     save_notes,
     sticker_reply,
     stickerize_image,
+    tag_all_admins,
     upscale_image,
 )
 
@@ -185,6 +186,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await sticker_reply(message, None, client)
+
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await tag_all_admins(message, None, client)
 
 
 @bot.register(None)

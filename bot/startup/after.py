@@ -101,6 +101,6 @@ async def on_startup():
             return
         await send_presence()
         await asyncio.sleep(5)
-        await send_presence(False)
+        # await send_presence(False)
     except Exception:
         await logger(Exception)

@@ -5,6 +5,7 @@ from bot.utils.bot_utils import get_date_from_ts, get_json
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
     chat_is_allowed,
+    tag_admins,
     user_is_admin,
     user_is_allowed,
     user_is_privileged,
@@ -117,8 +118,9 @@ async def getcmds(event, args, client):
 {pre}rss - *[Owner | Sudo] Setup bot to auto post RSS feeds*
 {pre}update - *[Owner | Sudo] Update & restarts bot*
 {pre}restart - *[Owner | Sudo] Restarts bot*
-{pre}disable - *[Owner | Sudo] Disable bot replies in a GC*
-{pre}enable - *[Owner | Sudo] Enable bot replies in a GC*
+{pre}disable - *[Owner | Sudo] Disable bot in a GC*
+{pre}enable - *[Owner | Sudo] Enable bot in a GC*
+{pre}gc_info - *[Owner | Sudo] Get group info*
 {pre}pause - *[Owner] Pauses bot*"""
         await event.reply(msg)
     except Exception as e:
@@ -139,8 +141,16 @@ async def gc_info(event, args, client):
         if not user_is_privileged(user):
             if not user_is_admin(user, group_info.Participants):
                 return
+        gc_owner = f"@{group_info.OwnerJID.User}" if group_info.OwnerJID.User else "MIA"
+        tags = str()
+        for tag in tag_admins(group_info.Participants):
+            tags += f"- {tag}\n"
         return await event.reply(
-            f"*Owner:* @{group_info.OwnerJID.User}\n*Created at:* {get_date_from_ts(group_info.GroupCreated)}"
+            f"*Owner:* {gc_owner}\n"
+            f"*Created at:* {get_date_from_ts(group_info.GroupCreated)}\n"
+            f"*Group Id:* {event.chat.id}\n\n"
+            f"*Admins:*\n"
+            tags.rstrip("\n")
         )
     except Exception:
         await logger(Exception)

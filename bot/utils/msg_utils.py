@@ -375,6 +375,14 @@ def chat_is_allowed(event: Event):
         return not bot.group_dict.get(event.chat.id, {}).get("disabled", False)
 
 
+def tag_admins(members: list):
+    tags = str()
+    for member in members:
+        if member.IsAdmin:
+            tags += f"@{member.JID.User} "
+    return tags.rstrip()
+
+
 def user_is_admin(user: str, members: list):
     for member in members:
         if user == member.JID.User:

@@ -545,6 +545,23 @@ async def get_notes2(event, args, client):
         await logger(Exception)
 
 
+async def tag_all_admins(event, args, client):
+    """
+    Tags all admins in a group
+    """
+    try:
+        if event.type != "text":
+            return
+        acc_tup = ("@admin", "@mod")
+        if not event.text.startswith(acc_tup):
+            return
+        group_info = await client.get_group_info(event.chat.jid)
+        tags = tag_admins(group_info.Participants)
+        await event.reply(tags if event.text.endswith("s") else tags.split()[0])
+    except Exception:
+        await logger(Exception)
+
+
 async def button(event, args, client):
     """ """
     try:
