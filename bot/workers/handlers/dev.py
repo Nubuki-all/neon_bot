@@ -1,4 +1,5 @@
 import asyncio
+import html
 import io
 import sys
 import traceback
@@ -80,7 +81,7 @@ async def bash(event, cmd, client):
             await asyncio.sleep(3)
             return await event.delete()
     else:
-        OUTPUT = f"```bash\n{cmd}```\n\n_PID:_\n{process.pid}\n\n```Stderr:\n{e}```\n\n```Output:\n{o}```\n"
+        OUTPUT = f"```bash\n{cmd}```\n\n_PID:_\n{process.pid}\n\n```Stderr:\n{e}```\n\n```Output:\n{html.escape(o)}```\n"
         await event.reply(OUTPUT, link_preview=False)
 
 
