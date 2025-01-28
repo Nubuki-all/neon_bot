@@ -150,7 +150,7 @@ async def gc_info(event, args, client):
             f"*Created at:* {get_date_from_ts(group_info.GroupCreated)}\n"
             f"*Group Id:* {event.chat.id}\n\n"
             f"*Admins:*\n"
-            tags.rstrip("\n")
+            f"{tags.rstrip('\n')}"
         )
     except Exception:
         await logger(Exception)
