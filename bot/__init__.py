@@ -44,9 +44,15 @@ from neonize.proto.Neonize_pb2 import Message as base_msg
 from neonize.proto.Neonize_pb2 import MessageInfo as base_msg_info
 from neonize.proto.Neonize_pb2 import MessageSource as base_msg_source
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
+    Message,
+    StickerMessage,
     ContextInfo,
     ExtendedTextMessage,
-    Message,
+    VideoMessage,
+    ImageMessage,
+    AudioMessage,
+    DocumentMessage,
+    ContactMessage,
 )
 from neonize.utils import jid, log
 

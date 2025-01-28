@@ -655,3 +655,28 @@ async def sudoers(event, args, client):
         )
     except Exception:
         await logger(Exception)
+
+
+async def delete(event, args, client):
+    """
+    Delete bot's message in group
+    Arguments: Reply to message to delete
+    """
+    if not event.chat.is_group:
+        return
+    try:
+        group_info = await client.get_group_info(event.chat.jid)
+        user = event.from_user.id
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return
+        if not (reply := event.reply_to_message):
+            return await event.reply("Reply to a  message to delete.")
+        me = await client.get_me()
+        if not reply.user.id == me.JID.User:
+            return await event.reply("Reply to one of *my* messages to delete.")
+        await reply.delete()
+        await event.react("✅")
+    except Exception:
+        await logger(Exception)
+        await event.react("✖️")

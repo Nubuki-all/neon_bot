@@ -120,6 +120,7 @@ async def getcmds(event, args, client):
 {pre}restart - *[Owner | Sudo] Restarts bot*
 {pre}disable - *[Owner | Sudo] Disable bot in a GC*
 {pre}enable - *[Owner | Sudo] Enable bot in a GC*
+{pre}del - *[Owner | Sudo] Delete bot's messages*
 {pre}gc_info - *[Owner | Sudo] Get group info*
 {pre}pause - *[Owner] Pauses bot*"""
         await event.reply(msg)

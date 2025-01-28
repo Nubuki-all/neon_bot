@@ -19,6 +19,7 @@ from .utils.os_utils import re_x, s_remove
 from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.manage import (
     ban,
+    delete,
     disable,
     enable,
     pause_handler,
@@ -171,6 +172,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("enable")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, enable, bot.client)
+
+
+@bot.register("del")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, delete, bot.client)
 
 
 @bot.register("update")
