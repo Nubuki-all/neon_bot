@@ -673,7 +673,7 @@ async def delete(event, args, client):
         if not (reply := event.reply_to_message):
             return await event.reply("Reply to a  message to delete.")
         me = await client.get_me()
-        if not reply.user.id == me.JID.User:
+        if not reply.from_user.id == me.JID.User:
             return await event.reply("Reply to one of *my* messages to delete.")
         await reply.delete()
         await event.react("✅")
