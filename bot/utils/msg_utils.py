@@ -106,7 +106,9 @@ class Event:
                     self.quoted_viewonce = getattr(self.quoted_viewonce_, x)
                     if self.quoted_viewonce.ByteSize():
                         break
-            elif self.quoted.quotedMessage.viewOnceMessageV2Extension.message.ByteSize():
+            elif (
+                self.quoted.quotedMessage.viewOnceMessageV2Extension.message.ByteSize()
+            ):
                 self.quoted_viewonce = (
                     self.quoted.quotedMessage.viewOnceMessageV2Extension.message.audioMessage
                 )
