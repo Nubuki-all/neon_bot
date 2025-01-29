@@ -670,7 +670,7 @@ async def delete(event, args, client):
     Arguments: Reply to message to delete
     """
     if not event.chat.is_group:
-        return
+        return await event.react("🚫")
     try:
         group_info = await client.get_group_info(event.chat.jid)
         user = event.from_user.id
