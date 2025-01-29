@@ -12,6 +12,7 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     event_handler,
     get_args,
+    user_is_admin,
     user_is_allowed,
     user_is_owner,
     user_is_privileged,
