@@ -94,11 +94,11 @@ class Event:
                 )
             elif self.quoted.quotedMessage.documentMessage.ByteSize():
                 self.quoted_document = self.quoted.quotedMessage.documentMessage
-            if self.quoted.quotedMessage.imageMessage.ByteSize():
+            elif self.quoted.quotedMessage.imageMessage.ByteSize():
                 self.quoted_image = self.quoted.quotedMessage.imageMessage
-            if self.quoted.quotedMessage.videoMessage.ByteSize():
+            elif self.quoted.quotedMessage.videoMessage.ByteSize():
                 self.quoted_video = self.quoted.quotedMessage.videoMessage
-            if self.quoted.quotedMessage.viewOnceMessageV2.message.ByteSize():
+            elif self.quoted.quotedMessage.viewOnceMessageV2.message.ByteSize():
                 self.quoted_viewonce_ = (
                     self.quoted.quotedMessage.viewOnceMessageV2.message
                 )
