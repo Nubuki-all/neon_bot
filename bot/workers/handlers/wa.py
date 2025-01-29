@@ -563,13 +563,13 @@ async def tag_all_admins(event, args, client):
     Tags all admins in a group
     """
     try:
-        if not event.chat.is_group:
-            return await event.react("🚫")
         if event.type != "text":
             return
         acc_tup = ("@admin", "@mod")
         if not event.text.startswith(acc_tup):
             return
+        if not event.chat.is_group:
+            return await event.react("🚫")
         user = event.from_user.id
         if not user_is_privileged(user):
             if not chat_is_allowed(event):
