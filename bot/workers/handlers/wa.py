@@ -545,6 +545,8 @@ async def get_notes2(event, args, client):
             return
         if not event.text.startswith("#"):
             return
+        if not event.text[1:]:
+            return
         chat = event.chat.id
         if not (notes := bot.notes_dict.get(chat)):
             return
