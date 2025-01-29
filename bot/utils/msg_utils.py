@@ -99,7 +99,9 @@ class Event:
             if self.quoted.quotedMessage.videoMessage.ByteSize():
                 self.quoted_video = self.quoted.quotedMessage.videoMessage
             if self.quoted.quotedMessage.viewOnceMessageV2.message.ByteSize():
-                self.quoted_viewonce_ = self.quoted.quotedMessage.viewOnceMessageV2.message
+                self.quoted_viewonce_ = (
+                    self.quoted.quotedMessage.viewOnceMessageV2.message
+                )
                 for x in ("imageMessage", "videoMessage", "audioMessage"):
                     self.quoted_viewonce = getattr(self.quoted_viewonce_, x)
                     if self.quoted_viewonce.ByteSize():
