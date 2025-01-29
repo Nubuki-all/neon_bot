@@ -473,6 +473,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
         future.result()
     except Exception:
+        await logger("Unhandled Exception:")
         await logger(Exception)
 
 

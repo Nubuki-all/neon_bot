@@ -31,15 +31,15 @@ async def restart_handler(event, args, client):
     user = event.from_user.id
     if not user_is_owner(user):
         if not user_is_sudoer(user):
-            return
+            return await event.react("🚫")
     try:
         rst = await event.reply("*Restarting Please Wait…*")
         message = f"{rst.chat.id}:{rst.id}:{rst.chat.server}"
         await shutdown_services()
         re_x("restart", message)
     except Exception:
-        await event.reply("An Error Occurred")
         await logger(Exception)
+        await event.react("❌")
 
 
 async def update_handler(event, args, client):
@@ -47,7 +47,7 @@ async def update_handler(event, args, client):
     user = event.from_user.id
     if not user_is_owner(user):
         if not user_is_sudoer(user):
-            return
+            return await event.react("🚫")
     try:
         upt_mess = "*Updating…*"
         reply = await event.reply(f"{upt_mess}")
@@ -55,6 +55,7 @@ async def update_handler(event, args, client):
         updater(reply)
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def pause_handler(event, args, client):
@@ -67,7 +68,7 @@ async def pause_handler(event, args, client):
     """
     try:
         if not user_is_owner(event.from_user.id):
-            return
+            return await event.react("🚫")
         if not args:
             msg = f"Bot is currently {'paused' if bot.paused else 'unpaused'}."
             return await event.reply(msg)
@@ -82,7 +83,8 @@ async def pause_handler(event, args, client):
             bot.paused = False
             return await event.reply("Bot has been unpaused.")
     except Exception:
-        await log(Exception)
+        await logger(Exception)
+        await event.react("❌")
 
 
 async def rss_handler(event, args, client):
@@ -101,7 +103,7 @@ async def rss_handler(event, args, client):
     user = event.from_user.id
     if not user_is_owner(user):
         if not user_is_sudoer(user):
-            return
+            return await event.react("🚫")
     arg, args = get_args(
         ["-d", "store_true"],
         ["-e", "store_true"],
@@ -471,7 +473,7 @@ async def ban(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        return
+        return await event.react("🚫")
     try:
         if args and not (args := args.lstrip("@")).isdigit():
             return await event.reply("*Please supply a valid id to ban*")
@@ -493,6 +495,7 @@ async def ban(event, args, client):
         return await event.reply(f"@{ban_id} *has been banned from using the bot.*")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def unban(event, args, client):
@@ -506,7 +509,7 @@ async def unban(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        return
+        return await event.react("🚫")
     try:
         if args and not (args := args.lstrip("@")).isdigit():
             return await event.reply("*Please supply a valid id to unban*")
@@ -528,12 +531,13 @@ async def unban(event, args, client):
         return await event.reply(f"@{ban_id} *ban has been lifted.*")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def disable(event, args, client):
     "Disable bot replies in a group chat."
     if not event.chat.is_group:
-        return
+        return await event.react("🚫")
     try:
         no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
         user = event.from_user.id
@@ -556,12 +560,13 @@ async def disable(event, args, client):
         await event.reply(f"Successfully disabled bot replies in group: *{chat_name}*")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def enable(event, args, client):
     "Enable bot replies in a group chat."
     if not event.chat.is_group:
-        return
+        return await event.react("🚫")
     try:
         no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
         user = event.from_user.id
@@ -582,6 +587,7 @@ async def enable(event, args, client):
         await event.reply(f"Successfully enabled bot replies in group: *{chat_name}*")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def list_sudoers(event, args, client):
@@ -614,7 +620,7 @@ async def sudoers(event, args, client):
     """
     user = event.from_user.id
     if not user_is_owner(user):
-        return
+        return await event.react("🚫")
     try:
         if not args:
             return await list_sudoers(event, args, client)
@@ -655,6 +661,7 @@ async def sudoers(event, args, client):
         )
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def delete(event, args, client):

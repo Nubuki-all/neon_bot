@@ -78,6 +78,7 @@ async def sticker_reply(event, args, client, overide=False):
         await event.send_typing_status(False)
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def sanitize_url(event, args, client):
@@ -92,7 +93,7 @@ async def sanitize_url(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         if not (event.quoted_text or args):
             return await event.reply(f"{sanitize_url.__doc__}")
@@ -121,6 +122,7 @@ async def sanitize_url(event, args, client):
         return await clean_reply(event, event.reply_to_message, "reply", msg)
     except Exception:
         await logger(Exception)
+        await event.react("❌")
     finally:
         if status_msg:
             await status_msg.delete()
@@ -138,7 +140,7 @@ async def stickerize_image(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         if args:
             arg, args = get_args(
@@ -180,6 +182,7 @@ async def stickerize_image(event, args, client):
         await event.send_typing_status(False)
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def upscale_image(event, args, client):
@@ -195,7 +198,7 @@ async def upscale_image(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         if bot.disable_cic:
             return await event.reply("*CPU heavy commands are currently disabled.*")
@@ -238,6 +241,7 @@ async def upscale_image(event, args, client):
         await msg.reply_photo(raw, "Upscaled image: Jpeg")
     except Exception as e:
         await logger(Exception)
+        await event.react("❌")
         await status_msg.edit(f"*Error:*\n{e}")
         status_msg = None
     finally:
@@ -262,7 +266,7 @@ async def pick_random(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         if not event.quoted_text:
             return await event.reply(
@@ -288,6 +292,7 @@ async def pick_random(event, args, client):
         await event.reply(msg)
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 def list_items(items, ini):
@@ -307,7 +312,7 @@ async def list_notes(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         chat = event.chat.id
         chat_name = (
@@ -344,6 +349,7 @@ async def list_notes(event, args, client):
             await asyncio.sleep(2)
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def save_notes(event, args, client):
@@ -360,7 +366,7 @@ async def save_notes(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         if not event.quoted_msg:
             return await event.reply("Can only save replied text or media.")
@@ -409,8 +415,10 @@ async def save_notes(event, args, client):
         await status_msg.edit(f"_Saved replied message to notes with name:_ *{args}*")
     except DownloadError:
         await status_msg.edit("*Download Failed!*\nPlease ask that it be resent.")
+        await status_msg.react("ℹ️")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def get_notes(event, args, client):
@@ -427,7 +435,7 @@ async def get_notes(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         if not args or (args and args.casefold() in ("all", "me", "notes", "my note")):
             return await list_notes(event, args, client)
@@ -473,6 +481,7 @@ async def get_notes(event, args, client):
             )
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def delete_notes(event, args, client):
@@ -487,7 +496,7 @@ async def delete_notes(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         chat = event.chat.id
         if event.chat.is_group:
@@ -522,6 +531,7 @@ async def delete_notes(event, args, client):
         return await event.reply(f"_Successfully removed note with title:_ *{args}*")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def get_notes2(event, args, client):
@@ -545,6 +555,7 @@ async def get_notes2(event, args, client):
         await event.react("❓")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def tag_all_admins(event, args, client):
@@ -552,11 +563,19 @@ async def tag_all_admins(event, args, client):
     Tags all admins in a group
     """
     try:
+        if not event.chat.is_group:
+            return await event.react("🚫")
         if event.type != "text":
             return
         acc_tup = ("@admin", "@mod")
         if not event.text.startswith(acc_tup):
             return
+        user = event.from_user.id
+        if not user_is_privileged(user):
+            if not chat_is_allowed(event):
+                return
+            if not user_is_allowed(user):
+                return await event.react("⛔")
         group_info = await client.get_group_info(event.chat.jid)
         tags = tag_admins(group_info.Participants)
         await clean_reply(
@@ -567,6 +586,7 @@ async def tag_all_admins(event, args, client):
         )
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def button(event, args, client):

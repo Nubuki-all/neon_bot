@@ -58,7 +58,7 @@ async def getmeme(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     link = "https://meme-api.com/gimme"
     try:
         if args:
@@ -97,7 +97,7 @@ async def getcmds(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     try:
         pre = conf.CMD_PREFIX
         msg = f"""{pre}start - *Hi!*
@@ -135,13 +135,13 @@ async def gc_info(event, args, client):
     Arguments: [None]
     """
     if not event.chat.is_group:
-        return
+        return await event.react("🚫")
     try:
         group_info = await client.get_group_info(event.chat.jid)
         user = event.from_user.id
         if not user_is_privileged(user):
             if not user_is_admin(user, group_info.Participants):
-                return
+                return await event.react("🚫")
         gc_owner = f"@{group_info.OwnerJID.User}" if group_info.OwnerJID.User else "MIA"
         tags = str()
         for tag in tag_admins(group_info.Participants).split():
@@ -163,6 +163,7 @@ async def hello(event, args, client):
         await event.reply("Hi!")
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def up(event, args, client):
@@ -172,7 +173,7 @@ async def up(event, args, client):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
-            return
+            return await event.react("⛔")
     ist = dt.now()
     msg = await event.reply("…")
     st = dt.now()
