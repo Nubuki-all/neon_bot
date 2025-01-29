@@ -218,10 +218,12 @@ async def upscale_image(event, args, client):
         file = await download_replied_media(event)
 
         if waiting_for_turn():
+            await event.react("⏰")
             w_msg = await status_msg.edit(
                 "*Waiting till previous upscaling process gets completed.*"
             )
             await wait_for_turn(turn_id)
+            await event.react("")
         # async with heavy_proc_lock:
         # Lock works now but eh i like the current implementation better
         await status_msg.edit("*Upscaling please wait…*")
