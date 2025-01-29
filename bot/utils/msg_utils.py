@@ -102,10 +102,14 @@ class Event:
                 self.quoted_viewonce_ = (
                     self.quoted.quotedMessage.viewOnceMessageV2.message
                 )
-                for x in ("imageMessage", "videoMessage", "audioMessage"):
+                for x in ("imageMessage", "videoMessage"):
                     self.quoted_viewonce = getattr(self.quoted_viewonce_, x)
                     if self.quoted_viewonce.ByteSize():
                         break
+            elif self.quoted.quotedMessage.viewOnceMessageV2Extension.message.ByteSize():
+                self.quoted_viewonce = (
+                    self.quoted.quotedMessage.viewOnceMessageV2Extension.message.audioMessage
+                )
 
         self.quoted_text = (
             (
