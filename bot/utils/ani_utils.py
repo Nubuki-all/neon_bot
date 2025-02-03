@@ -5,7 +5,6 @@ import humanize
 from aiohttp_retry import ExponentialRetry, RetryClient
 
 from bot import bot
-
 from .bot_utils import post_to_tgph
 from .log_utils import log
 
@@ -139,7 +138,7 @@ ANIME_TEMPLATE = """[{c_flag}] *{romaji}*
 ➤ *SCORE:* {score}% 🌟
 ➤ *ADULT RATED:* {adult}
 🎬 {trailer_link}
-📖 *Synopsis & More] - {synopsis_link}"""
+📖 *Synopsis & More:* {synopsis_link}"""
 
 
 def make_it_rw(time_stamp, as_countdown=False):
@@ -200,7 +199,7 @@ async def anime_arch(query, arg):
     trailer_link = "N/A"
 
     if data["trailer"] and data["trailer"]["site"] == "youtube":
-        trailer_link = f"*Trailer* - https://youtu.be/{data['trailer']['id']}"
+        trailer_link = f"*Trailer:* https://youtu.be/{data['trailer']['id']}"
     html_char = ""
     for character in data["characters"]["nodes"]:
         html_ = ""
@@ -241,7 +240,7 @@ async def anime_arch(query, arg):
 
     title_h = english or romaji
     synopsis_link = (await post_to_tgph(title_h, html_pc))["url"]
-    finals_ = ANIME_TEMPLATE.format(*locals())
+    finals_ = ANIME_TEMPLATE.format(**locals())
     return title_img, finals_
 
 
