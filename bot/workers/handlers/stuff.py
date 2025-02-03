@@ -109,6 +109,8 @@ async def getcmds(event, args, client):
 {pre}del_note - *Delete a saved item*
 {pre}random - *Get a random choice*
 {pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}
+{pre}anime - *Fetch anime info from anilist*
+{pre}airing - *Fetch anime airing info from anilist*
 {pre}ping - *Check if bot is alive*
 {pre}bash - *[Dev.] Run bash commands*
 {pre}eval - *[Dev.] Evaluate python commands*
