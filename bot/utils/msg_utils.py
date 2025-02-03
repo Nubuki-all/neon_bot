@@ -66,6 +66,7 @@ class Event:
         # To do support other message types
         self.id = message.Info.ID
         self.type = message.Info.Type
+        self.type = "text" if message.Info.MediaType = "url" else self.type
         self.media_type = message.Info.MediaType
         self.ext_msg = message.Message.extendedTextMessage
         self.text_msg = message.Message.conversation
