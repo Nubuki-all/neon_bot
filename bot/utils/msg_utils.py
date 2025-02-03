@@ -34,7 +34,7 @@ class Event:
 
     def __str__(self):
         return self.text
-    
+
     def __deepcopy__(self, memo):
         cls = self.__class__
         result = cls.__new__(cls)
