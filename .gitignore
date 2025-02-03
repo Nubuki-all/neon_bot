@@ -166,3 +166,4 @@ cython_debug/
 
 # pickle db
 *.pkl
+Msg_store

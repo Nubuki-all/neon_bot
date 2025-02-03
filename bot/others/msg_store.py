@@ -86,7 +86,6 @@ async def auto_save_msg():
             if messages := bot.pending_saved_messages:
                 async with msg_store_lock:
                     try:
-                        print(messages)
                         while len(messages) < 5 and not bot.force_save_messages:
                             await asyncio.sleep(1)
                         await sync_to_async(msg_store._save, *messages)
