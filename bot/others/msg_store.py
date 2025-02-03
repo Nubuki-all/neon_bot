@@ -43,16 +43,17 @@ class Message_store:
     def _patch(self, *messages):
         patched_messages = []
         for message in messages:
-            patched_messages.append(deepcopy(message))
+            message.client = bot.client
+            if message.reply_to_message:
+                message.reply_to_message.client = bot.client
+            patched_messages.append(message)
         return patched_messages
+
 
     def _save(self, *messages):
         message_store = self._get_message_store()
         for message in messages:
-            message.client = None
-            if message.reply_to_message:
-                message.reply_to_message.client = None
-            message_store.setdefault(message.chat.id, []).append(message)
+            message_store.setdefault(message.chat.id, []).append(deepcopy(message))
             while len(message_store.get(message.chat.id)) > self.msg_limit:
                 message_store.setdefault(message.chat.id, []).pop()
         with open(msg_store_file, "wb") as file:
