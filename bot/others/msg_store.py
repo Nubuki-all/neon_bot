@@ -49,7 +49,6 @@ class Message_store:
             patched_messages.append(message)
         return patched_messages
 
-
     def _save(self, *messages):
         message_store = self._get_message_store()
         for message in messages:
