@@ -12,7 +12,7 @@ class Message_store:
 
     def __init__(self):
         self.msg_limit = 50
-        if not file_exists(msg_store_file):
+        if not (file_exists(msg_store_file) and size_of(msg_store_file) > 0):
             with open(msg_store_file, "wb") as file:
                 pickle.dump({}, file)
 

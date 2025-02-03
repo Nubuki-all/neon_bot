@@ -90,6 +90,10 @@ def file_exists(file):
     return Path(file).is_file()
 
 
+def size_of(file):
+    return int(Path(file).stat().st_size)
+
+
 def touch(file):
     return Path(file).touch()
 
