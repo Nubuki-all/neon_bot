@@ -27,7 +27,7 @@ class Message_store:
                 return msg
 
     def _get_message_store(self):
-        if file_exists(msg_store_file) and size_of(msg_store_file) > 0:
+        if (file_exists(msg_store_file) and size_of(msg_store_file) > 0):
             with open(msg_store_file, "rb") as file:
                 message_store = pickle.load(file)
         else:
@@ -48,6 +48,7 @@ class Message_store:
             patched_messages.append(message)
         return patched_messages
 
+    
     def _save(self, *messages):
         message_store = self._get_message_store()
         for message in messages:
@@ -82,17 +83,16 @@ msg_store = Message_store()
 
 async def auto_save_msg():
     while True:
-        try:
-            if messages := bot.pending_saved_messages:
-                async with msg_store_lock:
+        if messages := bot.pending_saved_messages:
+            async with msg_store_lock:
+                try:
                     while len(messages) < 5 and not bot.force_save_messages:
                         await asyncio.sleep(1)
                     await sync_to_async(msg_store._save, *messages)
+                except Exception:
+                    await logger(Exception)
+                finally:
                     messages.clear()
                     if bot.force_save_messages:
                         bot.force_save_messages = False
-                await asyncio.sleep(1)
-        except Exception:
-            await logger(Exception)
-            messages.clear()
-            await asyncio.sleep(5)
+            await asyncio.sleep(1)
