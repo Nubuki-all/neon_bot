@@ -43,18 +43,18 @@ class Message_store:
 
     # AIO
     async def get_messages(self, chat_id):
+        bot.force_save_messages = True
         async with msg_store_lock:
-            bot.force_save_messages = True
             return await sync_to_async(self._get_messages, chat_id)
 
     async def get_message(self, chat_id, msg_id):
+        bot.force_save_messages = True
         async with msg_store_lock:
-            bot.force_save_messages = True
             return await sync_to_async(self._get_message, chat_id, msg_id)
 
     async def save(self, *messages):
+        bot.force_save_messages = True
         async with msg_store_lock:
-            bot.force_save_messages = True
             return await sync_to_async(self._save, *messages)
 
 
