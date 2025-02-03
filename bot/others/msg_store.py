@@ -3,6 +3,7 @@ import pickle
 
 from bot import bot, msg_store_file, msg_store_lock
 from bot.utils.bot_utils import sync_to_async
+from bot.utils.log_utils import logger
 from bot.utils.os_utils import file_exists
 
 
@@ -30,12 +31,13 @@ class Message_store:
             if msg.id == msg_id:
                 return msg
 
-    def _save(self, *msg):
+    def _save(self, *messages):
         with open(msg_store_file, "rb") as file:
             message_store = pickle.load(file)
-        message_store.setdefault(msg.chat.id, []).extend(msg)
-        while len(message_store.get(msg.chat.id)) > self.msg_limit:
-            message_store.setdefault(msg.chat.id, []).pop()
+        for message in messages:
+            message_store.setdefault(message.chat.id, []).append(message)
+            while len(message_store.get(message.chat.id)) > self.msg_limit:
+                message_store.setdefault(message.chat.id, []).pop()
         with open(msg_store_file, "wb") as file:
             pickle.dump(message_store, file)
 
@@ -50,10 +52,10 @@ class Message_store:
             bot.force_save_messages = True
             return await sync_to_async(self._get_message, chat_id, msg_id)
 
-    async def save(self, *msg):
+    async def save(self, *messages):
         async with msg_store_lock:
             bot.force_save_messages = True
-            return await sync_to_async(self._save, *msg)
+            return await sync_to_async(self._save, *messages)
 
 
 msg_store = Message_store()
@@ -61,12 +63,15 @@ msg_store = Message_store()
 
 async def auto_save_msg():
     while True:
-        if messages := bot.pending_saved_messages:
-            async with msg_store_lock:
-                while len(messages) < 5 and not bot.force_save_messages:
-                    await asyncio.sleep(1)
-                await msg_store.save(*messages)
-                messages.clear()
-                if bot.force_save_messages:
-                    bot.force_save_messages = False
-            await asyncio.sleep(1)
+        try:
+            if messages := bot.pending_saved_messages:
+                async with msg_store_lock:
+                    while len(messages) < 5 and not bot.force_save_messages:
+                        await asyncio.sleep(1)
+                    await sync_to_async(msg_store._save, *messages)
+                    messages.clear()
+                    if bot.force_save_messages:
+                        bot.force_save_messages = False
+                await asyncio.sleep(1)
+        except Exception:
+            await logger(Exception)
