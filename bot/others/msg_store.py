@@ -4,7 +4,7 @@ import pickle
 from bot import bot, msg_store_file, msg_store_lock
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.os_utils import file_exists
+from bot.utils.os_utils import file_exists, size_of
 
 
 class Message_store:
