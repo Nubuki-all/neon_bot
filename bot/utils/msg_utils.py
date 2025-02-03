@@ -34,6 +34,17 @@ class Event:
 
     def __str__(self):
         return self.text
+    
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k == "client":
+                setattr(result, k, copy.deepcopy(None, memo))
+            else:
+                setattr(result, k, copy.deepcopy(v, memo))
+        return result
 
     class User:
         def __init__(self):
@@ -327,12 +338,17 @@ class Event:
         # msg = self.gen_new_msg(
         # self.quoted.stanzaID, (self.quoted.participant.split("@"))[0], self.chat.id, self.text, self.chat.jid.Server
         # )
+        if self.quoted.remoteJID:
+            chat_id, server = self.quoted.remoteJID.split("@", maxsplit=1)
+        else:
+            chat_id = self.chat.id
+            server = self.chat.jid.Server
         msg = construct_message(
-            self.chat.id,
+            chat_id,
             (self.quoted.participant.split("@"))[0],
             self.quoted.stanzaID,
             None,
-            self.chat.jid.Server,
+            server,
             self.quoted.quotedMessage,
         )
         return construct_event(msg, False)
