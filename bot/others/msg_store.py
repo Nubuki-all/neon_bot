@@ -1,6 +1,7 @@
 import asyncio
 import pickle
 
+from copy import deepcopy
 from bot import bot, msg_store_file, msg_store_lock
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
@@ -42,10 +43,7 @@ class Message_store:
     def _patch(self, *messages):
         patched_messages = []
         for message in messages:
-            message.client = bot.client
-            if message.reply_to_message:
-                message.reply_to_message.client = bot.client
-            patched_messages.append(message)
+            patched_messages.append(deepcopy(message))
         return patched_messages
 
     def _save(self, *messages):

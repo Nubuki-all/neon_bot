@@ -41,9 +41,8 @@ class Event:
         memo[id(self)] = result
         for k, v in self.__dict__.items():
             if k == "client":
-                setattr(result, k, copy.deepcopy(None, memo))
-            else:
-                setattr(result, k, copy.deepcopy(v, memo))
+                v = None
+            setattr(result, k, copy.deepcopy(v, memo))
         return result
 
     class User:
