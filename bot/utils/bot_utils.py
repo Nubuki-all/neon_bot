@@ -177,4 +177,3 @@ async def shutdown_services():
         bot.force_save_messages = True
         while bot.pending_saved_messages:
             await asyncio.sleep(1)
-
