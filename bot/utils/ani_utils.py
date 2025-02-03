@@ -4,6 +4,7 @@ import flag
 import humanize
 from aiohttp_retry import ExponentialRetry, RetryClient
 
+from bot import bot
 from .bot_utils import post_to_tgph
 from .log_utils import log
 
