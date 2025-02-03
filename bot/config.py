@@ -70,12 +70,14 @@ class Runtime_Config:
         self.client = None
         self.disable_cic = False
         self.docker_deployed = False
+        self.force_save_messages = False
         self.group_dict = {}
         self.ignore_pm = False
         self.max_message_length = 4096
         self.offline = False
         self.paused = False
         self.p_queue = []
+        self.pending_saved_messages = []
         self.notes_dict = {}
         self.rss_dict = {}
         self.rss_ran_once = False

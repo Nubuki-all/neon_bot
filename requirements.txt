@@ -3,6 +3,7 @@ aiohttp_retry
 apscheduler
 beautifulsoup4
 clean_links
+emoji-country-flag
 feedparser
 html_telegraph_poster
 lxml[html_clean]

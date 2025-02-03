@@ -677,7 +677,7 @@ async def delete(event, args, client):
         user = event.from_user.id
         if not user_is_privileged(user):
             if not user_is_admin(user, group_info.Participants):
-                return
+                return await event.react("🚫")
         if not (reply := event.reply_to_message):
             return await event.reply("Reply to a  message to delete.")
         me = await client.get_me()

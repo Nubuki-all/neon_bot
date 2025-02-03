@@ -5,6 +5,7 @@ import aiohttp
 from bot import Message, asyncio, bot, con_ind, conf, jid, sys, version_file
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip2
+from bot.others.msg_store import auto_save_msg
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import send_presence
 from bot.utils.os_utils import file_exists, force_exit, touch
@@ -111,5 +112,6 @@ async def on_startup():
             await logger(e="Please Restart bot.")
             return
         asyncio.create_task(update_presence())
+        asyncio.create_task(auto_save_msg())
     except Exception:
         await logger(Exception)

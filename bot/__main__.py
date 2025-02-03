@@ -16,6 +16,7 @@ from . import (
 from .startup.after import on_startup
 from .utils.msg_utils import Event, event_handler, on_message
 from .utils.os_utils import re_x, s_remove
+from .workers.handlers.ani import airing, anime
 from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.manage import (
     ban,
@@ -142,6 +143,16 @@ async def _(client: NewAClient, message: Event):
 @bot.register("rss")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, rss_handler, require_args=True)
+
+
+@bot.register("anime")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, anime, require_args=True)
+
+
+@bot.register("airing")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, airing, require_args=True)
 
 
 @bot.register("ban")
