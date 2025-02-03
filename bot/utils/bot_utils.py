@@ -168,3 +168,13 @@ async def wait_for_turn(turn_id: str):
 
 def waiting_for_turn():
     return turn() and len(turn()) > 1
+
+
+async def shutdown_services():
+    await bot.client.disconnect()
+    await bot.requests.close()
+    if bot.pending_saved_messages:
+        bot.force_save_messages = True
+        while bot.pending_saved_messages:
+            await asyncio.sleep(1)
+

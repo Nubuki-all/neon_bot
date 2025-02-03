@@ -5,7 +5,7 @@ from inspect import getdoc
 from feedparser import parse as feedparse
 
 from bot import bot, jid, rss_dict_lock
-from bot.utils.bot_utils import list_to_str, split_text
+from bot.utils.bot_utils import list_to_str, shutdown_services, split_text
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
@@ -20,15 +20,6 @@ from bot.utils.msg_utils import (
 )
 from bot.utils.os_utils import re_x, updater
 from bot.utils.rss_utils import schedule_rss, scheduler
-
-
-async def shutdown_services():
-    await bot.client.disconnect()
-    await bot.requests.close()
-    if bot.pending_saved_messages:
-        bot.force_save_messages = True
-        while bot.pending_saved_messages:
-            await asyncio.sleep(1)
 
 
 async def restart_handler(event, args, client):
