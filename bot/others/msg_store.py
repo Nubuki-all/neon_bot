@@ -12,7 +12,7 @@ class Message_store:
 
     def __init__(self):
         self.msg_limit = 50
-        if not (file_exists(msg_store_file) and size_of(msg_store_file) > 300):
+        if not (file_exists(msg_store_file) and size_of(msg_store_file) > 0):
             with open(msg_store_file, "wb") as file:
                 pickle.dump({}, file)
 
@@ -32,9 +32,11 @@ class Message_store:
                 return msg
 
     def _save(self, *messages):
-        if size_of(msg_store_file) > 300:
+        if size_of(msg_store_file) > 0:
             with open(msg_store_file, "rb") as file:
                 message_store = pickle.load(file)
+        else:
+            message_store = {}
         for message in messages:
             message_store.setdefault(message.chat.id, []).append(message)
             while len(message_store.get(message.chat.id)) > self.msg_limit:
