@@ -38,6 +38,7 @@ class Message_store:
         else:
             message_store = {}
         for message in messages:
+            message.client = None
             message_store.setdefault(message.chat.id, []).append(message)
             while len(message_store.get(message.chat.id)) > self.msg_limit:
                 message_store.setdefault(message.chat.id, []).pop()
