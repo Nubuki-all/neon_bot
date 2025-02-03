@@ -16,14 +16,9 @@ class Message_store:
             with open(msg_store_file, "wb") as file:
                 pickle.dump({}, file)
 
-    def _get_messages(self, chat_id):
-        with open(msg_store_file, "rb") as file:
-            messages = pickle.load(file)
-        return messages.get(chat_id)
-
     def _get_message(self, chat_id, msg_id):
-        with open(msg_store_file, "rb") as file:
-            message_store = pickle.load(file)
+        if not (message_store := self._get_message_store()):
+            return
         messages = message_store.get(chat_id)
         if not messages:
             return
@@ -31,14 +26,35 @@ class Message_store:
             if msg.id == msg_id:
                 return msg
 
-    def _save(self, *messages):
-        if size_of(msg_store_file) > 0:
+    def _get_message_store(self):
+        if (file_exists(msg_store_file) and size_of(msg_store_file) > 0):
             with open(msg_store_file, "rb") as file:
                 message_store = pickle.load(file)
         else:
             message_store = {}
+        return message_store
+
+    def _get_messages(self, chat_id):
+        if not (message_store := self._get_message_store()):
+            return
+        return message_store.get(chat_id)
+
+    def _patch(self, *messages):
+        patched_messages = []
+        for message in messages:
+            message.client = bot.client
+            if message.reply_to_message:
+                message.reply_to_message.client = bot.client
+            patched_messages.append(message)
+        return patched_messages
+
+    
+    def _save(self, *messages):
+        message_store = self._get_message_store()
         for message in messages:
             message.client = None
+            if message.reply_to_message:
+                message.reply_to_message.client = None
             message_store.setdefault(message.chat.id, []).append(message)
             while len(message_store.get(message.chat.id)) > self.msg_limit:
                 message_store.setdefault(message.chat.id, []).pop()
@@ -79,3 +95,5 @@ async def auto_save_msg():
                 await asyncio.sleep(1)
         except Exception:
             await logger(Exception)
+            messages.clear()
+            await asyncio.sleep(5)
