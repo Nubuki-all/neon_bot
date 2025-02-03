@@ -1,16 +1,11 @@
 from datetime import datetime
 
-import aiohttp
 import flag
 import humanize
-
 from aiohttp_retry import ExponentialRetry, RetryClient
 
-from .bot_utils import (
-    post_to_tgph,
-    sync_to_async,
-)
-from .log_utils import log, logger
+from .bot_utils import post_to_tgph
+from .log_utils import log
 
 url = "https://graphql.anilist.co"
 
@@ -118,12 +113,13 @@ async def get_ani_info(title=None, query=anime_query, var=None):
     variables = var or {"search": title, "type": "ANIME"}
     retry_options = ExponentialRetry(attempts=10)
     retry_requests = RetryClient(bot.requests)
-    result = await retry_requests.post(url, json={"query": query, "variables": variables})
+    result = await retry_requests.post(
+        url, json={"query": query, "variables": variables}
+    )
     if var:
         return await result.json()
     info = (await result.json())["data"].get("Media")
     return info
-
 
 
 # Default templates for Query Formatting
