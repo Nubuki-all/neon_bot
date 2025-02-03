@@ -25,6 +25,10 @@ from bot.utils.rss_utils import schedule_rss, scheduler
 async def shutdown_services():
     await bot.client.disconnect()
     await bot.requests.close()
+    if bot.pending_saved_messages:
+        bot.force_save_messages = True
+        while bot.pending_saved_messages:
+            await asyncio.sleep(1)
 
 
 async def restart_handler(event, args, client):

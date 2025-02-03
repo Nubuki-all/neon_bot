@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from bot import bot, conf, msg_store_file, msg_store_lock
 from bot.utils.bot_utils import sync_to_async
-from bot.utils.log_utils import logger
+from bot.utils.log_utils import log, logger
 from bot.utils.os_utils import file_exists, size_of
 
 
@@ -28,11 +28,16 @@ class Message_store:
                 return msg
 
     def _get_message_store(self):
-        if file_exists(msg_store_file) and size_of(msg_store_file) > 0:
-            with open(msg_store_file, "rb") as file:
-                message_store = pickle.load(file)
-        else:
-            message_store = {}
+        message_store = {}
+        try:
+            if file_exists(msg_store_file) and size_of(msg_store_file) > 0:
+                with open(msg_store_file, "rb") as file:
+                    message_store = pickle.load(file)
+        except EOFError:
+            log(e="Message_store local database has been destroyed.")
+            log(e="Rebuilding…")
+            with open(msg_store_file, "wb") as file:
+                pickle.dump({}, file)
         return message_store
 
     def _get_messages(self, chat_id):
