@@ -38,9 +38,9 @@ class Config:
             self.DEBUG = config("DEBUG", default=False, cast=bool)
             self.DEV = config("DEV", default=0, cast=str)
             self.DYNO = config("DYNO", default=None)
-
-            self.LOG_GROUP = config("LOG_GROUP", default=0, cast=int)
             self.IGNORE_PM = config("IGNORE_PM", default=True, cast=bool)
+            self.LOG_GROUP = config("LOG_GROUP", default=0, cast=int)
+            self.MAX_SAVED_MESSAGES = config("MAX_SAVED_MESSAGES", default=300, cast=int)
             self.NO_GPU = config("NO_GPU", default=False, cast=bool)
             self.RSS_CHAT = config(
                 "RSS_CHAT",

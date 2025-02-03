@@ -2,7 +2,7 @@ import asyncio
 import pickle
 from copy import deepcopy
 
-from bot import bot, msg_store_file, msg_store_lock
+from bot import bot, conf, msg_store_file, msg_store_lock
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
 from bot.utils.os_utils import file_exists, size_of
@@ -12,7 +12,7 @@ class Message_store:
     """A class for locally storing messages"""
 
     def __init__(self):
-        self.msg_limit = 50
+        self.msg_limit = conf.MAX_SAVED_MESSAGES
         if not (file_exists(msg_store_file) and size_of(msg_store_file) > 0):
             with open(msg_store_file, "wb") as file:
                 pickle.dump({}, file)
