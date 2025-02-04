@@ -79,7 +79,7 @@ async def bash(event, cmd, client):
                 caption=cmd,
             )
             await asyncio.sleep(3)
-            return await event.delete()
+            return
     else:
         OUTPUT = f"```bash\n{cmd}```\n\n_PID:_\n{process.pid}\n\n```Stderr:\n{e}```\n\n```Output:\n{html.escape(o)}```\n"
         await event.reply(OUTPUT, link_preview=False)
