@@ -359,7 +359,7 @@ class YoutubeDLHelper:
                 "thumbnail": f"{path}/yt-dlp-thumb/{base_name}.%(ext)s",
             }
 
-        #if qual.startswith("ba/b"):
+        # if qual.startswith("ba/b"):
         self._listener.name = f"{base_name}{self._ext}"
 
         if self._ext in [
