@@ -298,6 +298,13 @@ class YoutubeDLHelper:
                 self._ext = ".m4a"
             else:
                 self._ext = f".{audio_format}"
+        else:
+            self.opts["postprocessors"].append(
+                {
+                    "key": "FFmpegVideoConvertor",
+                    "preferedformat": "mp4",
+                }
+            )
 
         if options:
             self._set_options(options)
@@ -392,13 +399,13 @@ class YoutubeDLHelper:
         # await self._on_download_start(True)
 
         # if not add_to_queue:
-        log(f"Downloading with YT_DLP: {self._listener.name}")
+        log(e=f"Downloading with YT_DLP: {self._listener.name}")
 
         await sync_to_async(self._download, path)
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
-        log(f"Cancelling ytdlp Download: {self._listener.name}")
+        log(e=f"Cancelling ytdlp Download: {self._listener.name}")
         await self._on_download_error("Stopped by User!")
 
     def _set_options(self, options):
