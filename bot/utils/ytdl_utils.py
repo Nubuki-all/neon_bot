@@ -167,7 +167,7 @@ class YoutubeDLHelper:
                 break
             if self.size >= 100000000:
                 self._listener.is_cancelled = True
-                await self.message(f"*{self.name or 'Media'} too large to upload.*")
+                await self.message.edit(f"*{self.name or 'Media'} too large to upload.*")
                 continue
             ud_type = "*Downloading*"
             ud_type += f":\n{self.name}" if self.name else "…"
