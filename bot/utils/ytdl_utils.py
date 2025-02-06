@@ -305,6 +305,7 @@ class YoutubeDLHelper:
                     "preferedformat": "mp4",
                 }
             )
+            self._ext = ".mp4"
 
         if options:
             self._set_options(options)
