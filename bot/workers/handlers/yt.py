@@ -49,7 +49,7 @@ async def youtube_reply(event, args, client):
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
                     "ytdl",
-                    "bv*(mp4)[height<=720]+ba/b(mp4)[height<=720] / wv*+ba/w",
+                    "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b",
                     playlist,
                     status_msg,
                 )
