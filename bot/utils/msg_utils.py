@@ -271,8 +271,6 @@ class Event:
         quote: bool = True,
         name: str = "",
         packname: str = "",
-        animated: bool = False,
-        bitrate: str = "",
         enforce_not_broken: bool = False,
     ):
         quoted = self.message if quote else None
@@ -282,8 +280,6 @@ class Event:
             quoted=quoted,
             name=name,
             packname=packname,
-            animated=animated,
-            bitrate=bitrate,
             enforce_not_broken=enforce_not_broken,
         )
         msg = self.gen_new_msg(response.ID)
