@@ -139,6 +139,7 @@ def time_formatter(seconds: float) -> str:
     )
     return tmp[:-2]
 
+
 def value_check(value):
     if not value:
         return "-"
