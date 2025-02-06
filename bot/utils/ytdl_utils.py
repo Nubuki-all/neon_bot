@@ -1,4 +1,5 @@
 import asyncio
+import math
 import time
 from os import listdir
 from os import path as ospath
@@ -199,7 +200,7 @@ class YoutubeDLHelper:
             )
             dsp = "{}\n{}".format(ud_type, tmp)
             await self.message.edit(dsp)
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
 
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
