@@ -248,6 +248,7 @@ class YoutubeDLHelper:
                         self._on_download_error(str(e))
                     log("Failed")
                     return
+            log("Here!")
             if self.is_playlist and (
                 not ospath.exists(path) or len(listdir(path)) == 0
             ):
