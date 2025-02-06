@@ -85,8 +85,8 @@ class YoutubeDLHelper:
         self.opts = {
             "progress_hooks": [self._on_download_progress],
             "logger": MyLogger(self, self._listener),
-            "usenetrc": True,
-            "cookiefile": "cookies.txt",
+            "usenetrc": False,
+            # "cookiefile": "cookies.txt",
             "allow_multiple_video_streams": True,
             "allow_multiple_audio_streams": True,
             "noprogress": True,
@@ -160,7 +160,7 @@ class YoutubeDLHelper:
         asyncio.create_task(self.progress_monitor())
 
     async def progress_monitor(self):
-        while not self.is_cancelled:
+        while not self._listener.is_cancelled:
             if self.download_is_complete:
                 break
             ud_type = "*Downloading*"
