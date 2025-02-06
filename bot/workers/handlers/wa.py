@@ -134,7 +134,6 @@ async def stickerize_image(event, args, client):
     Args:
         Name of sticker
     """
-    max_sticker_filesize = 512000
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -155,7 +154,7 @@ async def stickerize_image(event, args, client):
         if not (event.quoted_image or event.quoted_video):
             return await event.reply("*Replied message is not a gif/image/video.*")
 
-        #forced = False if event.quoted_image else forced
+        # forced = False if event.quoted_image else forced
         await event.send_typing_status()
         file = await download_replied_media(event)
         me = await bot.client.get_me()

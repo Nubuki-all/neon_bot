@@ -1,9 +1,10 @@
 import random
 
+from bot.config import bot
+
 from .player import Player
 from .roles import gamemodes, roles
 
-from bot.config import bot, conf
 
 class Game:
     def __init__(self, event, mode="default"):
@@ -17,13 +18,13 @@ class Game:
         self.wolf_num = 0
         self.neutral_num = 0
         self.villager_num = 0
-        
+
         self.player_ids = [event.from_user.id]
-        self.players = {} # id: Chracter object
-        self.newly_killed = [] # ids
-        
+        self.players = {}  # id: Chracter object
+        self.newly_killed = []  # ids
+
         self.waiting = True
-    
+
     def set_each_role_numbers_and_pool(self):
         pool = []
         t_pool = []
@@ -31,7 +32,7 @@ class Game:
             if (team := roles.get(role)[0]) != "template":
                 value = mode.get("roles").get(role)[self.total_players - 4]
                 if value:
-                    setattr(self, role.replace(" ", "_") +"_unassigned", value)
+                    setattr(self, role.replace(" ", "_") + "_unassigned", value)
                     prev_value = getattr(self, team + "_num")
                     setattr(self, team + "_num", prev_value + 1)
                     pool.append(role)
@@ -41,18 +42,24 @@ class Game:
                     t_pool.append(role)
         self.role_pool = pool
         self.template_pool = t_pool
-    
-    def assign(self,ids):
+
+    def assign(self, ids):
         while not self.id:
             _id = gen_rand_4_digits()
             ids = expand(_id, self.total_players)
-            if all(x not in bot.current_games_dict.setdefault("werewolf", {}).get("ids", []) for x in ids):
+            if all(
+                x
+                not in bot.current_games_dict.setdefault("werewolf", {}).get("ids", [])
+                for x in ids
+            ):
                 pass
             else:
                 continue
             self.id = _id
-            bot.current_games_dict.setdefault("werewolf", {}).setdefault("ids", []).extend(ids)
-        
+            bot.current_games_dict.setdefault("werewolf", {}).setdefault(
+                "ids", []
+            ).extend(ids)
+
         _id = self.id
         to_be_assgined = list(self.player_ids)
         while len(to_be_assgined) != 0:
@@ -75,7 +82,9 @@ class Game:
                 if template.endswith("villager"):
                     if not player.villager:
                         continue
-                    if template == "cursed villager" and not (player.seer or player.fool):
+                    if template == "cursed villager" and not (
+                        player.seer or player.fool
+                    ):
                         pass
                     elif template == "cursed villager":
                         continue
@@ -88,13 +97,13 @@ class Game:
                 player.template = template
                 setattr(player, template.replace(" ", "_"), True)
                 break
-    
+
     async def join(self, event):
         if (user_id := event.from_user.id) in self.player_ids:
             return await event.reply("You've lready joined the game!")
         self.player_ids.append(user_id)
         return await event.reply("You've successfully joined the game.")
-    
+
     async def status(self, message):
         player_ids = list()
         while self.waiting:
@@ -107,9 +116,10 @@ class Game:
                 msg += f"- @{p_id}"
             await message.edit(msg)
 
-    
-def expand(num:int, amount:int):
-    return [num + x for x in range(1, amount+1)]
+
+def expand(num: int, amount: int):
+    return [num + x for x in range(1, amount + 1)]
+
 
 def gen_rand_4_digits():
-    return random.randint(1000,9980)
+    return random.randint(1000, 9980)

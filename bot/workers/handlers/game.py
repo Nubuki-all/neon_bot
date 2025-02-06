@@ -1,5 +1,4 @@
-from bot.config import bot, conf
-
+from bot.config import conf
 
 
 async def were_info(event, args, client):
@@ -11,4 +10,3 @@ async def were_info(event, args, client):
     msg += "For a list of roles, use the command `{0} -r`. For information on a particular role, use `{0} -r role`. For statistics on the current game, use `{0} -s`. "
     msg += "For a list of commands, use `{0} -l`. For help on a command, use `{0} -h command`. To see the in-game time, use `{0} -t`.\n\n"
     return await event.reply(msg.format(f"{conf.CMD_PREFIX}werewolf"))
-

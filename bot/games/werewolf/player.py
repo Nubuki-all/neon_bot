@@ -1,4 +1,5 @@
-from .roles import gamemodes, roles
+from .roles import roles
+
 
 class Player:
     def __init__(self, role, _id, user_id):
@@ -20,4 +21,3 @@ class Player:
         self.id = _id
         self.wa_id = user_id
         self.template = None
-        
