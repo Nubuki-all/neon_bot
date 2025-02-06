@@ -4,7 +4,7 @@ from urlextract import URLExtract
 
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.os_utils s_remove
+from bot.utils.os_utils import s_remove
 from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
