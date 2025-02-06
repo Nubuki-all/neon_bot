@@ -54,19 +54,19 @@ class MyLogger:
             if match := re_search(
                 r".Merger..Merging formats into..(.*?).$", msg
             ) or re_search(r".ExtractAudio..Destination..(.*?)$", msg):
-                log(msg)
+                log(e=msg)
                 newname = match.group(1)
                 newname = newname.rsplit("/", 1)[-1]
                 self._listener.name = newname
 
     @staticmethod
     def warning(msg):
-        log(msg)
+        log(e=msg)
 
     @staticmethod
     def error(msg):
         if msg != "ERROR: Cancelling...":
-            log(msg)
+            log(e=msg)
 
 
 class YoutubeDLHelper:
@@ -242,15 +242,11 @@ class YoutubeDLHelper:
         try:
             with YoutubeDL(self.opts) as ydl:
                 try:
-                    log("here")
                     ydl.download([self._listener.link])
-                    log("here")
                 except DownloadError as e:
                     if not self._listener.is_cancelled:
                         self._on_download_error(str(e))
-                    log("Failed")
                     return
-            log("Here!")
             if self.is_playlist and (
                 not ospath.exists(path) or len(listdir(path)) == 0
             ):

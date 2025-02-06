@@ -5,7 +5,7 @@ from urlextract import URLExtract
 
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.os_utils import s_remove
+from bot.utils.os_utils import file_exists, s_remove
 from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
@@ -60,9 +60,13 @@ async def youtube_reply(event, args, client):
                     continue
                 await status_msg.edit("Download completed, Now uploading…")
                 file = "ytdl/" + ytdl.name
+                if not file_exists(file):
+                    raise Exception(f"File: {file} not found!")
+                await logger(e=f"Uploading {file}…")
                 await event.reply_video(file, ytdl.name)
                 s_remove(file)
                 await status_msg.delete()
+                job.pop(0)
             except Exception:
                 await logger(Exception)
                 job.pop(0)
