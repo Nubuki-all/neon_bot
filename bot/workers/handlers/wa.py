@@ -163,6 +163,7 @@ async def stickerize_image(event, args, client):
             quote=True,
             name=(args or random.choice((enquip(), enquip4()))),
             packname=me.PushName,
+            crop=forced,
             enforce_not_broken=forced,
         )
         await event.send_typing_status(False)
