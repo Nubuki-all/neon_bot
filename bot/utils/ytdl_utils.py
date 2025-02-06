@@ -242,7 +242,9 @@ class YoutubeDLHelper:
         try:
             with YoutubeDL(self.opts) as ydl:
                 try:
+                    log("here")
                     ydl.download([self._listener.link])
+                    log("here")
                 except DownloadError as e:
                     if not self._listener.is_cancelled:
                         self._on_download_error(str(e))
@@ -260,8 +262,8 @@ class YoutubeDLHelper:
                 return
             self._listener.completed = True
             # async_to_sync(self._listener.on_download_complete)
-        except BaseException:
-            pass
+        except Exception:
+            log(Exception)
 
     async def add_download(self, path, qual, playlist, message, options={}):
         self.message = message
