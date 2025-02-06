@@ -246,6 +246,7 @@ class YoutubeDLHelper:
                 except DownloadError as e:
                     if not self._listener.is_cancelled:
                         self._on_download_error(str(e))
+                    log("Failed")
                     return
             if self.is_playlist and (
                 not ospath.exists(path) or len(listdir(path)) == 0
