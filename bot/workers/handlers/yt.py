@@ -1,5 +1,4 @@
 import asyncio
-
 from clean_links.clean import clean_url
 from urlextract import URLExtract
 
@@ -34,7 +33,7 @@ async def youtube_reply(event, args, client):
         if not supported_links:
             return
         job = list(supported_links)
-        options = {}
+        options = str()
         while job:
             try:
                 listener = DummyListener(job[0])
