@@ -368,8 +368,7 @@ class YoutubeDLHelper:
         ]:
             self.opts["postprocessors"].append(
                 {
-                    "already_have_thumbnail": False
-                    ),
+                    "already_have_thumbnail": False,
                     "key": "EmbedThumbnail",
                 }
             )
