@@ -1,9 +1,14 @@
 from clean_links.clean import clean_url
 from urlextract import URLExtract
 
-from bot.config import bot
 from bot.utils.log_utils import logger
-from bot.utils.ytdl_utils import DummyListener, YoutubeDLHelper, extract_info, is_supported
+from bot.utils.ytdl_utils import (
+    DummyListener,
+    YoutubeDLHelper,
+    extract_info,
+    is_supported,
+)
+
 
 async def youtube_reply(event, args, client):
     """
@@ -31,21 +36,27 @@ async def youtube_reply(event, args, client):
                 ytdl = YoutubeDLHelper(listener)
                 try:
                     result = await sync_to_async(extract_info, self.link, options)
-                except Exception as e:
+                except Exception:
                     await logger(Exception)
                     await asyncio.sleep(1)
                     job.pop(0)
                     continue
                 playlist = "entries" in result
                 status_msg = await event.reply("*Downloading…*")
-                await ytdl.add_download("ytdl", "bv*[height<=1080]+ba/b[height<=1080] / wv*+ba/w", playlist, {}, status_msg)
+                await ytdl.add_download(
+                    "ytdl",
+                    "bv*[height<=1080]+ba/b[height<=1080] / wv*+ba/w",
+                    playlist,
+                    {},
+                    status_msg,
+                )
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled:
                         await event.reply(listener.error)
                     job.pop(0)
                     continue
                 await status_msg.edit("Download completed, Now uploading…")
-                await event.reply_video("ytdl/"+ytdl.name, ytdl.name)
+                await event.reply_video("ytdl/" + ytdl.name, ytdl.name)
                 await status_msg.delete()
             except Exception:
                 await logger(Exception)

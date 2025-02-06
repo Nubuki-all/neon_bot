@@ -1,22 +1,25 @@
 import asyncio
 import time
-from logging import getLogger
-from os import path as ospath, listdir
+from os import listdir
+from os import path as ospath
 from re import search as re_search
 from secrets import token_urlsafe
-from yt_dlp import YoutubeDL, DownloadError, extractor
+
+from yt_dlp import DownloadError, YoutubeDL, extractor
 
 from bot.fun.emojis import enhearts
+
 from .bot_utils import hbs, sync_to_async, value_check
 from .log_utils import log
 
-#Ripped almost all the code from;
-#https://github.com/anasty17/mirror-leech-telegram-bot/blob/master/bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py
+# Ripped almost all the code from;
+# https://github.com/anasty17/mirror-leech-telegram-bot/blob/master/bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py
+
 
 def is_supported(url):
     extractors = extractor.gen_extractors()
     for e in extractors:
-        if e.suitable(url) and e.IE_NAME != 'generic':
+        if e.suitable(url) and e.IE_NAME != "generic":
             return True
     return False
 
@@ -27,6 +30,7 @@ def extract_info(link, options):
         if result is None:
             raise ValueError("Info result is None")
         return result
+
 
 class DummyListener:
     def __init__(self, link):
@@ -148,13 +152,12 @@ class YoutubeDLHelper:
                 self._eta = d.get("eta")
             try:
                 self._progress = (self._downloaded_bytes / self._listener.size) * 100
-            except:
+            except BaseException:
                 pass
 
     async def _on_download_start(self, from_queue=False):
         self.start = time.time()
         asyncio.create_task(self.progress_monitor())
-
 
     async def progress_monitor(self):
         while not self.is_cancelled:
@@ -256,8 +259,8 @@ class YoutubeDLHelper:
             if self._listener.is_cancelled:
                 return
             self._listener.completed = True
-            #async_to_sync(self._listener.on_download_complete)
-        except:
+            # async_to_sync(self._listener.on_download_complete)
+        except BaseException:
             pass
 
     async def add_download(self, path, qual, playlist, options, message):
@@ -353,7 +356,6 @@ class YoutubeDLHelper:
         if qual.startswith("ba/b"):
             self._listener.name = f"{base_name}{self._ext}"
 
-
         if self._ext in [
             ".mp3",
             ".mkv",
@@ -377,23 +379,23 @@ class YoutubeDLHelper:
 
         # msg, button = await stop_duplicate_check(self._listener)
         # if msg:
-            # await self._listener.on_download_error(msg, button)
-            # return
+        # await self._listener.on_download_error(msg, button)
+        # return
 
-        #add_to_queue, event = await check_running_tasks(self._listener)
-        #if add_to_queue:
-            #LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
-            #async with task_dict_lock:
-                #task_dict[self._listener.mid] = QueueStatus(
-                    #self._listener, self._gid, "dl"
-                #)
-            #await event.wait()
-            #if self._listener.is_cancelled:
-                #return
-            #LOGGER.info(f"Start Queued Download from YT_DLP: {self._listener.name}")
-            #await self._on_download_start(True)
+        # add_to_queue, event = await check_running_tasks(self._listener)
+        # if add_to_queue:
+        # LOGGER.info(f"Added to Queue/Download: {self._listener.name}")
+        # async with task_dict_lock:
+        # task_dict[self._listener.mid] = QueueStatus(
+        # self._listener, self._gid, "dl"
+        # )
+        # await event.wait()
+        # if self._listener.is_cancelled:
+        # return
+        # LOGGER.info(f"Start Queued Download from YT_DLP: {self._listener.name}")
+        # await self._on_download_start(True)
 
-        #if not add_to_queue:
+        # if not add_to_queue:
         log(f"Downloading with YT_DLP: {self._listener.name}")
 
         await sync_to_async(self._download, path)
