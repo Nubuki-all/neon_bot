@@ -151,22 +151,11 @@ async def stickerize_image(event, args, client):
             forced = arg.f
         else:
             forced = True
-        rate = ""
-        trim = False
-        m_type = "image"
-        quoted_msg = event.quoted.quotedMessage
-        if not quoted_msg.imageMessage.URL:
-            if not quoted_msg.videoMessage.URL:
-                return await event.reply("*Replied message is not an image.*")
-            m_type = "video"
-            if (seconds := quoted_msg.videoMessage.seconds) > 6:
-                rate = max_sticker_filesize // 6
-                trim = True if forced else False
-            else:
-                seconds = 1 if not seconds else seconds
-                rate = max_sticker_filesize // seconds
-            rate = f"{rate}k"
-        forced = False if m_type == "image" else forced
+
+        if not (event.quoted_image or event.quoted_video):
+            return await event.reply("*Replied message is not a gif/image/video.*")
+
+        #forced = False if event.quoted_image else forced
         await event.send_typing_status()
         file = await download_replied_media(event)
         me = await bot.client.get_me()
@@ -175,8 +164,6 @@ async def stickerize_image(event, args, client):
             quote=True,
             name=(args or random.choice((enquip(), enquip4()))),
             packname=me.PushName,
-            animated=trim,
-            bitrate=rate,
             enforce_not_broken=forced,
         )
         await event.send_typing_status(False)

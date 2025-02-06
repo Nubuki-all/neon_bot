@@ -70,10 +70,12 @@ class Runtime_Config:
         self.author_url = None
         self.block_nsfw = False
         self.client = None
+        self.current_games_dict = {}
         self.disable_cic = False
         self.docker_deployed = False
         self.force_save_messages = False
         self.group_dict = {}
+        self.games_dict = {}
         self.ignore_pm = False
         self.max_message_length = 4096
         self.offline = False

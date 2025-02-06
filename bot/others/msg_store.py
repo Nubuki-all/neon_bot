@@ -59,7 +59,7 @@ class Message_store:
         for message in messages:
             message_store.setdefault(message.chat.id, []).append(deepcopy(message))
             while len(message_store.get(message.chat.id)) > self.msg_limit:
-                message_store.setdefault(message.chat.id, []).pop()
+                message_store.setdefault(message.chat.id, []).pop(0)
         with open(msg_store_file, "wb") as file:
             pickle.dump(message_store, file)
 

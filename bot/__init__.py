@@ -93,6 +93,7 @@ LOGS = logging.getLogger(__name__)
 
 no_verbose = [
     "apscheduler.executors.default",
+    "httpx",
 ]
 if not conf.DEBUG:
     log.setLevel(logging.INFO)
