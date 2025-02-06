@@ -9,7 +9,7 @@ from yt_dlp import DownloadError, YoutubeDL, extractor
 
 from bot.fun.emojis import enhearts
 
-from .bot_utils import hbs, sync_to_async, value_check
+from .bot_utils import hbs, sync_to_async, time_formatter, value_check
 from .log_utils import log
 
 # Ripped almost all the code from;

@@ -139,6 +139,23 @@ def time_formatter(seconds: float) -> str:
     )
     return tmp[:-2]
 
+def value_check(value):
+    if not value:
+        return "-"
+    return value
+
+
+def hbs(size: int):
+    if not size:
+        return ""
+    power = 2**10
+    raised_to_pow = 0
+    dict_power_n = {0: "B", 1: "K", 2: "M", 3: "G", 4: "T", 5: "P"}
+    while size > power:
+        size /= power
+        raised_to_pow += 1
+    return str(round(size, 2)) + " " + dict_power_n[raised_to_pow] + "B"
+
 
 async def png_to_jpg(png: bytes):
     ffmpeg = (
