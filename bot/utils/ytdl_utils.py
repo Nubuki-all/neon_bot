@@ -370,7 +370,7 @@ class YoutubeDLHelper:
             ".opus",
             ".flac",
             ".m4a",
-           # ".mp4",
+            # ".mp4",
             ".mov",
             ".m4v",
         ]:
