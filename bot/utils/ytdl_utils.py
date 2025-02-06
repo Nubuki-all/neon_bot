@@ -24,7 +24,7 @@ def is_supported(url):
     return False
 
 
-def extract_info(link, options):
+def extract_info(link, options={}):
     with YoutubeDL(options) as ydl:
         result = ydl.extract_info(link, download=False)
         if result is None:
@@ -263,7 +263,7 @@ class YoutubeDLHelper:
         except BaseException:
             pass
 
-    async def add_download(self, path, qual, playlist, options, message):
+    async def add_download(self, path, qual, playlist, message, options={}):
         self.message = message
         if playlist:
             self.opts["ignoreerrors"] = True
