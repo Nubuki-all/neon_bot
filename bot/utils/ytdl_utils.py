@@ -12,6 +12,7 @@ from bot.fun.emojis import enhearts
 
 from .bot_utils import hbs, sync_to_async, time_formatter, value_check
 from .log_utils import log
+from .os_utils import s_remove
 
 # Ripped almost all the code from;
 # https://github.com/anasty17/mirror-leech-telegram-bot/blob/master/bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py
@@ -164,6 +165,10 @@ class YoutubeDLHelper:
         while not self._listener.is_cancelled:
             if self.download_is_complete:
                 break
+            if self.size >= 100000000:
+                self._listener.is_cancelled = True
+                await self.message(f"*{self.name or 'Media'} too large to upload.*")
+                continue
             ud_type = "*Downloading*"
             ud_type += f":\n{self.name}" if self.name else "…"
             remaining_size = self.size - self.downloaded_bytes
@@ -175,7 +180,7 @@ class YoutubeDLHelper:
             diff = now - self.start
             fin_str = enhearts()
 
-            progress = "\n> {0}{1}\n*Progress:* {2}%\n".format(
+            progress = "\n{0}{1}\n*Progress:* {2}%\n".format(
                 "".join([fin_str for i in range(math.floor(self.progress / 10))]),
                 "".join(
                     [self.unfin_str for i in range(10 - math.floor(self.progress / 10))]
@@ -202,6 +207,7 @@ class YoutubeDLHelper:
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
         self._listener.error = error
+        s_remove(self.folder + self.name, folders=self.is_playlist)
 
     def _extract_meta_data(self):
         if self._listener.link.startswith(("rtmp", "mms", "rstp", "rtmps")):
@@ -262,6 +268,7 @@ class YoutubeDLHelper:
             log(Exception)
 
     async def add_download(self, path, qual, playlist, message, options={}):
+        self.folder = path
         self.message = message
         if playlist:
             self.opts["ignoreerrors"] = True
@@ -298,6 +305,7 @@ class YoutubeDLHelper:
                 self._ext = ".m4a"
             else:
                 self._ext = f".{audio_format}"
+        """
         else:
             self.opts["postprocessors"].append(
                 {
@@ -306,6 +314,7 @@ class YoutubeDLHelper:
                 }
             )
             self._ext = ".mp4"
+        """
 
         if options:
             self._set_options(options)
@@ -404,8 +413,10 @@ class YoutubeDLHelper:
 
         await sync_to_async(self._download, path)
 
+        """
         if not qual.startswith("ba/b"):
             self._listener.name = f"{base_name}{self._ext}"
+        """
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
