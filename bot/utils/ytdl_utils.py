@@ -359,8 +359,8 @@ class YoutubeDLHelper:
                 "thumbnail": f"{path}/yt-dlp-thumb/{base_name}.%(ext)s",
             }
 
-        # if qual.startswith("ba/b"):
-        self._listener.name = f"{base_name}{self._ext}"
+        if qual.startswith("ba/b"):
+            self._listener.name = f"{base_name}{self._ext}"
 
         if self._ext in [
             ".mp3",
@@ -403,6 +403,9 @@ class YoutubeDLHelper:
         log(e=f"Downloading with YT_DLP: {self._listener.name}")
 
         await sync_to_async(self._download, path)
+
+        if not qual.startswith("ba/b"):
+            self._listener.name = f"{base_name}{self._ext}"
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
