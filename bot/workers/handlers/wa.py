@@ -144,11 +144,14 @@ async def stickerize_image(event, args, client):
         if args:
             arg, args = get_args(
                 ["-f", "store_false"],
+                ["-c", "store_true"],
                 to_parse=args,
                 get_unknown=True,
             )
+            crop = arg.c
             forced = arg.f
         else:
+            crop = False
             forced = True
 
         if not (event.quoted_image or event.quoted_video):
@@ -163,7 +166,7 @@ async def stickerize_image(event, args, client):
             quote=True,
             name=(args or random.choice((enquip(), enquip4()))),
             packname=me.PushName,
-            crop=forced,
+            crop=crop,
             enforce_not_broken=forced,
         )
         await event.send_typing_status(False)
