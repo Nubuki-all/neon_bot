@@ -374,8 +374,6 @@ class YoutubeDLHelper:
                     "key": "EmbedThumbnail",
                 }
             )
-        elif not self._listener.is_leech:
-            self.opts["writethumbnail"] = False
 
         # msg, button = await stop_duplicate_check(self._listener)
         # if msg:
