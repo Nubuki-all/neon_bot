@@ -44,6 +44,7 @@ from .workers.handlers.wa import (
     tag_all_admins,
     upscale_image,
 )
+from .workers.handlers.yt import youtube_reply
 
 
 @bot.client.event(ConnectedEv)
@@ -213,6 +214,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await get_notes2(message, None, client)
+
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await youtube_reply(message, None, client)
 
 
 @bot.client.event(MessageEv)

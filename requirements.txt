@@ -14,6 +14,7 @@ python-ffmpeg
 pytz
 urlextract
 w3lib
+yt-dlp[default,curl-cffi]
 git+https://github.com/Nubuki-all/neonize@patch-1
 git+https://github.com/Nubuki-all/Real-ESRGAN
 #Snyk pins 
