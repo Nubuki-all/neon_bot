@@ -176,14 +176,14 @@ class YoutubeDLHelper:
             fin_str = enhearts()
 
             progress = "\n> {0}{1}\n*Progress:* {2}%\n".format(
-                "".join([fin_str for i in range(math.floor(download.progress / 10))]),
+                "".join([fin_str for i in range(math.floor(self.progress / 10))]),
                 "".join(
                     [
                         self.unfin_str
-                        for i in range(10 - math.floor(download.progress / 10))
+                        for i in range(10 - math.floor(self.progress / 10))
                     ]
                 ),
-                round(download.progress, 2),
+                round(self.progress, 2),
             )
             tmp = (
                 progress
