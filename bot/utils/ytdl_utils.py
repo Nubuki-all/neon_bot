@@ -31,7 +31,7 @@ def get_video_name(base_name, with_quality=True):
         return base_name
     index = base_name.rfind(" ")
     base_name = base_name[:index]
-    if with_quality:
+    if (with_quality or not base_name.split()[-1].endswith("fps")):
         return base_name
     index = base_name.rfind(" ")
     return base_name[:index]
