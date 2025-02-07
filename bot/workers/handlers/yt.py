@@ -36,10 +36,10 @@ async def folder_upload(folder, event, status_msg, audio):
 
             if file.endswith(("png", "jpg", "jpeg")):
                 event = await event.reply_photo(file, f"*{base_name}*")
-            elif audio:
+            elif audio and file.endswith("mp3"):
                 event = await event.reply_audio(file)
                 await event.reply(f"*{base_name}*")
-            else:
+            elif file.endswith("mp4"):
                 event = await event.reply_video(file, f"*{base_name}*")
             await asyncio.sleep(3)
             t += 1
@@ -74,7 +74,7 @@ async def youtube_reply(event, args, client):
                     form = "ba/b-mp3-"
                 else:
                     audio = False
-                    form = "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b"
+                    form = "bv*[ext=mp4][filesize<100M]+ba[ext=m4a]/b[ext=mp4][filesize<100M] / bv*+ba/b"
                 try:
                     result = await sync_to_async(extract_info, listener.link)
                 except Exception:
