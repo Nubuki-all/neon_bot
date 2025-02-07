@@ -11,6 +11,7 @@ from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
     extract_info,
+    get_video_name,
     is_supported,
 )
 
@@ -26,7 +27,7 @@ async def folder_upload(folder, event, status_msg, audio):
         i = len(files)
         t = 1
         for name in sorted(files):
-            base_name = os.path.splitext(name)[0]
+            base_name = get_video_name(os.path.splitext(name)[0])
             file = os.path.join(path, name)
             await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
             if size_of(file) >= 100000000:
@@ -102,10 +103,12 @@ async def youtube_reply(event, args, client):
                     if not file_exists(file):
                         raise Exception(f"File: {file} not found!")
                     await logger(e=f"Uploading {file}…")
-                    (
-                        await event.reply_video(file, f"*{ytdl.base_name}*")
-                        if not audio
-                        else await event.reply_audio(file)
+                    base_name = get_video_name(ytdl.base_name)
+                    if not audio:
+                        await event.reply_video(file, f"*{base_name}*")
+                    else:
+                        reply = await event.reply_audio(file)
+                        await reply.reply(f"*{base_name}*")
                     )
                 else:
                     await folder_upload(ytdl.folder, event, status_msg, audio)
