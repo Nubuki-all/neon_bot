@@ -6,7 +6,7 @@ from urlextract import URLExtract
 
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.os_utils import dir_exists, file_exists, s_remove
+from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
