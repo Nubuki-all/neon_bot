@@ -26,15 +26,17 @@ def is_supported(url):
     return False
 
 
-def get_video_name(base_name, with_quality=True):
+def get_video_name(base_name, with_quality=False):
     if not base_name.split()[-1].isdigit():
         return base_name
     index = base_name.rfind(" ")
     base_name = base_name[:index]
-    if with_quality or not base_name.split()[-1].endswith("fps"):
+    if with_quality or len(base_name.split()) < 2:
         return base_name
-    index = base_name.rfind(" ")
-    return base_name[:index]
+    if base_name.split()[-1].endswith("fps") or (base_name.split()[-1].endswith("p") and base_name.split()[-1][:-1].isdigit()):
+        index = base_name.rfind(" ")
+        return base_name[:index]
+    return base_name
 
 
 def extract_info(link, options={"ignoreerrors": True}):
