@@ -59,7 +59,7 @@ async def youtube_reply(event, args, client):
                     job.pop(0)
                     continue
                 await status_msg.edit("Download completed, Now uploading…")
-                file = (f"{ytdl.folder}/{ytdl.name}")
+                file = f"{ytdl.folder}/{ytdl.name}"
                 if not file_exists(file):
                     raise Exception(f"File: {file} not found!")
                 await logger(e=f"Uploading {file}…")
