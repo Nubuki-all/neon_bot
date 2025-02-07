@@ -190,12 +190,12 @@ async def _(client: NewAClient, message: Event):
 
 @bot.register("ytdl_disable")
 async def _(client: NewAClient, message: Event):
-    await event_handler(message, ytdl_disable)
+    await event_handler(message, ytdl_disable, bot.client)
 
 
 @bot.register("ytdl_enable")
 async def _(client: NewAClient, message: Event):
-    await event_handler(message, ytdl_enable)
+    await event_handler(message, ytdl_enable, bot.client)
 
 
 @bot.register("del")
