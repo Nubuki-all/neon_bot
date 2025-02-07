@@ -69,6 +69,8 @@ class MyLogger:
                 log(e=msg)
                 newname = match.group(1)
                 newname = newname.rsplit("/", 1)[-1]
+                if not newname.endswith(("mp4", "mp3")):
+                    return
                 self._listener.name = newname
 
     @staticmethod
