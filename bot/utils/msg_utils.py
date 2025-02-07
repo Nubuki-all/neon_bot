@@ -225,7 +225,6 @@ class Event:
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
 
-    
     async def reply_document(
         self,
         document: str | bytes,

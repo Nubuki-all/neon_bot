@@ -93,6 +93,7 @@ def file_exists(file):
 def dir_exists(folder):
     return os.path.isdir(folder)
 
+
 def size_of(file):
     return int(Path(file).stat().st_size)
 
