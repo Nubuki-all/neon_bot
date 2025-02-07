@@ -1,17 +1,44 @@
 import asyncio
+import os
 
 from clean_links.clean import clean_url
 from urlextract import URLExtract
 
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.os_utils import file_exists, s_remove
+from bot.utils.os_utils import dir_exists, file_exists, s_remove
 from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
     extract_info,
     is_supported,
 )
+
+
+async def folder_upload(folder, event, status_msg, audio):
+    if not dir_exists(folder):
+        return
+    for path, subdirs, files in os.walk(file):
+        subdirs.sort()
+        if not files:
+            if not os.listdir(path):
+                continue
+        i = len(files)
+        t = 1
+        for name in sorted(files):
+            base_name = os.path.splitext(name)[0]
+            file = os.path.join(path, name)
+            await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
+            if size_of(file) >= 100000000:
+                await event.reply(f"*{name} too large to upload.*")
+                continue
+
+            if audio:
+                event = await event.reply_audio(file)
+            else:
+                event = await event.reply_video(file, f"*{base_name}*")
+            await asyncio.sleep(3)
+            t += 1
 
 
 async def youtube_reply(event, args, client):
@@ -38,6 +65,12 @@ async def youtube_reply(event, args, client):
             try:
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
+                if music in listener.link:
+                    audio = True
+                    form = "ba/b-{frmt}-"
+                else:
+                    audio = False
+                    form = "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b"
                 try:
                     result = await sync_to_async(extract_info, listener.link)
                 except Exception:
@@ -49,7 +82,7 @@ async def youtube_reply(event, args, client):
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",
-                    "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b",
+                    form,
                     playlist,
                     status_msg,
                 )
@@ -64,7 +97,10 @@ async def youtube_reply(event, args, client):
                 if not file_exists(file):
                     raise Exception(f"File: {file} not found!")
                 await logger(e=f"Uploading {file}…")
-                await event.reply_video(file, ytdl.name)
+                if not playlist:
+                    await event.reply_video(file, f"*{ytdl.base_name}*") if not audio else await event.reply_audio(file)
+                else:
+                    await folder_upload(ytdl.folder, event, status_msg, audio)
                 s_remove(ytdl.folder, folders=True)
                 await status_msg.delete()
                 job.pop(0)

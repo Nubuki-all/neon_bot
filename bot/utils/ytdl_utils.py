@@ -165,7 +165,7 @@ class YoutubeDLHelper:
         while not self._listener.is_cancelled:
             if self.download_is_complete:
                 break
-            if self.size >= 100000000:
+            if self.size >= 100000000 and not self.is_playlist:
                 self._listener.is_cancelled = True
                 await self.message.edit(
                     f"*{self.name or 'Media'} too large to upload.*"
@@ -416,6 +416,7 @@ class YoutubeDLHelper:
         log(e=f"Downloading with YT_DLP: {self._listener.name}")
 
         await sync_to_async(self._download, path)
+        self.base_name = base_name
 
         """
         if not qual.startswith("ba/b"):

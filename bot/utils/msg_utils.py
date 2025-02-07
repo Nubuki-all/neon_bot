@@ -211,6 +211,21 @@ class Event:
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
 
+    async def reply_audio(
+        self,
+        audio: str | bytes,
+        ptt: bool = False,
+        quote: bool = True,
+    ):
+        quoted = self.message if quote else None
+
+        response = await self.client.send_audio(
+            self.chat.jid, audio, ptt, quoted=quoted
+        )
+        msg = self.gen_new_msg(response.ID)
+        return construct_event(msg)
+
+    
     async def reply_document(
         self,
         document: str | bytes,
