@@ -320,15 +320,7 @@ class YoutubeDLHelper:
                 self._ext = ".m4a"
             else:
                 self._ext = f".{audio_format}"
-        elif not (playlist or self._listener.name.endswith("mp4")):
-            self.opts["postprocessors"].append(
-                {
-                    "key": "FFmpegVideoConvertor",
-                    "preferedformat": "mp4",
-                }
-            )
-            self._ext = ".mp4"
-
+        
         if options:
             self._set_options(options)
 
@@ -382,6 +374,15 @@ class YoutubeDLHelper:
             }
 
         if qual.startswith("ba/b") and not self.is_playlist:
+            self._listener.name = f"{base_name}{self._ext}"
+        elif not (self.is_playlist or self._listener.name.endswith("mp4")):
+            self.opts["postprocessors"].append(
+                {
+                    "key": "FFmpegVideoConvertor",
+                    "preferedformat": "mp4",
+                }
+            )
+            self._ext = ".mp4"
             self._listener.name = f"{base_name}{self._ext}"
 
         if self._ext in [
