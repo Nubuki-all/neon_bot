@@ -158,9 +158,9 @@ class YoutubeDLHelper:
                 self._downloaded_bytes += chunk_size
             else:
                 if d.get("total_bytes"):
-                    self._listener.size = d["total_bytes"]
+                    self._listener.size = d["total_bytes"] or 0
                 elif d.get("total_bytes_estimate"):
-                    self._listener.size = d["total_bytes_estimate"]
+                    self._listener.size = d["total_bytes_estimate"] or 0
                 self._downloaded_bytes = d["downloaded_bytes"]
                 self._eta = d.get("eta")
             try:
