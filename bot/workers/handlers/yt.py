@@ -33,7 +33,7 @@ async def folder_upload(folder, event, status_msg, audio):
                 await event.reply(f"*{name} too large to upload.*")
                 continue
 
-            if file.endswith(("png", "jpg", "jpeg"):
+            if file.endswith(("png", "jpg", "jpeg")):
                 event = await event.reply_photo(file, f"*{base_name}*")
             elif audio:
                 event = await event.reply_audio(file)
