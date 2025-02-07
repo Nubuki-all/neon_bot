@@ -109,7 +109,6 @@ async def youtube_reply(event, args, client):
                     else:
                         reply = await event.reply_audio(file)
                         await reply.reply(f"*{base_name}*")
-                    )
                 else:
                     await folder_upload(ytdl.folder, event, status_msg, audio)
                 s_remove(ytdl.folder, folders=True)
