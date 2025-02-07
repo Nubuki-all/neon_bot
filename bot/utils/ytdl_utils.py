@@ -63,15 +63,14 @@ class MyLogger:
     def debug(self, msg):
         # Hack to fix changing extension
         if not self._obj.is_playlist:
-            log(e=msg)
             if match := re_search(
                 r".Merger..Merging formats into..(.*?).$", msg
-            ) or re_search(r".ExtractAudio..Destination..(.*?)$", msg):
-                # log(e=msg)
+            ) or re_search(r".ExtractAudio..Destination..(.*?)$", msg) or re_search(
+                r".VideoConvertor..Converting video from..(.*?).$", msg
+            ):
+                log(e=msg)
                 newname = match.group(1)
                 newname = newname.rsplit("/", 1)[-1]
-                if not newname.endswith(("mp4", "mp3")):
-                    return
                 self._listener.name = newname
 
     @staticmethod
