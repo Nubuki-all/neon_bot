@@ -75,6 +75,9 @@ async def youtube_reply(event, args, client):
                 if "music" in listener.link:
                     audio = True
                     form = "ba/b-mp3-"
+                elif "shorts" in listener.link and "(720p)" in event.text:
+                    audio = False
+                    form = "bv*[ext=mp4][filesize<100M][height<=1280]+ba[ext=m4a]/b[ext=mp4][filesize<100M][height<=1280] / bv*+ba/b"
                 else:
                     audio = False
                     form = "bv*[ext=mp4][filesize<100M][height<=720]+ba[ext=m4a]/b[ext=mp4][filesize<100M][height<=720] / bv*+ba/b"
