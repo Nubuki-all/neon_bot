@@ -712,10 +712,13 @@ async def ytdl_enable(event, args, client):
             return await event.reply("Ytdl is already enabled in this chat.")
         bot.group_dict.setdefault(chat_id, {}).update(ytdl=True)
         await save2db2(bot.group_dict, "groups")
-        await event.reply(f"Successfully enabled ytdl in {f'group: *{chat_name}*'if chat_name else 'pm.'}")
+        await event.reply(
+            f"Successfully enabled ytdl in {f'group: *{chat_name}*'if chat_name else 'pm.'}"
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
 
 async def ytdl_disable(event, args, client):
     "Disables automatic YouTube downloads in a chat."
@@ -744,7 +747,9 @@ async def ytdl_disable(event, args, client):
             return await event.reply("Ytdl is already disabled in this chat.")
         bot.group_dict.setdefault(chat_id, {}).update(ytdl=False)
         await save2db2(bot.group_dict, "groups")
-        await event.reply(f"Successfully disabled ytdl in {f'group: *{chat_name}*'if chat_name else 'pm.'}")
+        await event.reply(
+            f"Successfully disabled ytdl in {f'group: *{chat_name}*'if chat_name else 'pm.'}"
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")
