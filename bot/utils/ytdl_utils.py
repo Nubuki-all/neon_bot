@@ -320,7 +320,7 @@ class YoutubeDLHelper:
                 self._ext = ".m4a"
             else:
                 self._ext = f".{audio_format}"
-        
+
         if options:
             self._set_options(options)
 
