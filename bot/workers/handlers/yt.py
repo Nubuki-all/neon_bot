@@ -67,7 +67,7 @@ async def youtube_reply(event, args, client):
                 ytdl = YoutubeDLHelper(listener)
                 if "music" in listener.link:
                     audio = True
-                    form = "ba/b-m4a-"
+                    form = "ba/b-opus-"
                 else:
                     audio = False
                     form = "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b"
