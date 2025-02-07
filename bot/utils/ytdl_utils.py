@@ -25,6 +25,7 @@ def is_supported(url):
             return True
     return False
 
+
 def get_video_name(base_name, with_quality=True):
     if not base_name.split()[-1].isdigit():
         return base_name
@@ -34,8 +35,7 @@ def get_video_name(base_name, with_quality=True):
         return base_name
     index = base_name.rfind(" ")
     return base_name[:index]
-    
-        
+
 
 def extract_info(link, options={"ignoreerrors": True}):
     with YoutubeDL(options) as ydl:
