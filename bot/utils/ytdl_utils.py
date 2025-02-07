@@ -158,9 +158,9 @@ class YoutubeDLHelper:
                 self._downloaded_bytes += chunk_size
             else:
                 if d.get("total_bytes"):
-                    self._listener.size = d["total_bytes"] or 0
+                    self._listener.size = d["total_bytes"]
                 elif d.get("total_bytes_estimate"):
-                    self._listener.size = d["total_bytes_estimate"] or 0
+                    self._listener.size = d["total_bytes_estimate"]
                 self._downloaded_bytes = d["downloaded_bytes"]
                 self._eta = d.get("eta")
             try:
@@ -237,9 +237,10 @@ class YoutubeDLHelper:
                     if not entry:
                         continue
                     elif "filesize_approx" in entry:
-                        self._listener.size += entry.get("filesize_approx", 0)
+                        log(e=entry.get("filesize_approx", 0))
+                        self._listener.size += entry.get("filesize_approx", 0) or 0
                     elif "filesize" in entry:
-                        self._listener.size += entry.get("filesize", 0)
+                        self._listener.size += entry.get("filesize", 0) or 0
                     if not self._listener.name:
                         outtmpl_ = "%(series,playlist_title,channel)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d.%(ext)s"
                         self._listener.name, ext = ospath.splitext(
