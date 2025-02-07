@@ -329,7 +329,6 @@ class YoutubeDLHelper:
             )
             self._ext = ".mp4"
 
-
         if options:
             self._set_options(options)
 
