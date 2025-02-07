@@ -4,8 +4,10 @@ import os
 from clean_links.clean import clean_url
 from urlextract import URLExtract
 
+from bot.config import bot
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.log_utils import logger
+from bot.utils.msg_utils import chat_is_allowed
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
@@ -54,6 +56,10 @@ async def youtube_reply(event, args, client):
     """
     try:
         if event.type != "text":
+            return
+        if event.chat.is_group and not chat_is_allowed(event):
+            return
+        if not bot.group_dict.get(event.chat.id, {}).get("ytdl"):
             return
         extractor = URLExtract()
         urls = extractor.find_urls(event.text)

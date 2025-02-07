@@ -29,6 +29,8 @@ from .workers.handlers.manage import (
     sudoers,
     unban,
     update_handler,
+    ytdl_disable,
+    ytdl_enable,
 )
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
 from .workers.handlers.wa import (
@@ -184,6 +186,16 @@ async def _(client: NewAClient, message: Event):
 @bot.register("enable")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, enable, bot.client)
+
+
+@bot.register("ytdl_disable")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, ytdl_disable)
+
+
+@bot.register("ytdl_enable")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, ytdl_enable)
 
 
 @bot.register("del")

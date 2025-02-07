@@ -120,11 +120,14 @@ async def getcmds(event, args, client):
 {pre}rss - *[Owner | Sudo] Setup bot to auto post RSS feeds*
 {pre}update - *[Owner | Sudo] Update & restarts bot*
 {pre}restart - *[Owner | Sudo] Restarts bot*
+{pre}ytdl_* - *[Owner | Sudo] Disables/Enables Ytdl*
 {pre}disable - *[Owner | Sudo] Disable bot in a GC*
 {pre}enable - *[Owner | Sudo] Enable bot in a GC*
 {pre}del - *[Owner | Sudo] Delete bot's messages*
 {pre}gc_info - *[Owner | Sudo] Get group info*
-{pre}pause - *[Owner] Pauses bot*"""
+{pre}pause - *[Owner] Pauses bot*
+
+* expands to _ytdl_enable/ytdl_disable_"""
         await event.reply(msg)
     except Exception as e:
         await logger(Exception)

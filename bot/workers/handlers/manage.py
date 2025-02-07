@@ -683,3 +683,68 @@ async def delete(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("✖️")
+
+
+async def ytdl_enable(event, args, client):
+    "Enables automatic YouTube downloads in a chat."
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        chat_id = event.chat.id
+        chat_name = None
+        if event.chat.is_group:
+            no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+            group_info = await client.get_group_info(event.chat.jid)
+            if not user_is_privileged(user):
+                if not user_is_admin(user, group_info.Participants):
+                    return await event.reply_sticker(
+                        no,
+                        name="Seriously though, No.",
+                        packname="Qiqi.",
+                    )
+
+            chat_name = group_info.GroupName.Name
+        if bot.group_dict.get(chat_id, {}).get("ytdl"):
+            return await event.reply("Ytdl is already enabled in this chat.")
+        bot.group_dict.setdefault(chat_id, {}).update(ytdl=True)
+        await save2db2(bot.group_dict, "groups")
+        await event.reply(f"Successfully enabled ytdl in {f'group: *{chat_name}*'if chat_name else 'pm.'}")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+async def ytdl_disable(event, args, client):
+    "Disables automatic YouTube downloads in a chat."
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        chat_id = event.chat.id
+        chat_name = None
+        if event.chat.is_group:
+            no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+            group_info = await client.get_group_info(event.chat.jid)
+            if not user_is_privileged(user):
+                if not user_is_admin(user, group_info.Participants):
+                    return await event.reply_sticker(
+                        no,
+                        name="Seriously though, No.",
+                        packname="Qiqi.",
+                    )
+
+            chat_name = group_info.GroupName.Name
+        if not bot.group_dict.get(chat_id, {}).get("ytdl"):
+            return await event.reply("Ytdl is already disabled in this chat.")
+        bot.group_dict.setdefault(chat_id, {}).update(ytdl=False)
+        await save2db2(bot.group_dict, "groups")
+        await event.reply(f"Successfully disabled ytdl in {f'group: *{chat_name}*'if chat_name else 'pm.'}")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
