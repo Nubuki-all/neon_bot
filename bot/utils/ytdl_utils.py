@@ -266,6 +266,8 @@ class YoutubeDLHelper:
                 return
             self._listener.completed = True
             # async_to_sync(self._listener.on_download_complete)
+        except ValueError:
+            pass
         except Exception:
             log(Exception)
 

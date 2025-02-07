@@ -57,9 +57,10 @@ async def youtube_reply(event, args, client):
                     if listener.is_cancelled and listener.error:
                         await event.reply(listener.error)
                     job.pop(0)
+                    s_remove(ytdl.folder, folders=True)
                     continue
                 await status_msg.edit("Download completed, Now uploading…")
-                file = f"{ytdl.folder}/{ytdl.name}"
+                file = (f"{ytdl.folder}/{ytdl.name}")
                 if not file_exists(file):
                     raise Exception(f"File: {file} not found!")
                 await logger(e=f"Uploading {file}…")

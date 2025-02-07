@@ -61,7 +61,7 @@ def s_remove(*filenames, folders=False):
             try:
                 shutil.rmtree(_dir)
             except Exception:
-                log(Exception)
+                pass
         return
     for filename in filenames:
         try:
