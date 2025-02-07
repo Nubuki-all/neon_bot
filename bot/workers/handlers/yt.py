@@ -65,7 +65,7 @@ async def youtube_reply(event, args, client):
             try:
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
-                if music in listener.link:
+                if "music" in listener.link:
                     audio = True
                     form = "ba/b-{frmt}-"
                 else:
