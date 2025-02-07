@@ -38,6 +38,7 @@ async def folder_upload(folder, event, status_msg, audio):
                 event = await event.reply_photo(file, f"*{base_name}*")
             elif audio:
                 event = await event.reply_audio(file)
+                await event.reply(f"*{base_name}*")
             else:
                 event = await event.reply_video(file, f"*{base_name}*")
             await asyncio.sleep(3)

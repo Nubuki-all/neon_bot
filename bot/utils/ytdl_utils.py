@@ -26,7 +26,7 @@ def is_supported(url):
     return False
 
 
-def extract_info(link, options={}):
+def extract_info(link, options={"ignoreerrors": True}):
     with YoutubeDL(options) as ydl:
         result = ydl.extract_info(link, download=False)
         if result is None:
