@@ -98,3 +98,4 @@ async def auto_save_msg():
                     if bot.force_save_messages:
                         bot.force_save_messages = False
             await asyncio.sleep(1)
+        await asyncio.sleep(3)
