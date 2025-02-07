@@ -237,7 +237,6 @@ class YoutubeDLHelper:
                     if not entry:
                         continue
                     elif "filesize_approx" in entry:
-                        log(e=entry.get("filesize_approx", 0))
                         self._listener.size += entry.get("filesize_approx", 0) or 0
                     elif "filesize" in entry:
                         self._listener.size += entry.get("filesize", 0) or 0

@@ -24,6 +24,8 @@ async def folder_upload(folder, event, status_msg, audio):
         if not files:
             if not os.listdir(path):
                 continue
+        if "yt-dlp-thumb" in path:
+            continue
         i = len(files)
         t = 1
         for name in sorted(files):
