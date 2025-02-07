@@ -77,7 +77,7 @@ async def youtube_reply(event, args, client):
                     form = "ba/b-mp3-"
                 else:
                     audio = False
-                    form = "bv*[ext=mp4][filesize<100M]+ba[ext=m4a]/b[ext=mp4][filesize<100M] / bv*+ba/b"
+                    form = "bv*[ext=mp4][filesize<100M][height>=720]+ba[ext=m4a]/b[ext=mp4][filesize<100M][height>=720] / bv*+ba/b"
                 try:
                     result = await sync_to_async(extract_info, listener.link)
                 except Exception:
