@@ -320,8 +320,7 @@ class YoutubeDLHelper:
                 self._ext = ".m4a"
             else:
                 self._ext = f".{audio_format}"
-        """
-        else:
+        elif not (playlist or self._listener.name.endswith("mp4")):
             self.opts["postprocessors"].append(
                 {
                     "key": "FFmpegVideoConvertor",
@@ -329,7 +328,7 @@ class YoutubeDLHelper:
                 }
             )
             self._ext = ".mp4"
-        """
+
 
         if options:
             self._set_options(options)
