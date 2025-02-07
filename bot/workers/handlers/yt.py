@@ -18,7 +18,7 @@ from bot.utils.ytdl_utils import (
 async def folder_upload(folder, event, status_msg, audio):
     if not dir_exists(folder):
         return
-    for path, subdirs, files in os.walk(file):
+    for path, subdirs, files in os.walk(folder):
         subdirs.sort()
         if not files:
             if not os.listdir(path):
@@ -31,6 +31,7 @@ async def folder_upload(folder, event, status_msg, audio):
             await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
             if size_of(file) >= 100000000:
                 await event.reply(f"*{name} too large to upload.*")
+                await asyncio.sleep(3)
                 continue
 
             if file.endswith(("png", "jpg", "jpeg")):
