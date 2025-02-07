@@ -23,6 +23,10 @@ if os.path.isdir("/neon"):
     bot.docker_deployed = True
     LOGS.info("Docker: Yes")
 
+if not os.path.isdir("ytdl/"):
+    os.mkdir("ytdl/")
+
+
 LOGS.info("=" * 30)
 
 

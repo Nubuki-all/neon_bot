@@ -48,23 +48,23 @@ async def youtube_reply(event, args, client):
                 playlist = "entries" in result
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
-                    "ytdl",
+                    f"ytdl/{event.chat.id}:{event.id}",
                     "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b",
                     playlist,
                     status_msg,
                 )
                 if not ytdl.download_is_complete:
-                    if listener.is_cancelled:
+                    if listener.is_cancelled and listener.error:
                         await event.reply(listener.error)
                     job.pop(0)
                     continue
                 await status_msg.edit("Download completed, Now uploading…")
-                file = "ytdl/" + ytdl.name
+                file = ytdl.folder + ytdl.name
                 if not file_exists(file):
                     raise Exception(f"File: {file} not found!")
                 await logger(e=f"Uploading {file}…")
                 await event.reply_video(file, ytdl.name)
-                s_remove(file)
+                s_remove(ytdl.folder, folders=True)
                 await status_msg.delete()
                 job.pop(0)
             except Exception:

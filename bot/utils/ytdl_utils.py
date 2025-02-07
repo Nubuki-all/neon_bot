@@ -209,7 +209,7 @@ class YoutubeDLHelper:
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
         self._listener.error = error
-        s_remove(self.folder + self.name, folders=self.is_playlist)
+        s_remove(self.folder, folders=True)
 
     def _extract_meta_data(self):
         if self._listener.link.startswith(("rtmp", "mms", "rstp", "rtmps")):
