@@ -94,10 +94,10 @@ async def youtube_reply(event, args, client):
                     continue
                 await status_msg.edit("Download completed, Now uploading…")
                 file = f"{ytdl.folder}/{ytdl.name}"
-                if not file_exists(file):
-                    raise Exception(f"File: {file} not found!")
-                await logger(e=f"Uploading {file}…")
                 if not playlist:
+                    if not file_exists(file):
+                        raise Exception(f"File: {file} not found!")
+                    await logger(e=f"Uploading {file}…")
                     (
                         await event.reply_video(file, f"*{ytdl.base_name}*")
                         if not audio
