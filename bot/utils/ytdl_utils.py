@@ -1,6 +1,7 @@
 import asyncio
 import math
 import time
+import uuid
 from os import listdir
 from os import path as ospath
 from re import search as re_search
@@ -104,6 +105,7 @@ class YoutubeDLHelper:
         self._gid = ""
         self._ext = ""
         self.is_playlist = False
+        self.file_name = None
         self.start = None
         self.message = None
         self.unfin_str = "🤍"
@@ -263,7 +265,8 @@ class YoutubeDLHelper:
                 outtmpl_ = "%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"
                 realName = ydl.prepare_filename(result, outtmpl=outtmpl_)
                 ext = ospath.splitext(realName)[-1]
-                self._listener.name = (
+                self._listener.name = f"{uuid.uuid4()}{ext}"
+                self.file_name = (
                     f"{self._listener.name}{ext}" if self._listener.name else realName
                 )
                 if not self._ext:
@@ -435,10 +438,10 @@ class YoutubeDLHelper:
         # await self._on_download_start(True)
 
         # if not add_to_queue:
-        log(e=f"Downloading with YT_DLP: {self._listener.name}")
+        log(e=f"Downloading with YT_DLP: {self.file_name}")
 
         await sync_to_async(self._download, path)
-        self.base_name = base_name
+        self.base_name = ospath.splitext(self.file_name)[0]
 
         """
         if not qual.startswith("ba/b"):
