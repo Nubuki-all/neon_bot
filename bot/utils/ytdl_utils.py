@@ -265,10 +265,10 @@ class YoutubeDLHelper:
                 outtmpl_ = "%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"
                 realName = ydl.prepare_filename(result, outtmpl=outtmpl_)
                 ext = ospath.splitext(realName)[-1]
-                self._listener.name = f"{uuid.uuid4()}{ext}"
                 self.file_name = (
                     f"{self._listener.name}{ext}" if self._listener.name else realName
                 )
+                self._listener.name = f"{uuid.uuid4()}{ext}"
                 if not self._ext:
                     self._ext = ext
 
