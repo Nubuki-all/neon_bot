@@ -438,10 +438,10 @@ class YoutubeDLHelper:
         # await self._on_download_start(True)
 
         # if not add_to_queue:
-        log(e=f"Downloading with YT_DLP: {self.file_name}")
+        log(e=f"Downloading with YT_DLP: {self.file_name or self._listener.name}")
 
         await sync_to_async(self._download, path)
-        self.base_name = ospath.splitext(self.file_name)[0]
+        self.base_name = ospath.splitext(self.file_name or self._listener.name)[0]
 
         """
         if not qual.startswith("ba/b"):
