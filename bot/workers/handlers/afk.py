@@ -17,7 +17,7 @@ from bot.utils.msg_utils import (
 
 afk_message = "*{0} is currently AFK!*\n\n*Reason:*\n> {1}\n\n*Since:* _{2}_ ago."
 
-unafk_message = "*Welcome back, {0}.\nYou were AFK for: *{1}*"
+unafk_message = "*Welcome back, {0}.*\nYou were AFK for: *{1}*"
 
 
 async def afk_helper(event, args, client):
@@ -30,6 +30,10 @@ async def afk_helper(event, args, client):
         if not chat_is_allowed(event):
             return
         if afk_dict := get_afk_status(event.from_user.id):
+            if afk_dict.get("grace"):
+                afk_dict["grace"] = 0
+                bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict)
+                return await save2db2(bot.user_dict, "users")
             since = time_formatter(time.time() - afk_dict.get("time"))
             user_name = afk_dict.get("user_name")
             bot.user_dict.setdefault(event.from_user.id, {}).update(afk=False)
@@ -98,6 +102,7 @@ async def activate_afk(event, args, client):
             return
         user_info = await get_user_info(user)
         afk_dict = {
+            "grace": 1,
             "reason": args,
             "time": time.time(),
             "user_name": user_info.PushName,

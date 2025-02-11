@@ -169,7 +169,7 @@ class Event:
 
     async def _send_message(self, chat, message, link_preview=True):
         await self.send_typing_status()
-        response = await self.client.send_mesaage(
+        response = await self.client.send_message(
             to=chat, message=message, link_preview=link_preview
         )
         await self.send_typing_status(False)
