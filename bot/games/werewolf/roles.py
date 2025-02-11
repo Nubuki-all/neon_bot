@@ -1,4 +1,5 @@
-DETECTIVE_REVEAL_CHANCE = 0.4
+from .defaults import DETECTIVE_REVEAL_CHANCE
+
 
 # {role name : [team, plural, description]}
 roles = {

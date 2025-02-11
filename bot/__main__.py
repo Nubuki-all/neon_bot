@@ -16,6 +16,7 @@ from . import (
 from .startup.after import on_startup
 from .utils.msg_utils import Event, event_handler, on_message
 from .utils.os_utils import re_x, s_remove
+from .workers.handlers.afk import activate_afk, afk_helper
 from .workers.handlers.ani import airing, anime
 from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.manage import (
@@ -121,6 +122,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("del_note")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, delete_notes, require_args=True)
+
+
+@bot.register("afk")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, activate_afk)
 
 
 @bot.register("sanitize")
@@ -232,6 +238,10 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await youtube_reply(message, None, client)
 
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await afk_helper(message, None, client)
 
 @bot.client.event(MessageEv)
 async def _(client: NewAClient, message: MessageEv):

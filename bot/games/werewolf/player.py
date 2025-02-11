@@ -13,11 +13,14 @@ class Player:
             if value:
                 team = roles.get(role)[0]
                 setattr(self, team, value)
+                self.role = role
+                self.team = team
             setattr(self, attr.replace(" ", "_"), value)
-        self.role = role
         self.description = roles.get(role)[2]
-        self.lynched = False
-        self.dead = False
         self.id = _id
-        self.wa_id = user_id
+        self.is_dead = False
+        self.is_injured = False
+        self.lynched = False
+        self.role = role
         self.template = None
+        self.wa_id = user_id

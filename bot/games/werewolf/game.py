@@ -2,6 +2,7 @@ import random
 
 from bot.config import bot
 
+from .defaults import DEFAULT_DAY_TIMEOUT, DEFAULT_DAY_WARNING, DEFAULT_NIGHT_TIMEOUT, DEFAULT_NIGHT_WARNING
 from .player import Player
 from .roles import gamemodes, roles
 
@@ -10,6 +11,7 @@ class Game:
     def __init__(self, event, mode="default"):
         self.id = 0
         self.chat_id = event.chat.id
+        self.chat_jid = event.chat.jid
         self.total_players = 1
         self.mode = mode
         mode = gamemodes.get(self.mode)
@@ -21,20 +23,33 @@ class Game:
 
         self.player_ids = [event.from_user.id]
         self.players = {}  # id: Chracter object
+        self.players_alive = 0
         self.newly_killed = []  # ids
 
+        self.day = False
+        self.night = False
         self.waiting = True
 
+        # set defaults
+        # self.wait_bucket = WAIT_BUCKET_INIT
+        # self.wait_timer = datetime.now()
+        self.day_warning = DEFAULT_DAY_WARNING
+        self.day_timeout = DEFAULT_DAY_TIMEOUT
+        self.night_warning = DEFAULT_NIGHT_WARNING
+        self.night_timeout = DEFAULT_NIGHT_TIMEOUT
     def set_each_role_numbers_and_pool(self):
         pool = []
         t_pool = []
+        mode = gamemodes.get(self.mode)
         for role in list(mode.get("roles").keys()):
             if (team := roles.get(role)[0]) != "template":
                 value = mode.get("roles").get(role)[self.total_players - 4]
                 if value:
                     setattr(self, role.replace(" ", "_") + "_unassigned", value)
                     prev_value = getattr(self, team + "_num")
-                    setattr(self, team + "_num", prev_value + 1)
+                    setattr(self, team + "_num", prev_value + value)
+                    setattr(self, role.replace(" ", "_") + "_num", value)
+                    setattr(self, "_" + role.replace(" ", "_") + "_num", value)
                     pool.append(role)
             else:
                 value = mode.get("roles").get(role)[self.total_players - 4]
@@ -42,6 +57,10 @@ class Game:
                     t_pool.append(role)
         self.role_pool = pool
         self.template_pool = t_pool
+
+    def pre_assign_vars(self):
+        self.charmed_num = 0
+        self.entranced_num = 0
 
     def assign(self, ids):
         while not self.id:
@@ -72,7 +91,7 @@ class Game:
             value = getattr(self, role + "_unassigned")
             value -= 1
             if not value:
-                self.pool.pop(0)
+                self.role_pool.pop(0)
             setattr(self, role + "_unassigned", value)
             to_be_assgined.pop(0)
         for template in template_pool:

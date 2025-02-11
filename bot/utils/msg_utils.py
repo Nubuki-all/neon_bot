@@ -10,6 +10,7 @@ import httpx
 from bs4 import BeautifulSoup
 from neonize.types import MessageWithContextInfo
 from neonize.utils.enum import ChatPresence, ChatPresenceMedia, MediaType, Presence
+from neonize.utils.message import extract_text
 
 from bot import (
     Message,
@@ -66,6 +67,14 @@ class Event:
             self.is_group = message.Info.MessageSource.IsGroup
             self.server = self.jid.Server
 
+    def _construct_media(self):
+        for msg, v in self._message.ListFields():
+            if not msg.name.endswith("Message"):
+                continue
+            setattr(self, msg.name.split("M")[0], v)
+            self.media = v
+            break
+
     def construct(self, message: MessageEv, add_replied: bool = True):
         self.chat = self.Chat()
         self.chat.construct(message)
@@ -78,6 +87,7 @@ class Event:
         self.type = message.Info.Type
         self.type = "text" if message.Info.MediaType == "url" else self.type
         self.media_type = message.Info.MediaType
+        self._message = message.Message
         self.ext_msg = message.Message.extendedTextMessage
         self.text_msg = message.Message.conversation
         self.short_text = self.text_msg
@@ -89,7 +99,14 @@ class Event:
         self.text = self.text or self.short_text
         # To do expand quoted; has members [stanzaID, participant,
         # quotedMessage.conversation]
-        self.quoted = self.ext_msg.contextInfo if add_replied else None
+        self.document = None
+        self.image = None
+        self.media = None
+        self.video = None
+        self._construct_media()
+        self.caption = extract_text(self._message) if not self.text else None
+        
+        self.quoted = self.ext_msg.contextInfo if self .ext_msg.contextInfo.ByteSize() and add_replied else None
         self.quoted_audio = self.quoted_document = self.quoted_image = (
             self.quoted_video
         ) = self.quoted_viewonce = None
@@ -146,9 +163,16 @@ class Event:
         self.constructed = True
         return self
 
+    async def _send_message(self, chat, message, link_preview=True):
+        await self.send_typing_status()
+        response = await self.client.send_mesaage(to=chat, message=message, link_preview=link_preview)
+        await self.send_typing_status(False)
+        msg = self.gen_new_msg(response.ID)
+        return construct_event(msg)
+
     async def delete(self):
         await self.client.revoke_message(self.chat.jid, self.from_user.jid, self.id)
-        return None
+        return
 
     async def edit(self, text: str):
         msg = Message(conversation=text)
@@ -183,6 +207,8 @@ class Event:
         if not text:
             raise Exception("Specify a text to reply with.")
         # msg_id = self.id if quote else None
+        if not quote:
+            return await self._send_message(self.chat.jid, text, link_preview)
         await self.send_typing_status()
 
         try:
@@ -417,6 +443,14 @@ def chat_is_allowed(event: Event):
         return not bot.group_dict.get(event.chat.id, {}).get("disabled", False)
 
 
+def get_afk_status(user: str):
+    return bot.user_dict.get(user, {}).get("afk", False)
+
+
+def get_mentioned(text: str):
+    return [jid.group(1) for jid in re.finditer(r"@([0-9]{5,16}|0)", text)]
+
+
 def tag_admins(members: list):
     tags = str()
     for member in members:
@@ -425,11 +459,21 @@ def tag_admins(members: list):
     return tags.rstrip()
 
 
+def tag_users(members: list):
+    tags = str()
+    for member in members:
+        tags += f"@{member} "
+    return tags.rstrip()
+
+
 def user_is_admin(user: str, members: list):
     for member in members:
         if user == member.JID.User:
             return member.IsAdmin
 
+
+def user_is_afk(user: str):
+    return bool(get_afk_status(user))
 
 def user_is_allowed(user: str | int):
     user = str(user)
@@ -455,6 +499,10 @@ def user_is_privileged(user):
 def user_is_sudoer(user: str | int):
     user = str(user)
     return bot.user_dict.get(user, {}).get("sudoer", False)
+
+
+async def get_user_info(user_id):
+    return await bot.client.contact.get_contact(jid.build_jid(user_id))
 
 
 function_dict = {None: []}
@@ -528,6 +576,10 @@ def construct_message(
             ),
         ),
     )
+
+
+def construct_msg_and_evt(*args, **kwargs):
+    return construct_event(construct_message(*args **kwargs))
 
 
 async def send_presence(online=True):
