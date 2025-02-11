@@ -1,6 +1,5 @@
 from .defaults import DETECTIVE_REVEAL_CHANCE
 
-
 # {role name : [team, plural, description]}
 roles = {
     "wolf": [

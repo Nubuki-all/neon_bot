@@ -19,7 +19,7 @@ WAIT_BUCKET_MAX = 3
 
 NOTIFY_COOLDOWN = 180
 
-GAME_START_TIMEOUT = 60 * 30 # 30 minutes
+GAME_START_TIMEOUT = 60 * 30  # 30 minutes
 QUIT_GAME_STASIS = 2
 
 GUNNER_MISS = 1
@@ -30,9 +30,9 @@ DRUNK_MISS = 3
 DRUNK_SUICIDE = 2
 DRUNK_HEADSHOT = 2
 DRUNK_INJURE = 2
-GUNNER_MULTIPLIER = 0.12 # bullets = ceil(num players * multiplier)
+GUNNER_MULTIPLIER = 0.12  # bullets = ceil(num players * multiplier)
 SHARPSHOOTER_MULTIPLIER = 0.06
 DRUNK_MULTIPLIER = 3
-GUNNER_REVENGE_WOLF = 0.25 # chance that gunner will kill wolf
+GUNNER_REVENGE_WOLF = 0.25  # chance that gunner will kill wolf
 
 DETECTIVE_REVEAL_CHANCE = 0.4

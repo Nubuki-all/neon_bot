@@ -2,7 +2,12 @@ import random
 
 from bot.config import bot
 
-from .defaults import DEFAULT_DAY_TIMEOUT, DEFAULT_DAY_WARNING, DEFAULT_NIGHT_TIMEOUT, DEFAULT_NIGHT_WARNING
+from .defaults import (
+    DEFAULT_DAY_TIMEOUT,
+    DEFAULT_DAY_WARNING,
+    DEFAULT_NIGHT_TIMEOUT,
+    DEFAULT_NIGHT_WARNING,
+)
 from .player import Player
 from .roles import gamemodes, roles
 
@@ -37,6 +42,7 @@ class Game:
         self.day_timeout = DEFAULT_DAY_TIMEOUT
         self.night_warning = DEFAULT_NIGHT_WARNING
         self.night_timeout = DEFAULT_NIGHT_TIMEOUT
+
     def set_each_role_numbers_and_pool(self):
         pool = []
         t_pool = []

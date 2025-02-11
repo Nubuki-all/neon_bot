@@ -243,6 +243,7 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await afk_helper(message, None, client)
 
+
 @bot.client.event(MessageEv)
 async def _(client: NewAClient, message: MessageEv):
     await on_message(client, message)

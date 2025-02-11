@@ -6,26 +6,19 @@ from bot.utils.bot_utils import time_formatter
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
-    Message,
     chat_is_allowed,
-    clean_reply,
     construct_msg_and_evt,
-    download_replied_media,
     get_afk_status,
-    get_args,
     get_mentioned,
     get_user_info,
-    tag_admins,
-    user_is_admin,
-    user_is_afk,
     user_is_allowed,
-    user_is_owner,
     user_is_privileged,
 )
 
 afk_message = "*{0} is currently AFK!*\n\n*Reason:*\n> {1}\n\n*Since:* _{2}_ ago."
 
 unafk_message = "*Welcome back, {0}.\nYou were AFK for: *{1}*"
+
 
 async def afk_helper(event, args, client):
     """
@@ -36,20 +29,24 @@ async def afk_helper(event, args, client):
             return
         if not chat_is_allowed(event):
             return
-        if (afk_dict := get_afk_status(event.from_user.id)):
+        if afk_dict := get_afk_status(event.from_user.id):
             since = time_formatter(time.time() - afk_dict.get("time"))
             user_name = afk_dict.get("user_name")
             bot.user_dict.setdefault(event.from_user.id, {}).update(afk=False)
             await save2db2(bot.user_dict, "users")
             await event.reply(unafk_message.format(user_name, since))
         reped = []
-        if (replied := event.reply_to_message) and (afk_dict := get_afk_status(replied.from_user.id)):
+        if (replied := event.reply_to_message) and (
+            afk_dict := get_afk_status(replied.from_user.id)
+        ):
             user = replied.from_user.id
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
             await event.reply(afk_message.format(user_name, reason, since))
-            reply = await replied.reply(text=event.text, reply_privately=True, message=event.media)
+            reply = await replied.reply(
+                text=event.text, reply_privately=True, message=event.media
+            )
             await asyncio.sleep(1)
             await reply.reply(f"*@{user} replied to your message while you were AFK!*")
         mentioned_users = get_mentioned(event.text)
@@ -71,7 +68,9 @@ async def afk_helper(event, args, client):
                 await bot.client.send_message(user_jid, (replied.media or replied.text))
                 await asyncio.sleep(1)
             rep = await bot.client.send_message(user_jid, (event.media or event.text))
-            reply = construct_msg_and_evt(user, me.JID.User, rep.id, event.text, Msg=event._message)
+            reply = construct_msg_and_evt(
+                user, me.JID.User, rep.id, event.text, Msg=event._message
+            )
             reped.append(user)
             await asyncio.sleep(1)
             await reply.reply(f"*@{user} replied to your message while you were AFK!*")
@@ -101,7 +100,7 @@ async def activate_afk(event, args, client):
         afk_dict = {
             "reason": args,
             "time": time.time(),
-            "user_name": user_info.PushName
+            "user_name": user_info.PushName,
         }
         bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict)
         await save2db2(bot.user_dict, "users")

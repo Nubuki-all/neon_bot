@@ -105,8 +105,12 @@ class Event:
         self.video = None
         self._construct_media()
         self.caption = extract_text(self._message) if not self.text else None
-        
-        self.quoted = self.ext_msg.contextInfo if self .ext_msg.contextInfo.ByteSize() and add_replied else None
+
+        self.quoted = (
+            self.ext_msg.contextInfo
+            if self.ext_msg.contextInfo.ByteSize() and add_replied
+            else None
+        )
         self.quoted_audio = self.quoted_document = self.quoted_image = (
             self.quoted_video
         ) = self.quoted_viewonce = None
@@ -165,7 +169,9 @@ class Event:
 
     async def _send_message(self, chat, message, link_preview=True):
         await self.send_typing_status()
-        response = await self.client.send_mesaage(to=chat, message=message, link_preview=link_preview)
+        response = await self.client.send_mesaage(
+            to=chat, message=message, link_preview=link_preview
+        )
         await self.send_typing_status(False)
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -475,6 +481,7 @@ def user_is_admin(user: str, members: list):
 def user_is_afk(user: str):
     return bool(get_afk_status(user))
 
+
 def user_is_allowed(user: str | int):
     user = str(user)
     return not (
@@ -579,7 +586,7 @@ def construct_message(
 
 
 def construct_msg_and_evt(*args, **kwargs):
-    return construct_event(construct_message(*args **kwargs))
+    return construct_event(construct_message(*args**kwargs))
 
 
 async def send_presence(online=True):
