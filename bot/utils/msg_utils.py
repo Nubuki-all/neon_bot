@@ -369,7 +369,9 @@ class Event:
         # return construct_event(msg)
         return response
 
-    def gen_new_msg(self, msg_id: str, user_id: str = None, chat_id: str = None, private=False):
+    def gen_new_msg(
+        self, msg_id: str, user_id: str = None, chat_id: str = None, private=False
+    ):
         msg = copy.deepcopy(self.message)
         msg.Info.ID = msg_id
         if private:
