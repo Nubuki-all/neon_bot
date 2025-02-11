@@ -55,6 +55,7 @@ class Event:
             self.id = self.jid.User
             self.is_empty = message.Info.MessageSource.Sender.IsEmpty
             self.name = message.Info.Pushname
+            self.server = self.jid.Server
 
     class Chat:
         def __init__(self):
@@ -376,6 +377,7 @@ class Event:
         msg.Info.ID = msg_id
         if private:
             msg.Info.MessageSource.Chat.User = self.from_user.id
+            msg.Info.MessageSource.Chat.Server = self.from_user.server
         msg.Info.MessageSource.Sender.User = user_id or conf.PH_NUMBER
         return msg
 
@@ -389,7 +391,7 @@ class Event:
             chat_id, server = self.quoted.remoteJID.split("@", maxsplit=1)
         else:
             chat_id = self.chat.id
-            server = self.chat.jid.Server
+            server = self.chat.server
         msg = construct_message(
             chat_id,
             (self.quoted.participant.split("@"))[0],
