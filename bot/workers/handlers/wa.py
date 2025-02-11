@@ -592,7 +592,7 @@ async def tag_everyone(event, args, client):
         if event.type != "text":
             return
         acc_tup = ("@all", "@everyone")
-        if not event.text in (acc_tup):
+        if event.text not in (acc_tup):
             return
         if not event.chat.is_group:
             return await event.react("🚫")
@@ -610,7 +610,6 @@ async def tag_everyone(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
-
 
 
 async def button(event, args, client):

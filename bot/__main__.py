@@ -234,6 +234,7 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await tag_everyone(message, None, client)
 
+
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await get_notes2(message, None, client)
