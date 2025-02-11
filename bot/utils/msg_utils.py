@@ -240,7 +240,7 @@ class Event:
 
         # self.user.name = None
         await self.send_typing_status(False)
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response.ID, private=reply_privately)
         return construct_event(msg)
 
     async def reply_audio(
@@ -369,9 +369,11 @@ class Event:
         # return construct_event(msg)
         return response
 
-    def gen_new_msg(self, msg_id: str, user_id: str = None):
+    def gen_new_msg(self, msg_id: str, user_id: str = None, chat_id: str = None, private=False):
         msg = copy.deepcopy(self.message)
         msg.Info.ID = msg_id
+        if private:
+            msg.Info.MessageSource.Chat.User = self.from_user.id
         msg.Info.MessageSource.Sender.User = user_id or conf.PH_NUMBER
         return msg
 
@@ -468,7 +470,7 @@ def tag_admins(members: list):
 def tag_users(members: list):
     tags = str()
     for member in members:
-        tags += f"@{member} "
+        tags += f"@{member.JID.User} "
     return tags.rstrip()
 
 
