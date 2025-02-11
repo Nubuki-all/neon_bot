@@ -1,7 +1,7 @@
 import time
 
 from bot import jid
-from bot.conf import bot
+from bot.config import bot
 from bot.utils.bot_utils import time_formatter
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
