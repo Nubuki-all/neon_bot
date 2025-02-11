@@ -45,6 +45,7 @@ from .workers.handlers.wa import (
     sticker_reply,
     stickerize_image,
     tag_all_admins,
+    tag_everyone,
     upscale_image,
 )
 from .workers.handlers.yt import youtube_reply
@@ -228,6 +229,10 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await tag_all_admins(message, None, client)
 
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await tag_everyone(message, None, client)
 
 @bot.register(None)
 async def _(client: NewAClient, message: Event):

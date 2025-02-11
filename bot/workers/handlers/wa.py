@@ -37,6 +37,7 @@ from bot.utils.msg_utils import (
     download_replied_media,
     get_args,
     tag_admins,
+    tag_users,
     user_is_admin,
     user_is_allowed,
     user_is_owner,
@@ -581,6 +582,35 @@ async def tag_all_admins(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+
+async def tag_everyone(event, args, client):
+    """
+    Tags everyone in a group
+    """
+    try:
+        if event.type != "text":
+            return
+        acc_tup = ("@all", "@everyone")
+        if not event.text in (acc_tup):
+            return
+        if not event.chat.is_group:
+            return await event.react("🚫")
+        user = event.from_user.id
+        if not user_is_privileged(user):
+            return
+        group_info = await client.get_group_info(event.chat.jid)
+        tags = tag_users(group_info.Participants)
+        await clean_reply(
+            event,
+            event.reply_to_message,
+            "reply",
+            tags,
+        )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
 
 
 async def button(event, args, client):
