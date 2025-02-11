@@ -44,7 +44,6 @@ async def afk_helper(event, args, client):
         if (replied := event.reply_to_message) and (
             afk_dict := get_afk_status(replied.from_user.id)
         ):
-            user = replied.from_user.id
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
@@ -53,16 +52,19 @@ async def afk_helper(event, args, client):
                 text=event.text, reply_privately=True, message=event.media
             )
             await asyncio.sleep(1)
-            await reply.reply(f"*@{user} replied to your message while you were AFK!*")
+            await reply.reply(f"*@{event.from_user.id} replied to your message while you were AFK!*")
         mentioned_users = get_mentioned(event.text)
         me = await bot.client.get_me()
         while mentioned_users:
             user = mentioned_users[0]
             if user in reped:
+                mentioned_users.pop(0)
                 continue
             if not (afk_dict := get_afk_status(user)):
+                mentioned_users.pop(0)
                 continue
             if replied and replied.from_user.id == user:
+                mentioned_users.pop(0)
                 continue
             user_jid = jid.build_jid(user)
             user_name = afk_dict.get("user_name")
@@ -78,7 +80,7 @@ async def afk_helper(event, args, client):
             )
             reped.append(user)
             await asyncio.sleep(1)
-            await reply.reply(f"*@{user} replied to your message while you were AFK!*")
+            await reply.reply(f"*@{event.from_user.id} replied to your message while you were AFK!*")
             mentioned_users.pop(0)
     except Exception:
         await logger(Exception)
