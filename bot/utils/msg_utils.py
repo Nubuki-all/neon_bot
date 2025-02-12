@@ -72,6 +72,8 @@ class Event:
         for msg, v in self._message.ListFields():
             if not msg.name.endswith("Message"):
                 continue
+            if msg.name.startswith("senderKeyDistribution"):
+                continue
             setattr(self, msg.name.split("M")[0], v)
             self.media = v
             log(e=msg.name)
