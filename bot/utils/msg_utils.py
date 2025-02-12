@@ -592,7 +592,7 @@ def construct_message(
 
 
 def construct_msg_and_evt(*args, **kwargs):
-    return construct_event(construct_message(*args**kwargs))
+    return construct_event(construct_message(*args, **kwargs))
 
 
 async def send_presence(online=True):
