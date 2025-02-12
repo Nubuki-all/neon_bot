@@ -121,7 +121,9 @@ async def activate_afk(event, args, client):
         if get_afk_status(user):
             return
         if not await msg_store.get_messages(user):
-            return await event.reply("*Kindly send me 'Hi' in Dm/Pm in order for you to be able to use this command!*")
+            return await event.reply(
+                "*Kindly send me 'Hi' in Dm/Pm in order for you to be able to use this command!*"
+            )
         user_info = await get_user_info(user)
         afk_dict = {
             "grace": 1,
