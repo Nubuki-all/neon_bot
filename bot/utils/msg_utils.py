@@ -25,7 +25,7 @@ from bot.config import bot, conf
 from bot.others.exceptions import ArgumentParserError
 
 from .bot_utils import post_to_tgph
-from .log_utils import logger
+from .log_utils import log, logger
 
 
 class Event:
@@ -74,6 +74,7 @@ class Event:
                 continue
             setattr(self, msg.name.split("M")[0], v)
             self.media = v
+            log(e=msg.name)
             break
 
     def construct(self, message: MessageEv, add_replied: bool = True):
