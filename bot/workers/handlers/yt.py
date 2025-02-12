@@ -76,17 +76,20 @@ async def youtube_reply(event, args, client):
         job = list(supported_links)
         while job:
             try:
+                audio = False
+                _format = "bv*[ext=mp4][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][filesize<100M][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
                 if "music" in listener.link:
                     audio = True
-                    form = "ba/b-mp3-"
+                    _format = "ba/b-mp3{0}"
+                    quality = "-"
                 elif "shorts" in listener.link and "(720p)" in event.text:
-                    audio = False
-                    form = "bv*[ext=mp4][filesize<100M][height<=1280]+ba[ext=m4a]/b[ext=mp4][filesize<100M][height<=1280] / bv*+ba/b"
+                    quality = "1280"
+                elif "(480p)" in event.text:
+                    quality = "480"
                 else:
-                    audio = False
-                    form = "bv*[ext=mp4][filesize<100M][height<=720]+ba[ext=m4a]/b[ext=mp4][filesize<100M][height<=720] / bv*+ba/b"
+                    quality = "720"
                 try:
                     result = await sync_to_async(extract_info, listener.link)
                 except Exception:
@@ -98,7 +101,7 @@ async def youtube_reply(event, args, client):
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",
-                    form,
+                    _format.format(quality),
                     playlist,
                     status_msg,
                 )
@@ -113,6 +116,11 @@ async def youtube_reply(event, args, client):
                 if not playlist:
                     if not file_exists(file):
                         raise Exception(f"File: {file} not found!")
+                    if size_of(file) > 100000000:
+                        await status_msg.edit("*Upload failed, Video is too large!*\nTry with lower quality.")
+                        s_remove(ytdl.folder, folders=True)
+                        job.pop(0)
+                        continue
                     await logger(e=f"Uploading {file}…")
                     base_name = get_video_name(ytdl.base_name)
                     if not audio:
