@@ -51,11 +51,14 @@ async def afk_helper(event, args, client):
             reply = await replied.reply(
                 text=event.text, reply_privately=True, message=event.media
             )
+            reply = construct_msg_and_evt(
+                user, me.JID.User, reply.id, event.text, Msg=event._message
+            )
             await asyncio.sleep(1)
             await reply.reply(
                 f"*@{event.from_user.id} replied to your message while you were AFK!*"
             )
-        mentioned_users = get_mentioned(event.text)
+        mentioned_users = get_mentioned(event.text or event.caption)
         me = await bot.client.get_me()
         while mentioned_users:
             user = mentioned_users[0]
@@ -78,10 +81,11 @@ async def afk_helper(event, args, client):
                     user_jid, (replied.text or replied._message)
                 )
                 reply = construct_msg_and_evt(
-                    user, me.JID.User, rep.ID, replied.text, Msg=replied._message
-                )
+                user, me.JID.User, rep.ID, replied.text, Msg=replied._message)
                 await asyncio.sleep(1)
-            rep = await reply.reply(text=event.text, message=event.media)
+            rep = await reply.reply(
+                text=event.text, message=event.media
+            )
             reply = construct_msg_and_evt(
                 user, me.JID.User, rep.id, event.text, Msg=event._message
             )

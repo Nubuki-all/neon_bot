@@ -108,8 +108,8 @@ class Event:
         self.caption = extract_text(self._message) if not self.text else None
 
         self.quoted = (
-            self.ext_msg.contextInfo
-            if self.ext_msg.contextInfo.ByteSize() and add_replied
+            self.media.contextInfo
+            if self.media.contextInfo.ByteSize() and add_replied
             else None
         )
         self.quoted_audio = self.quoted_document = self.quoted_image = (
