@@ -33,7 +33,7 @@ async def afk_helper(event, args, client):
             return
         if afk_dict := get_afk_status(event.from_user.id):
             if afk_dict.get("grace"):
-                afk_dict["grace"] = 0
+                afk_dict["grace"] = False
                 bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict)
                 return await save2db2(bot.user_dict, "users")
             since = time_formatter(time.time() - afk_dict.get("time"))
@@ -126,7 +126,7 @@ async def activate_afk(event, args, client):
             )
         user_info = await get_user_info(user)
         afk_dict = {
-            "grace": 1,
+            "grace": event.chat.is_group,
             "reason": args,
             "time": time.time(),
             "user_name": user_info.PushName,

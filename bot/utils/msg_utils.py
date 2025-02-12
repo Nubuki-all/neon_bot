@@ -72,11 +72,10 @@ class Event:
         for msg, v in self._message.ListFields():
             if not msg.name.endswith("Message"):
                 continue
-            if msg.name.startswith("senderKeyDistribution"):
+            if not hasattr(v, "contextInfo"):
                 continue
             setattr(self, msg.name.split("M")[0], v)
             self.media = v
-            log(e=msg.name)
             break
 
     def construct(self, message: MessageEv, add_replied: bool = True):
