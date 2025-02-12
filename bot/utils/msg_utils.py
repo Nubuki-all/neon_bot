@@ -109,7 +109,8 @@ class Event:
 
         self.quoted = (
             self.media.contextInfo
-            if add_replied and self.media and self.media.contextInfo.ByteSize() else None
+            if add_replied and self.media and self.media.contextInfo.ByteSize()
+            else None
         )
         self.quoted_audio = self.quoted_document = self.quoted_image = (
             self.quoted_video
