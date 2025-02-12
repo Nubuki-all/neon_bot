@@ -78,6 +78,7 @@ class Runtime_Config:
         self.games_dict = {}
         self.ignore_pm = False
         self.max_message_length = 4096
+        self.me = None
         self.offline = False
         self.paused = False
         self.p_queue = []

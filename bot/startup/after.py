@@ -104,6 +104,7 @@ async def on_startup():
         else:
             await wait_for_client()
             scheduler.start()
+        bot.me = await bot.client.get_me()
         if len(sys.argv) == 3:
             await onrestart()
         else:
