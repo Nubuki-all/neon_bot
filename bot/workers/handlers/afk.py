@@ -74,7 +74,7 @@ async def afk_helper(event, args, client):
             since = time_formatter(time.time() - afk_dict.get("time"))
             await event.reply(afk_message.format(user_name, reason, since))
             if replied:
-                await bot.client.send_message(user_jid, (replied.media or replied.text))
+                await bot.client.send_message(user_jid, (replied.text or replied._message))
                 await asyncio.sleep(1)
             rep = await bot.client.send_message(
                 user_jid, (event.text or event._message)
