@@ -25,7 +25,7 @@ from bot.config import bot, conf
 from bot.others.exceptions import ArgumentParserError
 
 from .bot_utils import post_to_tgph
-from .log_utils import log, logger
+from .log_utils import logger
 
 
 class Event:
