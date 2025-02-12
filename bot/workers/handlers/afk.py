@@ -3,6 +3,7 @@ import time
 
 from bot import jid
 from bot.config import bot
+from bot.others.msg_store import msg_store
 from bot.utils.bot_utils import time_formatter
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
@@ -119,6 +120,8 @@ async def activate_afk(event, args, client):
     try:
         if get_afk_status(user):
             return
+        if not await msg_store.get_messages(user):
+            return await event.reply("*Kindly send me 'Hi' in Dm/Pm in order for you to be able to use this command!*")
         user_info = await get_user_info(user)
         afk_dict = {
             "grace": 1,
