@@ -84,9 +84,15 @@ async def afk_helper(event, args, client):
                     user, me.JID.User, rep.ID, replied.text, Msg=replied._message
                 )
                 await asyncio.sleep(1)
-            rep = await reply.reply(text=event.text, message=event.media)
+                rep = await reply.reply(text=event.text, message=event.media)
+                rep_id = rep.id
+            else:
+                rep = await bot.client.send_message(
+                    user_jid, (event.text or event._message)
+                )
+                rep_id = rep.ID
             reply = construct_msg_and_evt(
-                user, me.JID.User, rep.id, event.text, Msg=event._message
+                user, me.JID.User, rep_id, event.text, Msg=event._message
             )
             reped.append(user)
             await asyncio.sleep(1)
