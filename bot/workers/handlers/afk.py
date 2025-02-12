@@ -44,6 +44,7 @@ async def afk_helper(event, args, client):
         if (replied := event.reply_to_message) and (
             afk_dict := get_afk_status(replied.from_user.id)
         ):
+            user = replied.from_user.id
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
