@@ -117,7 +117,9 @@ async def youtube_reply(event, args, client):
                     if not file_exists(file):
                         raise Exception(f"File: {file} not found!")
                     if size_of(file) > 100000000:
-                        await status_msg.edit("*Upload failed, Video is too large!*\nTry with lower quality.")
+                        await status_msg.edit(
+                            "*Upload failed, Video is too large!*\nTry with lower quality."
+                        )
                         s_remove(ytdl.folder, folders=True)
                         job.pop(0)
                         continue
