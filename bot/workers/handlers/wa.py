@@ -599,7 +599,7 @@ async def tag_everyone(event, args, client):
         user = event.from_user.id
         group_info = await client.get_group_info(event.chat.jid)
         if not user_is_privileged(user):
-            if not user_is_admin(user, group_info.Participants)
+            if not user_is_admin(user, group_info.Participants):
                 return
         tags = tag_users(group_info.Participants)
         await clean_reply(
