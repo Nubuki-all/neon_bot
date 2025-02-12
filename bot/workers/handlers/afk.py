@@ -82,7 +82,7 @@ async def afk_helper(event, args, client):
                 user_jid, (event.text or event._message)
             )
             reply = construct_msg_and_evt(
-                user, me.JID.User, rep.id, event.text, Msg=event._message
+                user, me.JID.User, rep.ID, event.text, Msg=event._message
             )
             reped.append(user)
             await asyncio.sleep(1)
