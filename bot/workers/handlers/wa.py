@@ -654,7 +654,7 @@ async def msg_ranking(event, args, client, tag=False):
         msg = str()
         sorted_ms_rank_dict(sorted(msg_rank_dict.items(), key=lambda item: item[1]), reverse=True)
         for i, value in zip(
-            itertools.count(1), list(sorted_ms_rank_dict.keys()))
+            itertools.count(1), list(sorted_ms_rank_dict.keys())
         ):
             if value == "total":
                 continue
