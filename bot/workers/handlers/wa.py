@@ -622,9 +622,7 @@ async def rec_msg_ranking(event, args, client):
         if not (event.text or event.media):
             return
         chat_id = event.chat.id
-        msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault(
-            "msg_ranking", {}
-        )
+        msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
         user = event.from_user.id
         msg_rank[user] = msg_rank.setdefault(user, 0) + 1
         msg_rank["total"] = msg_rank.setdefault(user, 0) + 1
@@ -652,10 +650,10 @@ async def msg_ranking(event, args, client, tag=False):
             "msg_ranking", {"total": 0}
         )
         msg = str()
-        sorted_ms_rank_dict(sorted(msg_rank_dict.items(), key=lambda item: item[1]), reverse=True)
-        for i, value in zip(
-            itertools.count(1), list(sorted_ms_rank_dict.keys())
-        ):
+        sorted_ms_rank_dict(
+            sorted(msg_rank_dict.items(), key=lambda item: item[1]), reverse=True
+        )
+        for i, value in zip(itertools.count(1), list(sorted_ms_rank_dict.keys())):
             if value == "total":
                 continue
             user = sorted_ms_rank_dict.get(value)
