@@ -630,7 +630,6 @@ async def rec_msg_ranking(event, args, client):
         await logger(Exception)
 
 
-
 async def msg_ranking(event, args, client, tag=False):
     """
     Get the Message Leaderboard of a particular group chat.
