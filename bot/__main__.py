@@ -35,10 +35,10 @@ from .workers.handlers.manage import (
 )
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
 from .workers.handlers.wa import (
-    msg_ranking,
     delete_notes,
     get_notes,
     get_notes2,
+    msg_ranking,
     pick_random,
     rec_msg_ranking,
     sanitize_url,
@@ -254,6 +254,7 @@ async def _(client: NewAClient, message: Event):
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await rec_msg_ranking(message, None, client)
+
 
 @bot.client.event(MessageEv)
 async def _(client: NewAClient, message: MessageEv):

@@ -494,7 +494,9 @@ def user_is_afk(user: str):
 def user_is_allowed(user: str | int):
     user = str(user)
     return not (
-        bot.user_dict.get(user, {}).get("banned", False) or bot.user_dict.get(user, {}).get("fbanned", False) or user in conf.BANNED_USERS
+        bot.user_dict.get(user, {}).get("banned", False)
+        or bot.user_dict.get(user, {}).get("fbanned", False)
+        or user in conf.BANNED_USERS
     )
 
 
@@ -503,6 +505,7 @@ def user_is_banned_by_ownr(user: str | int):
     return (
         bot.user_dict.get(user, {}).get("fbanned", False) or user in conf.BANNED_USERS
     )
+
 
 def user_is_dev(user: str):
     user = int(user)

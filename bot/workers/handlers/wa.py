@@ -7,13 +7,7 @@ import random
 import torch
 from clean_links.clean import clean_url
 from neonize.exc import DownloadError
-from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
-    DeviceListMetadata,
-    FutureProofMessage,
-    InteractiveMessage,
-    Message,
-    MessageContextInfo,
-)
+from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import Message
 from PIL import Image
 from RealESRGAN import RealESRGAN
 from urlextract import URLExtract
@@ -618,7 +612,7 @@ async def tag_everyone(event, args, client):
 
 async def rec_msg_ranking(event, args, client):
     """
-    Helper for the message leaderboard 
+    Helper for the message leaderboard
     """
     try:
         if not event.chat.is_group:
@@ -628,7 +622,9 @@ async def rec_msg_ranking(event, args, client):
         if not (event.text or event.media):
             return
         chat_id = event.chat.id
-        chat_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("chat_ranking", {})
+        chat_rank = bot.group_dict.setdefault(chat_id, {}).setdefault(
+            "chat_ranking", {}
+        )
         user = event.from_user.id
         chat[user] = chat_rank.setdefault(user, 0) + 1
         chat["total"] = chat_rank.setdefault(user, 0) + 1
@@ -654,7 +650,9 @@ async def msg_ranking(event, args, client, tag=False):
         chat_id = event.chat.id
         chat_rank_dict = bot.group_dict.setdefault(chat_id, {}).get("chat_ranking", {})
         msg = str()
-        for i, value in zip(itertools.count(1), list(chat_rank_dict.values()).sort(reversed=True)):
+        for i, value in zip(
+            itertools.count(1), list(chat_rank_dict.values()).sort(reversed=True)
+        ):
             user = chat_rank_dict.get(value)
             if user == "total":
                 continue
