@@ -625,7 +625,7 @@ async def rec_msg_ranking(event, args, client):
         msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
         user = event.from_user.id
         msg_rank[user] = msg_rank.setdefault(user, 0) + 1
-        msg_rank["total"] = msg_rank.setdefault(user, 0) + 1
+        msg_rank["total"] = msg_rank.setdefault("total", 0) + 1
         await save2db2(bot.group_dict, "groups")
     except Exception:
         await logger(Exception)
@@ -654,7 +654,7 @@ async def msg_ranking(event, args, client, tag=False):
             sorted(msg_rank_dict.items(), key=lambda item: item[1]), reverse=True
         )
         for i, user in zip(itertools.count(1), list(sorted_ms_rank_dict.keys())):
-            if value == "total":
+            if user == "total":
                 continue
             value = sorted_ms_rank_dict.get(value)
             user_info = await get_user_info(user)
