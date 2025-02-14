@@ -648,7 +648,9 @@ async def msg_ranking(event, args, client, tag=False):
             return await event.react("⛔")
     try:
         chat_id = event.chat.id
-        chat_rank_dict = bot.group_dict.setdefault(chat_id, {}).get("chat_ranking", {"total": 0})
+        chat_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
+            "chat_ranking", {"total": 0}
+        )
         msg = str()
         for i, value in zip(
             itertools.count(1), list(chat_rank_dict.values()).sort(reverse=True)
