@@ -622,12 +622,12 @@ async def rec_msg_ranking(event, args, client):
         if not (event.text or event.media):
             return
         chat_id = event.chat.id
-        chat_rank = bot.group_dict.setdefault(chat_id, {}).setdefault(
-            "chat_ranking", {}
+        msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault(
+            "msg_ranking", {}
         )
         user = event.from_user.id
-        chat_rank[user] = chat_rank.setdefault(user, 0) + 1
-        chat_rank["total"] = chat_rank.setdefault(user, 0) + 1
+        msg_rank[user] = msg_rank.setdefault(user, 0) + 1
+        msg_rank["total"] = msg_rank.setdefault(user, 0) + 1
         await save2db2(bot.group_dict, "groups")
     except Exception:
         await logger(Exception)
@@ -648,21 +648,22 @@ async def msg_ranking(event, args, client, tag=False):
             return await event.react("⛔")
     try:
         chat_id = event.chat.id
-        chat_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
-            "chat_ranking", {"total": 0}
+        msg_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
+            "msg_ranking", {"total": 0}
         )
         msg = str()
+        sorted_ms_rank_dict(sorted(msg_rank_dict.items(), key=lambda item: item[1]), reverse=True)
         for i, value in zip(
-            itertools.count(1), sorted(list(chat_rank_dict.values()), reverse=True)
+            itertools.count(1), list(sorted_ms_rank_dict.keys()))
         ):
-            user = chat_rank_dict.get(value)
-            if user == "total":
+            if value == "total":
                 continue
+            user = sorted_ms_rank_dict.get(value)
             user_info = await get_user_info(user)
             msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
         if not msg:
             return await event.reply("Can't fetch ranking right now!")
-        total_msg = chat_rank_dict.get("total")
+        total_msg = msg_rank_dict.get("total")
         msg = f"📈 *MESSAGE LEADERBOARD*\n{msg}\n✉️ *Total messages:* {human_format_num(total_msg)}"
         return await event.reply(msg)
     except Exception:
