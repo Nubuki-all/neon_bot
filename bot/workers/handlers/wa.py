@@ -653,7 +653,7 @@ async def msg_ranking(event, args, client, tag=False):
         )
         msg = str()
         for i, value in zip(
-            itertools.count(1), list(chat_rank_dict.values()).sort(reverse=True)
+            itertools.count(1), sorted(list(chat_rank_dict.values()), reverse=True)
         ):
             user = chat_rank_dict.get(value)
             if user == "total":
