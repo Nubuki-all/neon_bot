@@ -651,7 +651,7 @@ async def msg_ranking(event, args, client, tag=False):
         chat_rank_dict = bot.group_dict.setdefault(chat_id, {}).get("chat_ranking", {})
         msg = str()
         for i, value in zip(
-            itertools.count(1), list(chat_rank_dict.values()).sort(reversed=True)
+            itertools.count(1), list(chat_rank_dict.values()).sort(reverse=True)
         ):
             user = chat_rank_dict.get(value)
             if user == "total":
