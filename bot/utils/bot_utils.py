@@ -203,6 +203,7 @@ async def shutdown_services():
     await bot.client.disconnect()
     await bot.requests.close()
     if bot.pending_saved_messages:
+        bot.msg_leaderboard_counter = 100
         bot.force_save_messages = True
         while bot.pending_saved_messages:
             await asyncio.sleep(1)

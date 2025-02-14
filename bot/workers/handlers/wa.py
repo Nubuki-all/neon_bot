@@ -630,6 +630,7 @@ async def rec_msg_ranking(event, args, client):
         await logger(Exception)
 
 
+
 async def msg_ranking(event, args, client, tag=False):
     """
     Get the Message Leaderboard of a particular group chat.
@@ -660,6 +661,8 @@ async def msg_ranking(event, args, client, tag=False):
             user_info = await get_user_info(user)
             msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
             i += 1
+            if i > 10:
+                break
         if not msg:
             return await event.reply("Can't fetch ranking right now!")
         total_msg = msg_rank_dict.get("total")
