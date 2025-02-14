@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from bot import bot, conf, msg_store_file, msg_store_lock
 from bot.utils.bot_utils import sync_to_async
+from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import log, logger
 from bot.utils.os_utils import file_exists, size_of
 
@@ -88,9 +89,12 @@ async def auto_save_msg():
         if messages := bot.pending_saved_messages:
             async with msg_store_lock:
                 try:
-                    while len(messages) < 5 and not bot.force_save_messages:
+                    while len(messages) < 15 and not bot.force_save_messages:
                         await asyncio.sleep(1)
                     await sync_to_async(msg_store._save, *messages)
+                    if bot.msg_leaderboard_counter > 10:
+                        await save2db2(bot.group_dict, "groups")
+                        bot.msg_leaderboard_counter = 0
                 except Exception:
                     await logger(Exception)
                 finally:

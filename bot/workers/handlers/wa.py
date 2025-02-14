@@ -625,9 +625,10 @@ async def rec_msg_ranking(event, args, client):
         user = event.from_user.id
         msg_rank[user] = msg_rank.setdefault(user, 0) + 1
         msg_rank["total"] = msg_rank.setdefault("total", 0) + 1
-        await save2db2(bot.group_dict, "groups")
+        bot.msg_leaderboard_counter +=1
     except Exception:
         await logger(Exception)
+
 
 
 async def msg_ranking(event, args, client, tag=False):
