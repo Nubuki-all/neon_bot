@@ -649,16 +649,18 @@ async def msg_ranking(event, args, client, tag=False):
         msg_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
             "msg_ranking", {"total": 0}
         )
+        i = 1
         msg = str()
         sorted_ms_rank_dict = dict(
-            sorted(msg_rank_dict.items(), key=lambda item: item[1]), reverse=True
+            sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
         )
-        for i, user in zip(itertools.count(1), list(sorted_ms_rank_dict.keys())):
+        for user in list(sorted_ms_rank_dict.keys()):
             if user == "total":
                 continue
             value = sorted_ms_rank_dict.get(user)
             user_info = await get_user_info(user)
             msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
+            i += 1
         if not msg:
             return await event.reply("Can't fetch ranking right now!")
         total_msg = msg_rank_dict.get("total")
