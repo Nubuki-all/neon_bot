@@ -35,11 +35,12 @@ from .workers.handlers.manage import (
 )
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
 from .workers.handlers.wa import (
-    button,
+    msg_ranking,
     delete_notes,
     get_notes,
     get_notes2,
     pick_random,
+    rec_msg_ranking,
     sanitize_url,
     save_notes,
     sticker_reply,
@@ -105,9 +106,9 @@ async def _(client: NewAClient, message: Event):
     await event_handler(message, getcmds)
 
 
-@bot.register("button")
+@bot.register("msg_ranking")
 async def _(client: NewAClient, message: Event):
-    await event_handler(message, button, bot.client)
+    await event_handler(message, msg_ranking, bot.client)
 
 
 @bot.register("save")
@@ -249,6 +250,10 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await afk_helper(message, None, client)
 
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await rec_msg_ranking(message, None, client)
 
 @bot.client.event(MessageEv)
 async def _(client: NewAClient, message: MessageEv):

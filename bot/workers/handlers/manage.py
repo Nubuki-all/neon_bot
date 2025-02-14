@@ -14,6 +14,7 @@ from bot.utils.msg_utils import (
     get_args,
     user_is_admin,
     user_is_allowed,
+    user_is_banned_by_ownr,
     user_is_owner,
     user_is_privileged,
     user_is_sudoer,
@@ -468,7 +469,7 @@ async def ban(event, args, client):
     *user_id: user's phone number with country code without spaces or the initial '+'
     """
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         return await event.react("🚫")
     try:
         if args and not (args := args.lstrip("@")).isdigit():
@@ -486,7 +487,10 @@ async def ban(event, args, client):
             return await event.reply(
                 f"@{ban_id} *has already been banned from using the bot.*"
             )
-        bot.user_dict.setdefault(ban_id, {}).update(banned=True)
+        if user_is_owner(user):
+            bot.user_dict.setdefault(ban_id, {}).update(fbanned=True)
+        else:
+            bot.user_dict.setdefault(ban_id, {}).update(banned=True)
         await save2db2(bot.user_dict, "users")
         return await event.reply(f"@{ban_id} *has been banned from using the bot.*")
     except Exception:
@@ -504,7 +508,7 @@ async def unban(event, args, client):
     *user_id: user's phone number with country code without spaces or the initial '+'
     """
     user = event.from_user.id
-    if not user_is_owner(user):
+    if not user_is_privileged(user):
         return await event.react("🚫")
     try:
         if args and not (args := args.lstrip("@")).isdigit():
@@ -522,7 +526,14 @@ async def unban(event, args, client):
             return await event.reply(
                 f"@{ban_id} *was never banned from using the bot.*"
             )
-        bot.user_dict.setdefault(ban_id, {}).update(banned=False)
+        if user_is_banned_by_ownr(ban_id) and not user_is_admin(user):
+            return await event.reply(
+                f"*You're currently not allowed to unban users banned by owner.*"
+            )
+        if user_is_banned_by_ownr(ban_id):
+            bot.user_dict.setdefault(ban_id, {}).update(fbanned=False)
+        else:
+            bot.user_dict.setdefault(ban_id, {}).update(banned=False)
         await save2db2(bot.user_dict, "users")
         return await event.reply(f"@{ban_id} *ban has been lifted.*")
     except Exception:

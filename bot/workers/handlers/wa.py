@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import io
+import itertools
 import random
 
 import torch
@@ -21,6 +22,7 @@ from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
+    human_format_num,
     png_to_jpg,
     split_text,
     sync_to_async,
@@ -36,6 +38,7 @@ from bot.utils.msg_utils import (
     clean_reply,
     download_replied_media,
     get_args,
+    get_user_info,
     tag_admins,
     tag_users,
     user_is_admin,
@@ -613,66 +616,54 @@ async def tag_everyone(event, args, client):
         await event.react("❌")
 
 
-async def button(event, args, client):
-    """ """
+async def rec_msg_ranking(event, args, client):
+    """
+    Helper for the message leaderboard 
+    """
     try:
-        message = event.message
-        await client.send_message(
-            message.Info.MessageSource.Chat,
-            Message(
-                viewOnceMessage=FutureProofMessage(
-                    message=Message(
-                        messageContextInfo=MessageContextInfo(
-                            deviceListMetadata=DeviceListMetadata(),
-                            deviceListMetadataVersion=2,
-                        ),
-                        interactiveMessage=InteractiveMessage(
-                            body=InteractiveMessage.Body(text="Body Message"),
-                            footer=InteractiveMessage.Footer(text="@krypton-byte"),
-                            header=InteractiveMessage.Header(
-                                title="Title Message",
-                                subtitle="Subtitle Message",
-                                hasMediaAttachment=False,
-                            ),
-                            nativeFlowMessage=InteractiveMessage.NativeFlowMessage(
-                                buttons=[
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="single_select",
-                                        buttonParamsJSON='{"title":"List Buttons","sections":[{"title":"title","highlight_label":"label","rows":[{"header":"header","title":"title","description":"description","id":"select 1"},{"header":"header","title":"title","description":"description","id":"select 2"}]}]}',
-                                    ),
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="quick_reply",
-                                        buttonParamsJSON='{"display_text":"Quick URL","url":"https://www.google.com","merchant_url":"https://www.google.com"}',
-                                    ),
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="cta_call",
-                                        buttonParamsJSON='{"display_text":"Quick Call","id":"message"}',
-                                    ),
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="cta_copy",
-                                        buttonParamsJSON='{"display_text":"Quick Copy","id":"123456789","copy_code":"message"}',
-                                    ),
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="cta_remainder",
-                                        buttonParamsJSON='{"display_text":"Reminder","id":"message"}',
-                                    ),
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="cta_cancel_remainder",
-                                        buttonParamsJSON='{"display_text":"Cancel Reminder","id":"message"}',
-                                    ),
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="address_message",
-                                        buttonParamsJSON='{"display_text":"Address","id":"message"}',
-                                    ),
-                                    InteractiveMessage.NativeFlowMessage.NativeFlowButton(
-                                        name="send_location", buttonParamsJSON=""
-                                    ),
-                                ]
-                            ),
-                        ),
-                    )
-                )
-            ),
-        )
+        if not event.chat.is_group:
+            return
+        if not chat_is_allowed(event):
+            return
+        if not (event.text or event.media):
+            return
+        chat_id = event.chat.id
+        chat_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("chat_ranking", {})
+        user = event.from_user.id
+        chat[user] = chat_rank.setdefault(user, 0) + 1
+        chat["total"] = chat_rank.setdefault(user, 0) + 1
+        await save2db2(bot.group_dict, "groups")
+    except Exception:
+        await logger(Exception)
+
+
+async def msg_ranking(event, args, client, tag=False):
+    """
+    Get the Message Leaderboard of a particular group chat.
+    No additional argument required.
+    """
+    if not event.chat.is_group:
+        return
+    user = event.from_user.id
+    if not (user_is_privileged(user) or tag):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        chat_id = event.chat.id
+        chat_rank_dict = bot.group_dict.setdefault(chat_id, {}).get("chat_ranking", {})
+        msg = str()
+        for i, value in zip(itertools.count(1), list(chat_rank_dict.values()).sort(reversed=True)):
+            user = chat_rank_dict.get(value)
+            if user == "total":
+                continue
+            user_info = await get_user_info(user)
+            msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
+        if not msg:
+            return await event.reply("Can't fetch ranking right now!")
+        total_msg = chat_rank_dict.get("total")
+        msg = f"📈 *MESSAGE LEADERBOARD*\n{msg}\n✉️ *Total messages:* {human_format_num(total_msg)}"
+        return await event.reply(msg)
     except Exception:
         await logger(Exception)

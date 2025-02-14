@@ -72,9 +72,9 @@ class Event:
         for msg, v in self._message.ListFields():
             if not msg.name.endswith("Message"):
                 continue
+            setattr(self, msg.name.split("M")[0], v)
             if not hasattr(v, "contextInfo"):
                 continue
-            setattr(self, msg.name.split("M")[0], v)
             self.media = v
             break
 
@@ -105,6 +105,7 @@ class Event:
         self.document = None
         self.image = None
         self.media = None
+        self.reaction = None
         self.video = None
         self._construct_media()
         self.caption = extract_text(self._message) if not self.text else None
@@ -493,9 +494,15 @@ def user_is_afk(user: str):
 def user_is_allowed(user: str | int):
     user = str(user)
     return not (
-        bot.user_dict.get(user, {}).get("banned", False) or user in conf.BANNED_USERS
+        bot.user_dict.get(user, {}).get("banned", False) or bot.user_dict.get(user, {}).get("fbanned", False) or user in conf.BANNED_USERS
     )
 
+
+def user_is_banned_by_ownr(user: str | int):
+    user = str(user)
+    return (
+        bot.user_dict.get(user, {}).get("fbanned", False) or user in conf.BANNED_USERS
+    )
 
 def user_is_dev(user: str):
     user = int(user)
