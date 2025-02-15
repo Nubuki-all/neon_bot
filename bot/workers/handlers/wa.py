@@ -687,9 +687,9 @@ def get_medals(chat_id, user):
     if not user_rank:
         return
     med_dict = {
-        1: 🥇,
-        2: 🥈,
-        3: 🥉,
+        1: "🥇",
+        2: "🥈",
+        3: "🥉",
     }
     msg = str()
     for pos in list(user_rank):
