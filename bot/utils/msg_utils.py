@@ -558,7 +558,7 @@ async def on_message(client: NewAClient, message: MessageEv):
     try:
         event = construct_event(message)
         bot.pending_saved_messages.append(event)
-        if event.type == "text":
+        if event.type == "text" and event.text:
             command, args = (
                 event.text.split(maxsplit=1)
                 if len(event.text.split()) > 1
