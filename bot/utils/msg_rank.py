@@ -27,7 +27,9 @@ async def auto_rank():
             if not msg:
                 continue
             await bot.client.send_message(jid.build_jid(group, "g.us"), msg)
-            if same_week(groups.get("last_rank_clear"), 2):
+            if not last_clear := groups.get("last_rank_clear"):
+                groups["last_rank_clear"] = datetime.datetime.today()
+            elif same_week(last_clear, 2):
                 continue
             write = True
             update_users_rank(group)
@@ -55,4 +57,4 @@ def update_users_rank(chat_id):
         user_rank[i] = user_rank.setdefault(i, 0) + 1
 
 
-scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=3, minute=11)
+scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=3, minute=17)

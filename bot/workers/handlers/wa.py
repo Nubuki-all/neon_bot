@@ -669,7 +669,7 @@ async def get_ranking_msg(chat_id, tag=False):
         user_info = await get_user_info(user)
         msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
         medals = get_medals(chat_id, user)
-        msg += f"     └{medals}\n" if medals else str()
+        msg += f"    └{medals}\n" if medals else str()
         i += 1
         if i > 10:
             break
