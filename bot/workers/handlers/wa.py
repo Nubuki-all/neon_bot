@@ -619,7 +619,7 @@ async def rec_msg_ranking(event, args, client):
         if not chat_is_allowed(event):
             return
         # if not (event.text or event.media):
-        if not (event.text or event.caption or event.audio)
+        if not (event.text or event.caption or event.audio):
             return
         chat_id = event.chat.id
         msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
