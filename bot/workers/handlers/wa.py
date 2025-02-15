@@ -630,7 +630,6 @@ async def rec_msg_ranking(event, args, client):
         await logger(Exception)
 
 
-
 async def msg_ranking(event, args, client):
     """
     Get the Message Leaderboard of a particular group chat.
@@ -652,6 +651,7 @@ async def msg_ranking(event, args, client):
         return await event.reply(msg)
     except Exception:
         await logger(Exception)
+
 
 async def get_ranking_msg(chat_id, tag=False):
     msg_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
@@ -678,11 +678,10 @@ async def get_ranking_msg(chat_id, tag=False):
     total_msg = msg_rank_dict.get("total")
     msg = f"📈 *MESSAGE LEADERBOARD*\n{msg}\n✉️ *Total messages:* {human_format_num(total_msg)}"
 
+
 def get_medals(chat_id, user):
-    group = bot.group_dict.setdefault(chat_id, {}) 
-    msg_rank_dict = group.setdefault(
-        "msg_ranking"
-    )
+    group = bot.group_dict.setdefault(chat_id, {})
+    msg_rank_dict = group.setdefault("msg_ranking")
     user_rank = group.get("msg_stats", {}).get(user, {})
     if not user_rank:
         return

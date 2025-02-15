@@ -765,6 +765,7 @@ async def ytdl_disable(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def disable_amr(event, args, client):
     "Disables auto message ranking in a group chat."
     if not event.chat.is_group:
@@ -789,7 +790,9 @@ async def disable_amr(event, args, client):
             )
         bot.group_dict.setdefault(chat_id, {}).update(msg_chat=False)
         await save2db2(bot.group_dict, "groups")
-        await event.reply(f"Successfully disabled auto message ranking in group: *{chat_name}*")
+        await event.reply(
+            f"Successfully disabled auto message ranking in group: *{chat_name}*"
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -819,8 +822,9 @@ async def enable_amr(event, args, client):
             )
         bot.group_dict.setdefault(chat_id, {}).update(msg_chat=True)
         await save2db2(bot.group_dict, "groups")
-        await event.reply(f"Successfully enabled auto message ranking in group: *{chat_name}*")
+        await event.reply(
+            f"Successfully enabled auto message ranking in group: *{chat_name}*"
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")
-
