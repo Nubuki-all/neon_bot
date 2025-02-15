@@ -46,7 +46,7 @@ async def sticker_reply(event, args, client, overide=False):
     Sends a random sticker upon being tagged
     """
     try:
-        if event.type != "text":
+        if not event.text:
             return
         if not overide:
             if not event.text.startswith("@"):
@@ -528,7 +528,7 @@ async def get_notes2(event, args, client):
     Alias for get_notes
     """
     try:
-        if event.type != "text":
+        if not event.text:
             return
         if not event.text.startswith("#"):
             return
@@ -554,7 +554,7 @@ async def tag_all_admins(event, args, client):
     Tags all admins in a group
     """
     try:
-        if event.type != "text":
+        if not event.text:
             return
         acc_tup = ("@admin", "@mod")
         if not event.text.startswith(acc_tup):
@@ -585,7 +585,7 @@ async def tag_everyone(event, args, client):
     Tags everyone in a group
     """
     try:
-        if event.type != "text":
+        if not event.text:
             return
         acc_tup = ("@all", "@everyone")
         if event.text not in (acc_tup):
