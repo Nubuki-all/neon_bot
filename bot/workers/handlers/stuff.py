@@ -112,6 +112,7 @@ async def getcmds(event, args, client):
 {pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}
 {pre}anime - *Fetch anime info from anilist*
 {pre}airing - *Fetch anime airing info from anilist*
+{pre}msg_ranking - *Get a group's msg ranking*
 {pre}ping - *Check if bot is alive*
 {pre}bash - *[Dev.] Run bash commands*
 {pre}eval - *[Dev.] Evaluate python commands*
@@ -122,14 +123,15 @@ async def getcmds(event, args, client):
 {pre}update - *[Owner | Sudo] Update & restarts bot*
 {pre}restart - *[Owner | Sudo] Restarts bot*
 {pre}ytdl_* - *[Owner | Sudo] Disables/Enables Ytdl*
-{pre}msg_ranking - *Get a group's msg ranking*
+{pre}amr_* - *[Owner | Sudo] Disables/Enables Auto msg ranking*
 {pre}disable - *[Owner | Sudo] Disable bot in a GC*
 {pre}enable - *[Owner | Sudo] Enable bot in a GC*
 {pre}del - *[Owner | Sudo] Delete bot's messages*
 {pre}gc_info - *[Owner | Sudo] Get group info*
 {pre}pause - *[Owner] Pauses bot*
 
-* expands to _ytdl_enable/ytdl_disable_"""
+* expands to _ytdl_enable/ytdl_disable_
+* expands to _amr_enable/amr_disable_"""
         await event.reply(msg)
     except Exception as e:
         await logger(Exception)

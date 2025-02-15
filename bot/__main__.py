@@ -23,7 +23,9 @@ from .workers.handlers.manage import (
     ban,
     delete,
     disable,
+    disable_amr,
     enable,
+    enable_amr,
     pause_handler,
     restart_handler,
     rss_handler,
@@ -194,6 +196,16 @@ async def _(client: NewAClient, message: Event):
 @bot.register("enable")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, enable, bot.client)
+
+
+@bot.register("amr_enable")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, enable_amr, bot.client)
+
+
+@bot.register("amr_disable")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, disable_amr, bot.client)
 
 
 @bot.register("ytdl_disable")

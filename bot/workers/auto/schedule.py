@@ -19,3 +19,4 @@ def addjob(delay: int, function, id="0", name="RSS"):
 
 
 scheduler = AsyncIOScheduler(timezone=str(get_localzone()))
+scheduler2 = AsyncIOScheduler(timezone=str(get_localzone()))

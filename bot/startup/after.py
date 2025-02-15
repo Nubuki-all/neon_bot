@@ -8,6 +8,7 @@ from bot.fun.quips import enquip, enquip2
 from bot.others.msg_store import auto_save_msg
 from bot.utils.bot_utils import shutdown_services
 from bot.utils.log_utils import logger
+from bot.utils.msg_rank import scheduler2
 from bot.utils.msg_utils import send_presence
 from bot.utils.os_utils import file_exists, force_exit, touch
 from bot.utils.rss_utils import scheduler
@@ -104,6 +105,7 @@ async def on_startup():
         else:
             await wait_for_client()
             scheduler.start()
+            scheduler2.start()
         bot.me = await bot.client.get_me()
         if len(sys.argv) == 3:
             await onrestart()

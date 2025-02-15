@@ -764,3 +764,63 @@ async def ytdl_disable(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+async def disable_amr(event, args, client):
+    "Disables auto message ranking in a group chat."
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Seriously though, No.",
+                    packname="Qiqi.",
+                )
+        chat_id = event.chat.id
+        chat_name = group_info.GroupName.Name
+        group_info = bot.group_dict.get(chat_id, {})
+        if not group_info.get("msg_chat"):
+            return await event.reply(
+                "This Group chat already has auto message ranking disabled."
+            )
+        bot.group_dict.setdefault(chat_id, {}).update(msg_chat=False)
+        await save2db2(bot.group_dict, "groups")
+        await event.reply(f"Successfully disabled auto message ranking in group: *{chat_name}*")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def enable_amr(event, args, client):
+    "Enables auto message ranking in a group chat."
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Seriously though, No.",
+                    packname="Qiqi.",
+                )
+        chat_id = event.chat.id
+        chat_name = group_info.GroupName.Name
+        group_info = bot.group_dict.get(chat_id, {})
+        if group_info.get("msg_chat"):
+            return await event.reply(
+                "This Group chat already has auto message ranking enabled."
+            )
+        bot.group_dict.setdefault(chat_id, {}).update(msg_chat=True)
+        await save2db2(bot.group_dict, "groups")
+        await event.reply(f"Successfully enabled auto message ranking in group: *{chat_name}*")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+

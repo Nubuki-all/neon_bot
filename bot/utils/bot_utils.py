@@ -207,3 +207,11 @@ async def shutdown_services():
         bot.force_save_messages = True
         while bot.pending_saved_messages:
             await asyncio.sleep(1)
+
+
+def same_week(date, offset: int = 1):
+    '''returns true if datetime object is part of the current week'''
+    d1 = date
+    d2 = datetime.datetime.today() + datetime.timedelta(days=offset) # 
+    return d1.isocalendar()[1] == d2.isocalendar()[1] \
+              and d1.year == d2.year

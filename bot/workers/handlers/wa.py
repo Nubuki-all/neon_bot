@@ -630,7 +630,8 @@ async def rec_msg_ranking(event, args, client):
         await logger(Exception)
 
 
-async def msg_ranking(event, args, client, tag=False):
+
+async def msg_ranking(event, args, client):
     """
     Get the Message Leaderboard of a particular group chat.
     No additional argument required.
@@ -638,34 +639,61 @@ async def msg_ranking(event, args, client, tag=False):
     if not event.chat.is_group:
         return
     user = event.from_user.id
-    if not (user_is_privileged(user) or tag):
+    if not (user_is_privileged(user)):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
         chat_id = event.chat.id
-        msg_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
-            "msg_ranking", {"total": 0}
-        )
-        i = 1
-        msg = str()
-        sorted_ms_rank_dict = dict(
-            sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
-        )
-        for user in list(sorted_ms_rank_dict.keys()):
-            if user == "total":
-                continue
-            value = sorted_ms_rank_dict.get(user)
-            user_info = await get_user_info(user)
-            msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
-            i += 1
-            if i > 10:
-                break
+        msg = await get_ranking_msg(chat_id)
         if not msg:
             return await event.reply("Can't fetch ranking right now!")
-        total_msg = msg_rank_dict.get("total")
-        msg = f"📈 *MESSAGE LEADERBOARD*\n{msg}\n✉️ *Total messages:* {human_format_num(total_msg)}"
         return await event.reply(msg)
     except Exception:
         await logger(Exception)
+
+async def get_ranking_msg(chat_id, tag=False):
+    msg_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
+        "msg_ranking", {"total": 0}
+    )
+    i = 1
+    msg = str()
+    sorted_ms_rank_dict = dict(
+        sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
+    )
+    for user in list(sorted_ms_rank_dict.keys()):
+        if user == "total":
+            continue
+        value = sorted_ms_rank_dict.get(user)
+        user_info = await get_user_info(user)
+        msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
+        medals = get_medals(chat_id, user)
+        msg += f"     └{medals}\n" if medals else str()
+        i += 1
+        if i > 10:
+            break
+    if not msg:
+        return
+    total_msg = msg_rank_dict.get("total")
+    msg = f"📈 *MESSAGE LEADERBOARD*\n{msg}\n✉️ *Total messages:* {human_format_num(total_msg)}"
+
+def get_medals(chat_id, user):
+    group = bot.group_dict.setdefault(chat_id, {}) 
+    msg_rank_dict = group.setdefault(
+        "msg_ranking"
+    )
+    user_rank = group.get("msg_stats", {}).get(user, {})
+    if not user_rank:
+        return
+    med_dict = {
+        1: 🥇,
+        2: 🥈,
+        3: 🥉,
+    }
+    msg = str()
+    for pos in list(user_rank):
+        if not user_rank.get(pos):
+            continue
+        msg += f"{med_dict.get(pos)}: *{user_rank.get(pos)}*, "
+    return msg.rstrip(", ")
