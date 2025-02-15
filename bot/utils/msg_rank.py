@@ -18,6 +18,8 @@ async def auto_rank():
         groups = bot.group_dict
         write = False
         for group in list(groups):
+            if group in ("last_rank_clear"):
+                continue
             group_info = groups[group]
             if not group_info.get("msg_chat"):
                 continue
@@ -53,4 +55,4 @@ def update_users_rank(chat_id):
         user_rank[i] = user_rank.setdefault(i, 0) + 1
 
 
-scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=3, minute=7)
+scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=3, minute=11)
