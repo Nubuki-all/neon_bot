@@ -55,7 +55,7 @@ async def youtube_reply(event, args, client):
     Download and upload sent video from sent YouTube link
     """
     try:
-        if event.type != "text":
+        if not event.text:
             return
         if event.chat.is_group and not chat_is_allowed(event):
             return
@@ -140,4 +140,4 @@ async def youtube_reply(event, args, client):
                 job.pop(0)
     except Exception:
         await logger(Exception)
-        await event.react()
+        await event.react("❌")
