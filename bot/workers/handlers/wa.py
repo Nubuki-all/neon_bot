@@ -681,7 +681,7 @@ async def get_ranking_msg(chat_id, tag=False):
 
 def get_medals(chat_id, user):
     group = bot.group_dict.setdefault(chat_id, {})
-    msg_rank_dict = group.setdefault("msg_ranking")
+    group.setdefault("msg_ranking")
     user_rank = group.get("msg_stats", {}).get(user, {})
     if not user_rank:
         return
