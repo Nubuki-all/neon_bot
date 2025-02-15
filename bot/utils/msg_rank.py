@@ -41,7 +41,9 @@ async def auto_rank():
             )
             await asyncio.sleep(3)
         if write:
-            groups.update(last_rank_clear=(datetime.datetime.today() + datetime.timedelta(days=1)))
+            groups.update(
+                last_rank_clear=(datetime.datetime.today() + datetime.timedelta(days=1))
+            )
             await save2db2(bot.group_dict, "groups")
     except Exception:
         await logger(Exception)
