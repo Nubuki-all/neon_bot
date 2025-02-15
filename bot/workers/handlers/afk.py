@@ -60,7 +60,7 @@ async def afk_helper(event, args, client):
             await reply.reply(
                 f"*@{event.from_user.id} replied to your message while you were AFK!*"
             )
-        mentioned_users = get_mentioned(event.text or event.caption)
+        mentioned_users = get_mentioned(event.text or event.caption or str())
         while mentioned_users:
             user = mentioned_users[0]
             if user in reped:
