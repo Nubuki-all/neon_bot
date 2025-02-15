@@ -27,7 +27,7 @@ async def auto_rank():
             if not msg:
                 continue
             await bot.client.send_message(jid.build_jid(group, "g.us"), msg)
-            if not last_clear := groups.get("last_rank_clear"):
+            if not (last_clear := groups.get("last_rank_clear")):
                 groups["last_rank_clear"] = datetime.datetime.today()
             elif same_week(last_clear, 2):
                 continue
