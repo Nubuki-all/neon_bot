@@ -99,16 +99,17 @@ class Event:
         # self.mentioned = self.text.startswith(mention_str) if self.text else False
         # if self.mentioned:
         #    self.text = (self.text.split(maxsplit=1)[1]).strip()
-        self.text = self.text or self.short_text
+        self.text = self.text or self.short_text or None
         # To do expand quoted; has members [stanzaID, participant,
         # quotedMessage.conversation]
+        self.audio = None
         self.document = None
         self.image = None
         self.media = None
         self.reaction = None
         self.video = None
         self._construct_media()
-        self.caption = extract_text(self._message) if not self.text else None
+        self.caption = (extract_text(self._message) or None) if not self.text else None
 
         self.quoted = (
             self.media.contextInfo
