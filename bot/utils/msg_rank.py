@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 
 from bot import jid
@@ -27,6 +28,7 @@ async def auto_rank():
             if not msg:
                 continue
             await bot.client.send_message(jid.build_jid(group, "g.us"), msg)
+            await asyncio.sleep(3)
             if not (last_clear := groups.get("last_rank_clear")):
                 groups["last_rank_clear"] = datetime.datetime.today()
             elif same_week(last_clear, 1):
@@ -37,6 +39,7 @@ async def auto_rank():
             await bot.client.send_message(
                 jid.build_jid(group, "g.us"), "*Message ranking has been reset.*"
             )
+            await asyncio.sleep(3)
         if write:
             groups.update(last_rank_clear=datetime.datetime.today())
             await save2db2(bot.group_dict, "groups")
@@ -57,4 +60,4 @@ def update_users_rank(chat_id):
         user_rank[i] = user_rank.setdefault(i, 0) + 1
 
 
-scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=3, minute=44)
+scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=20)
