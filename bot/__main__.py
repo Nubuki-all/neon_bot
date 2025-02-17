@@ -3,6 +3,8 @@ from bot.utils.os_utils import re_x, s_remove
 from . import (
     LOGS,
     ConnectedEv,
+    GroupInfoEv,
+    JoinedGroupEv,
     LoggedOutEv,
     MessageEv,
     NewAClient,
@@ -271,6 +273,18 @@ async def _(client: NewAClient, message: Event):
 @bot.client.event(MessageEv)
 async def _(client: NewAClient, message: MessageEv):
     await on_message(client, message)
+
+@bot.client.event(GroupInfoEv)
+async def _(client: NewAClient, message: GroupInfoEv):
+    LOGS.info(message)
+    #await on_message(client, message)
+
+@bot.client.event(JoinedGroupEv)
+async def _(client: NewAClient, message: JoinedGroupEv):
+    LOGS.info("JoinedGroupEv:")
+    LOGS.info(message)
+    #await on_message(client, message)
+
 
 
 ########### Start ############
