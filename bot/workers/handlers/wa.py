@@ -701,9 +701,7 @@ def get_medals(chat_id, user):
 
 async def gc_handler(gc_msg):
     try:
-        leave = None
         if gc_msg.Leave:
-            leave = True
             await logger(e=str(gc_msg.Leave))
             try:
                 await logger(e=gc_msg.Leave.User)
@@ -714,7 +712,7 @@ async def gc_handler(gc_msg):
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
         # if leave:
-            # return await goodbye_msg(gc_msg)
+        # return await goodbye_msg(gc_msg)
         return await welcome_msg(gc_msg)
     except Exception:
         await logger(Exception)
