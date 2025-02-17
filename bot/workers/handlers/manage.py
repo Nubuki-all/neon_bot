@@ -834,7 +834,7 @@ async def grt_toggle(event, args, client):
     """
     Toggle greetings in a group chat.
     Arguments:
-        on/enable - Enables greetings in group chat 
+        on/enable - Enables greetings in group chat
         off/disable - Disables greetings in group chat
     """
     if not event.chat.is_group:
@@ -861,13 +861,9 @@ async def grt_toggle(event, args, client):
         chat_name = group_info.GroupName.Name
         group_info = bot.group_dict.get(chat_id, {})
         if enable and group_info.get("greetings"):
-            return await event.reply(
-                "This Group chat already has greetings enabled."
-            )
+            return await event.reply("This Group chat already has greetings enabled.")
         elif disable and not group_info.get("greetings"):
-            return await event.reply(
-                "This Group chat already has greetings disabled."
-            )
+            return await event.reply("This Group chat already has greetings disabled.")
         bot.group_dict.setdefault(chat_id, {}).update(greetings=enable)
         await save2db2(bot.group_dict, "groups")
         await event.reply(
