@@ -42,7 +42,7 @@ async def auto_rank():
             await asyncio.sleep(3)
         if write:
             groups.update(
-                last_rank_clear=(datetime.datetime.today() + datetime.timedelta(days=1))
+                last_rank_clear=(datetime.datetime.today() + datetime.timedelta(days=2))
             )
             await save2db2(bot.group_dict, "groups")
     except Exception:
@@ -62,4 +62,4 @@ def update_users_rank(chat_id):
         user_rank[i] = user_rank.setdefault(i, 0) + 1
 
 
-scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=20, minute=17)
+scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=20)

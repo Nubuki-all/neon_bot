@@ -40,6 +40,7 @@ from .workers.handlers.manage import (
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
 from .workers.handlers.wa import (
     delete_notes,
+    gc_handler,
     get_notes,
     get_notes2,
     msg_ranking,
@@ -277,8 +278,7 @@ async def _(client: NewAClient, message: MessageEv):
 
 @bot.client.event(GroupInfoEv)
 async def _(client: NewAClient, message: GroupInfoEv):
-    LOGS.info(message)
-    # await on_message(client, message)
+    await gc_handler(message)
 
 
 @bot.client.event(JoinedGroupEv)

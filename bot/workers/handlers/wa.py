@@ -697,3 +697,40 @@ def get_medals(chat_id, user):
             continue
         msg += f"{med_dict.get(pos)}: *{user_rank.get(pos)}*, "
     return msg.rstrip(", ")
+
+
+async def gc_handler(gc_msg):
+    try:
+        join = None
+        leave = None
+        if gc_msg.Leave.ByteSize():
+            leave = True
+        elif gc_msg.Join.ByteSize():
+            join = True
+        else:
+            return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
+        if leave:
+            return await goodbye_msg(gc_msg)
+        return await welcome_msg(gc_msg)
+    except Exception:
+        await logger(Exception)
+
+async def goodbye_msg(gc_event):
+    msg = "It was nice knowing you!, {}"
+    user_info = await get_user_info(gc_event.Leave.User)
+    await bot.client.send_message(
+        gc_event.JID,
+        msg.format(user_info.PushName)
+        )
+
+async def welcome_msg(gc_event):
+    msg = "*Hi there!*, {0}, Welcome to *{1}*!\nRemember to be respectful and follow the rules."
+    msg += "\n\n*Joined through:* {2}"
+    # user_info = await get_user_info(gc_event.Join.User)
+    group_info = await client.get_group_info(gc_event.JID)
+    chat_name = group_info.GroupName.Name
+    user_name = f"@{gc_event.Join.User}"
+    await bot.client.send_message(
+        gc_event.JID,
+        msg.format(user_name, chat_name, gc_event.JoinReason)
+        )
