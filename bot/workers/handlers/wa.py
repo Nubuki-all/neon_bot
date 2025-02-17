@@ -714,7 +714,7 @@ async def gc_handler(gc_msg):
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
         # if leave:
-            # return await goodbye_msg(gc_msg)
+        # return await goodbye_msg(gc_msg)
         return await welcome_msg(gc_msg)
     except Exception:
         await logger(Exception)
