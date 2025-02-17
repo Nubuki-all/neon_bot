@@ -724,7 +724,7 @@ async def goodbye_msg(gc_event):
 
 
 async def welcome_msg(gc_event):
-    msg = "*Hi there!*, {0}, Welcome to *{1}*!\nRemember to be respectful and follow the rules."
+    msg = "*Hi there* {0}, Welcome to *{1}*!\nRemember to be respectful and follow the rules."
     msg += "\n\n*Joined through:* {2}"
     # user_info = await get_user_info(gc_event.Join.User)
     group_info = await bot.client.get_group_info(gc_event.JID)
