@@ -702,9 +702,9 @@ def get_medals(chat_id, user):
 async def gc_handler(gc_msg):
     try:
         leave = None
-        if gc_msg.Leave.ByteSize():
+        if gc_msg.Leave:
             leave = True
-        elif gc_msg.Join.ByteSize():
+        elif gc_msg.Join:
             pass
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
