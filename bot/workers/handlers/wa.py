@@ -704,12 +704,17 @@ async def gc_handler(gc_msg):
         leave = None
         if gc_msg.Leave:
             leave = True
+            await logger(e=str(gc_msg.Leave))
+            try:
+                await logger(e=gc_msg.Leave.User)
+            except Exception:
+                await logger(Exception)
         elif gc_msg.Join:
             pass
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
-        if leave:
-            return await goodbye_msg(gc_msg)
+        # if leave:
+            # return await goodbye_msg(gc_msg)
         return await welcome_msg(gc_msg)
     except Exception:
         await logger(Exception)
@@ -725,7 +730,7 @@ async def welcome_msg(gc_event):
     msg = "*Hi there!*, {0}, Welcome to *{1}*!\nRemember to be respectful and follow the rules."
     msg += "\n\n*Joined through:* {2}"
     # user_info = await get_user_info(gc_event.Join.User)
-    group_info = await client.get_group_info(gc_event.JID)
+    group_info = await bot.client.get_group_info(gc_event.JID)
     chat_name = group_info.GroupName.Name
     user_name = f"@{gc_event.Join.User}"
     await bot.client.send_message(
