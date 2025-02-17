@@ -274,17 +274,18 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: MessageEv):
     await on_message(client, message)
 
+
 @bot.client.event(GroupInfoEv)
 async def _(client: NewAClient, message: GroupInfoEv):
     LOGS.info(message)
-    #await on_message(client, message)
+    # await on_message(client, message)
+
 
 @bot.client.event(JoinedGroupEv)
 async def _(client: NewAClient, message: JoinedGroupEv):
     LOGS.info("JoinedGroupEv:")
     LOGS.info(message)
-    #await on_message(client, message)
-
+    # await on_message(client, message)
 
 
 ########### Start ############
