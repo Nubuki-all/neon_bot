@@ -28,6 +28,7 @@ from .workers.handlers.manage import (
     disable_amr,
     enable,
     enable_amr,
+    grt_toggle,
     pause_handler,
     restart_handler,
     rss_handler,
@@ -184,6 +185,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("gc_info")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, gc_info, bot.client)
+
+
+@bot.register("greetings")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, grt_toggle, bot.client, require_args=True)
 
 
 @bot.register("sudo")

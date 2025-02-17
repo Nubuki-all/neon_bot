@@ -828,3 +828,51 @@ async def enable_amr(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+
+async def grt_toggle(event, args, client):
+    """
+    Toggle greetings in a group chat.
+    Arguments:
+        on/enable - Enables greetings in group chat 
+        off/disable - Disables greetings in group chat
+    """
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Seriously though, No.",
+                    packname="Qiqi.",
+                )
+        disable = enable = False
+        if args.casefold() in ("on", "enable"):
+            enable = True
+        elif args.casefold() in ("off", "disable"):
+            disable = True
+        else:
+            return await event.reply(f"Unknown args: {args}")
+        chat_id = event.chat.id
+        chat_name = group_info.GroupName.Name
+        group_info = bot.group_dict.get(chat_id, {})
+        if enable and group_info.get("greetings"):
+            return await event.reply(
+                "This Group chat already has greetings enabled."
+            )
+        elif disable and not group_info.get("greetings"):
+            return await event.reply(
+                "This Group chat already has greetings disabled."
+            )
+        bot.group_dict.setdefault(chat_id, {}).update(greetings=enable)
+        await save2db2(bot.group_dict, "groups")
+        await event.reply(
+            f"Successfully {'enabled' if enable else 'disabled'} greetings in group: *{chat_name}*"
+        )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")

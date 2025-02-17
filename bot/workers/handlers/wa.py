@@ -708,6 +708,8 @@ async def gc_handler(gc_msg):
             pass
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
+        if not bot.group_dict.get(gc_msg.JID.User, {}).get("greetings"):
+            return
         if leave:
             return await goodbye_msg(gc_msg)
         return await welcome_msg(gc_msg)
@@ -716,7 +718,7 @@ async def gc_handler(gc_msg):
 
 
 async def goodbye_msg(gc_event):
-    msg = "It was nice knowing you!, {}"
+    msg = "_It was nice knowing you, {}!_"
     user_info = await get_user_info(gc_event.Leave[0].User)
     await bot.client.send_message(gc_event.JID, msg.format(user_info.PushName))
 
