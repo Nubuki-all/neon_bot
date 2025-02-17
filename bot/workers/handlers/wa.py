@@ -701,12 +701,11 @@ def get_medals(chat_id, user):
 
 async def gc_handler(gc_msg):
     try:
-        join = None
         leave = None
         if gc_msg.Leave.ByteSize():
             leave = True
         elif gc_msg.Join.ByteSize():
-            join = True
+            pass
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
         if leave:
@@ -715,13 +714,12 @@ async def gc_handler(gc_msg):
     except Exception:
         await logger(Exception)
 
+
 async def goodbye_msg(gc_event):
     msg = "It was nice knowing you!, {}"
     user_info = await get_user_info(gc_event.Leave.User)
-    await bot.client.send_message(
-        gc_event.JID,
-        msg.format(user_info.PushName)
-        )
+    await bot.client.send_message(gc_event.JID, msg.format(user_info.PushName))
+
 
 async def welcome_msg(gc_event):
     msg = "*Hi there!*, {0}, Welcome to *{1}*!\nRemember to be respectful and follow the rules."
@@ -731,6 +729,5 @@ async def welcome_msg(gc_event):
     chat_name = group_info.GroupName.Name
     user_name = f"@{gc_event.Join.User}"
     await bot.client.send_message(
-        gc_event.JID,
-        msg.format(user_name, chat_name, gc_event.JoinReason)
-        )
+        gc_event.JID, msg.format(user_name, chat_name, gc_event.JoinReason)
+    )
