@@ -556,6 +556,7 @@ async def handler_helper(funcs):
 
 async def on_message(client: NewAClient, message: MessageEv):
     try:
+        await logger(e=message)
         event = construct_event(message)
         bot.pending_saved_messages.append(event)
         if event.type == "text" and event.text:
@@ -575,7 +576,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
         future.result()
     except Exception:
-        await logger("Unhandled Exception:")
+        await logger(e="Unhandled Exception:")
         await logger(Exception)
 
 

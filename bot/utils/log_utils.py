@@ -20,7 +20,7 @@ async def group_logger(Exception: Exception, e: str):
 
 
 def log(Exception: Exception = None, e: str = None, critical=False):
-    trace = e or traceback.format_exc()
+    trace = e or traceback.format_exc() or "Logger wasn't configured properly!"
     LOGS.info(trace) if not critical else LOGS.critical(trace)
 
 
