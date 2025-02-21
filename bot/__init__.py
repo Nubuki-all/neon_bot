@@ -34,13 +34,13 @@ from neonize.aioze.client import NewAClient
 from neonize.events import (
     CallOfferEv,
     ConnectedEv,
+    ConnectFailureEv,
     GroupInfoEv,
     JoinedGroupEv,
     LoggedOutEv,
     MessageEv,
     PairStatusEv,
     ReceiptEv,
-    StreamErrorEv,
     event,
 )
 from neonize.proto.Neonize_pb2 import Message as base_msg
