@@ -8,6 +8,7 @@ from . import (
     LoggedOutEv,
     MessageEv,
     NewAClient,
+    StreamErrorEv,
     asyncio,
     bot,
     con_ind,
@@ -69,6 +70,13 @@ async def on_logout(_: NewAClient, __: LoggedOutEv):
     LOGS.info("Bot has been logged out.")
     LOGS.info("Restarting…")
     time.sleep(10)
+    re_x()
+
+
+@bot.client.event(StreamErrorEv)
+async def _(_: NewAClient, __: StreamErrorEv):
+    LOGS.info("Restarting…")
+    time.sleep(1)
     re_x()
 
 

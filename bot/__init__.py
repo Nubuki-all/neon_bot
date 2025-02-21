@@ -40,6 +40,7 @@ from neonize.events import (
     MessageEv,
     PairStatusEv,
     ReceiptEv,
+    StreamErrorEv,
     event,
 )
 from neonize.proto.Neonize_pb2 import Message as base_msg
