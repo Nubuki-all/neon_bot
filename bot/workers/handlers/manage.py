@@ -350,7 +350,6 @@ async def rss_sub(event, args, client):
         where:
             or - means either of both values
             | - means and
-        *only leech and qbleech commands are passed
         Returns:
             success message on successfully subscribing to an rss feed
     """

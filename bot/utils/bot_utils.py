@@ -203,6 +203,8 @@ async def shutdown_services():
     await bot.client.disconnect()
     await bot.requests.close()
     if bot.pending_saved_messages:
+        if not bot.auto_save_msg_is_running:
+            return
         bot.msg_leaderboard_counter = 100
         bot.force_save_messages = True
         while bot.pending_saved_messages:

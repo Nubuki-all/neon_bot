@@ -68,6 +68,7 @@ class Runtime_Config:
         self.initialized_client = False
         self.author = None
         self.author_url = None
+        self.auto_save_msg_is_running = False
         self.block_nsfw = False
         self.client = None
         self.current_games_dict = {}
