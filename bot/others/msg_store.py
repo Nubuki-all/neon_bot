@@ -85,7 +85,7 @@ msg_store = Message_store()
 
 
 async def auto_save_msg():
-    bot.auto_save_msg_is_running = True 
+    bot.auto_save_msg_is_running = True
     while True:
         if messages := bot.pending_saved_messages:
             async with msg_store_lock:
