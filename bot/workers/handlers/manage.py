@@ -525,7 +525,7 @@ async def unban(event, args, client):
             return await event.reply(
                 f"@{ban_id} *was never banned from using the bot.*"
             )
-        if user_is_banned_by_ownr(ban_id) and not user_is_admin(user):
+        if user_is_banned_by_ownr(ban_id) and not user_is_owner(user):
             return await event.reply(
                 f"*You're currently not allowed to unban users banned by owner.*"
             )
