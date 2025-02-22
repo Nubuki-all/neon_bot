@@ -676,8 +676,9 @@ async def get_ranking_msg(chat_id, tag=False):
             break
     if not msg:
         return
+    act_mem = len(msg_rank_dict.keys()) - 1
     total_msg = msg_rank_dict.get("total")
-    return f"📈 *MESSAGE LEADERBOARD*\n{msg}\n✉️ *Total messages:* {human_format_num(total_msg)}"
+    return f"📈 *MESSAGE LEADERBOARD*\n{msg}\n👥 *Participants:* {human_format_num(act_mem)}\n✉️ *Total messages:* {human_format_num(total_msg)}"
 
 
 def get_medals(chat_id, user):
