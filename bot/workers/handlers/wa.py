@@ -634,7 +634,7 @@ async def rec_msg_ranking(event, args, client):
 async def msg_ranking(event, args, client):
     """
     Get the Message Leaderboard of a particular group chat.
-    No additional argument required.
+    Argument: -f/full (Get full ranking)
     """
     if not event.chat.is_group:
         return
@@ -646,7 +646,8 @@ async def msg_ranking(event, args, client):
             return await event.react("⛔")
     try:
         chat_id = event.chat.id
-        msg = await get_ranking_msg(chat_id)
+        full = True if args.casefold() in ("-f", "full") else False
+        msg = await get_ranking_msg(chat_id, full=full)
         if not msg:
             return await event.reply("Can't fetch ranking right now!")
         return await event.reply(msg)
@@ -654,7 +655,7 @@ async def msg_ranking(event, args, client):
         await logger(Exception)
 
 
-async def get_ranking_msg(chat_id, tag=False):
+async def get_ranking_msg(chat_id, tag=False, full=False):
     msg_rank_dict = bot.group_dict.setdefault(chat_id, {}).get(
         "msg_ranking", {"total": 0}
     )
@@ -672,7 +673,7 @@ async def get_ranking_msg(chat_id, tag=False):
         medals = get_medals(chat_id, user)
         msg += f"    └{medals}\n" if medals else str()
         i += 1
-        if i > 10:
+        if i > 10 and not full:
             break
     if not msg:
         return
