@@ -34,7 +34,7 @@ from neonize.aioze.client import NewAClient
 from neonize.events import (
     CallOfferEv,
     ConnectedEv,
-    ConnectFailureEv,
+    DisconnectedEv,
     GroupInfoEv,
     JoinedGroupEv,
     LoggedOutEv,

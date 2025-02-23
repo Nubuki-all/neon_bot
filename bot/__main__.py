@@ -3,7 +3,7 @@ from bot.utils.os_utils import re_x, s_remove
 from . import (
     LOGS,
     ConnectedEv,
-    ConnectFailureEv,
+    DisconnectedEv,
     GroupInfoEv,
     JoinedGroupEv,
     LoggedOutEv,
@@ -73,8 +73,8 @@ async def on_logout(_: NewAClient, __: LoggedOutEv):
     re_x()
 
 
-@bot.client.event(ConnectFailureEv)
-async def _(_: NewAClient, __: ConnectFailureEv):
+@bot.client.event(DisconnectedEv)
+async def _(_: NewAClient, __: DisconnectedEv):
     LOGS.info("Restarting…")
     time.sleep(1)
     re_x()
