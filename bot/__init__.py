@@ -70,6 +70,7 @@ log_file_name = "logs.txt"
 msg_store_file = "Msg_store"
 msg_store_lock = asyncio.Lock()
 rss_dict_lock = asyncio.Lock()
+sudo_btn_lock = asyncio.Lock()
 uptime = time.time()
 version_file = "version.txt"
 wa_db = "db.sqlite3"

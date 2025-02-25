@@ -10,7 +10,7 @@ import httpx
 from bs4 import BeautifulSoup
 from neonize.types import MessageWithContextInfo
 from neonize.utils.enum import ChatPresence, ChatPresenceMedia, MediaType, Presence
-from neonize.utils.message import extract_text
+from neonize.utils.message import extract_text, get_poll_update_message
 
 from bot import (
     Message,
@@ -26,7 +26,7 @@ from bot.others.exceptions import ArgumentParserError
 
 from .bot_utils import post_to_tgph
 from .log_utils import logger
-
+from .sudo_button_utils import poll_as_button_handler
 
 class Event:
     def __init__(self):
@@ -559,6 +559,8 @@ async def on_message(client: NewAClient, message: MessageEv):
         # await logger(e=message)
         event = construct_event(message)
         bot.pending_saved_messages.append(event)
+        if get_poll_update_message(event.message):
+            return await poll_as_button_handler(event)
         if event.type == "text" and event.text:
             command, args = (
                 event.text.split(maxsplit=1)

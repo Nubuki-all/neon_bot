@@ -3,6 +3,7 @@ import datetime
 import itertools
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from hashlib import sha256
 
 import aiohttp
 import pytz
@@ -216,3 +217,6 @@ def same_week(date, offset: int = 1):
     d1 = date
     d2 = datetime.datetime.today() + datetime.timedelta(days=offset)
     return d1.isocalendar()[1] == d2.isocalendar()[1] and d1.year == d2.year
+
+def get_sha256(string: str):
+    return (sha256(string.encode('utf-8')).hexdigest())

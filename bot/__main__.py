@@ -18,7 +18,7 @@ from . import (
 )
 from .startup.after import on_startup
 from .utils.msg_utils import Event, event_handler, on_message
-from .utils.os_utils import re_x, s_remove
+from .utils.os_utils import file_exists, re_x, s_remove
 from .workers.handlers.afk import activate_afk, afk_helper
 from .workers.handlers.ani import airing, anime
 from .workers.handlers.dev import bash, eval_message, get_logs
@@ -54,6 +54,7 @@ from .workers.handlers.wa import (
     stickerize_image,
     tag_all_admins,
     tag_everyone,
+    test_button,
     upscale_image,
 )
 from .workers.handlers.yt import youtube_reply
@@ -75,9 +76,10 @@ async def on_logout(_: NewAClient, __: LoggedOutEv):
 
 @bot.client.event(DisconnectedEv)
 async def _(_: NewAClient, __: DisconnectedEv):
-    LOGS.info("Restarting…")
-    time.sleep(1)
-    re_x()
+    if not file_exists(con_ind):
+        LOGS.info("Restarting…")
+        time.sleep(1)
+        re_x()
 
 
 @bot.register("start")
@@ -248,6 +250,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("restart")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, restart_handler)
+
+
+@bot.register("button")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, test_button)
 
 
 @bot.register(None)
