@@ -763,6 +763,6 @@ async def test_button(event, args, client):
             await event.reply("yikes.")
         await poll_msg.delete()
         info = button_dict.get(results[0])
-        await event.reply(f"{info[0]} was pressed.\n*Value:*{info[1]}")
+        await event.reply(f"{info[0]} was pressed.\n*Value:* {info[1]}")
     except Exception:
         await logger(Exception)

@@ -107,7 +107,7 @@ async def youtube_reply(event, args, client):
                 )
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled and listener.error:
-                        await event.reply(listener.error)
+                        await status_msg.edit(listener.error)
                     job.pop(0)
                     s_remove(ytdl.folder, folders=True)
                     continue

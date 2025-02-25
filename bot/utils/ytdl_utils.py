@@ -285,7 +285,7 @@ class YoutubeDLHelper:
                 not ospath.exists(path) or len(listdir(path)) == 0
             ):
                 self._on_download_error(
-                    "No video available to download from this playlist. Check logs for more details"
+                    "No video is available to be downloaded from this playlist. Check logs for more details"
                 )
                 return
             if self._listener.is_cancelled:
@@ -347,7 +347,7 @@ class YoutubeDLHelper:
 
         if not self._listener.name:
             self._on_download_error(
-                "No video available to download from this playlist. Check logs for more details"
+                "No video is available to be downloaded from this playlist. Check logs for more details"
             )
             return
         base_name, ext = ospath.splitext(self._listener.name)
