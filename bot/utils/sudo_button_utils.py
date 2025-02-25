@@ -3,6 +3,7 @@ import asyncio
 from neonize.utils.message import get_poll_update_message
 
 from bot import client, sudo_btn_lock
+from .bot_utils import get_sha256
 
 active_poll_dict = {}
 
@@ -31,7 +32,7 @@ async def create_sudo_button(
         msg = await client.send_message(chat_jid, poll_msg)
         poll_info = {}
         for key, value in options.items():
-            poll_info.update({sha256(value[0]): key})
+            poll_info.update({get_sha256(value[0]): key})
         poll_info.update(user=user_id)
         active_poll_dict.update({msg.ID: poll_info})
         return poll_msg, msg.ID
