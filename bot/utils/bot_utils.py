@@ -223,4 +223,4 @@ def get_sha256(string: str):
     return sha256(string.encode("utf-8")).hexdigest()
 
 def trunc_string(string: str, limit: int):
-    return string[:limit-2] + "…") if len(string) > limit else string
+    return (string[:limit-2] + "…") if len(string) > limit else string
