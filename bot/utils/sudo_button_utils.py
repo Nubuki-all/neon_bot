@@ -21,17 +21,26 @@ async def poll_as_button_handler(event):
         if poll_info.get("user") != event.from_user.id:
             return
         selected = await bot.client.decrypt_poll_vote(event.message)
-        if (conf_btn := poll_info.get("conf_btn")) and conf_btn not in [s.hex() for s in selected.selectedOptions]:
+        if (conf_btn := poll_info.get("conf_btn")) and conf_btn not in [
+            s.hex() for s in selected.selectedOptions
+        ]:
             return
         poll_info.update(selected=selected)
 
 
 async def create_sudo_button(
-    name: str, options: dict, chat_jid, user_id: str, selectable: int = 1, conf_btn: str | None = None,
+    name: str,
+    options: dict,
+    chat_jid,
+    user_id: str,
+    selectable: int = 1,
+    conf_btn: str | None = None,
 ):
     async with sudo_btn_lock:
         poll_msg = await bot.client.build_poll_vote_creation(
-            trunc_string(name, 255), [trunc_string(v[0], 100) for v in options.values()], selectable
+            trunc_string(name, 255),
+            [trunc_string(v[0], 100) for v in options.values()],
+            selectable,
         )
         msg = await bot.client.send_message(chat_jid, poll_msg)
         poll_info = {}
