@@ -218,5 +218,6 @@ def same_week(date, offset: int = 1):
     d2 = datetime.datetime.today() + datetime.timedelta(days=offset)
     return d1.isocalendar()[1] == d2.isocalendar()[1] and d1.year == d2.year
 
+
 def get_sha256(string: str):
-    return (sha256(string.encode('utf-8')).hexdigest())
+    return sha256(string.encode("utf-8")).hexdigest()

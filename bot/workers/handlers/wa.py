@@ -2,7 +2,6 @@ import asyncio
 import copy
 import io
 import random
-import time
 import uuid
 
 import torch
@@ -42,6 +41,7 @@ from bot.utils.msg_utils import (
     user_is_privileged,
 )
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
+
 
 async def sticker_reply(event, args, client, overide=False):
     """
@@ -738,6 +738,7 @@ async def welcome_msg(gc_event):
         gc_event.JID, msg.format(user_name, chat_name, gc_event.JoinReason)
     )
 
+
 async def test_button(event, args, client):
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -751,7 +752,9 @@ async def test_button(event, args, client):
         button_dict.update({uuid.uuid4(): ["Button 2", "Another information."]})
         button_dict.update({uuid.uuid4(): ["Button 3", "More information."]})
         title = "Poll message to test the usability of polls as buttons."
-        poll_msg_, msg_id = await create_sudo_button(title, button_dict, event.chat.jid, user)
+        poll_msg_, msg_id = await create_sudo_button(
+            title, button_dict, event.chat.jid, user
+        )
         poll_msg = construct_msg_and_evt(
             event.chat.id, user, msg_id, None, event.chat.server, poll_msg_
         )

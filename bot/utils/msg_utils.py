@@ -28,6 +28,7 @@ from .bot_utils import post_to_tgph
 from .log_utils import logger
 from .sudo_button_utils import poll_as_button_handler
 
+
 class Event:
     def __init__(self):
         self.client = bot.client
