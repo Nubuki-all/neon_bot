@@ -48,4 +48,4 @@ async def wait_for_button_response(msg_id: str, grace=0.1):
             if not poll_info:
                 return
             if selected := poll_info.get("selected"):
-                return [poll_info.get(s) for s in selected]
+                return [poll_info.get(s.hex()) for s in selected.selectedOptions]

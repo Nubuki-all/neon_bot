@@ -345,6 +345,10 @@ class YoutubeDLHelper:
         if self._listener.is_cancelled:
             return
 
+        if not self._listener.name:
+            self._on_download_error(
+                    "No video available to download from this playlist. Check logs for more details"
+                )
         base_name, ext = ospath.splitext(self._listener.name)
         trim_name = self._listener.name if self.is_playlist else base_name
         if len(trim_name.encode()) > 200:
