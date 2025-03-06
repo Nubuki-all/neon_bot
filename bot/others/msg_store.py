@@ -26,7 +26,7 @@ class Message_store:
             return
         for msg in messages:
             if msg.id == msg_id:
-                return msg
+                return self._patch(msg)
 
     def _get_message_store(self):
         message_store = {}

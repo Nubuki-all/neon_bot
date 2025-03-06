@@ -190,6 +190,10 @@ async def upscale_image(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        if not event.reply_to_message:
+            return await event.reply(
+                "*Command can only be used when replying to an image.*"
+            )
         if bot.disable_cic:
             return await event.reply("*CPU heavy commands are currently disabled.*")
         quoted_msg = event.quoted.quotedMessage
