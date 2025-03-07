@@ -580,7 +580,8 @@ async def tag_all_admins(event, args, client):
             event,
             event.reply_to_message,
             "reply",
-            tags if event.text.endswith("s") else tags.split()[0],
+            "_*Tagged all admins!*_" if event.text.endswith("s") else tags.split()[0],
+            ghost_mentions=tags if event.text.endswith("s") else tags.split()[0],
         )
     except Exception:
         await logger(Exception)
