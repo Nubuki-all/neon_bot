@@ -173,10 +173,15 @@ class Event:
         self.constructed = True
         return self
 
-    async def _send_message(self, chat, message, link_preview: bool = True, ghost_mentions: str = None):
+    async def _send_message(
+        self, chat, message, link_preview: bool = True, ghost_mentions: str = None
+    ):
         await self.send_typing_status()
         response = await self.client.send_message(
-            to=chat, message=message, link_preview=link_preview, ghost_mentions=ghost_mentions,
+            to=chat,
+            message=message,
+            link_preview=link_preview,
+            ghost_mentions=ghost_mentions,
         )
         await self.send_typing_status(False)
         msg = self.gen_new_msg(response.ID)
@@ -213,15 +218,21 @@ class Event:
         if not self.constructed:
             return
         if file:
-            return await self.reply_document(file, file_name, text, quote, ghost_mentions=ghost_mentions)
+            return await self.reply_document(
+                file, file_name, text, quote, ghost_mentions=ghost_mentions
+            )
         if image and file_name:
-            return await self.reply_photo(image, text, quote, ghost_mentions=ghost_mentions)
+            return await self.reply_photo(
+                image, text, quote, ghost_mentions=ghost_mentions
+            )
         text = text or message
         if not text:
             raise Exception("Specify a text to reply with.")
         # msg_id = self.id if quote else None
         if not quote:
-            return await self._send_message(self.chat.jid, text, link_preview, ghost_mentions=ghost_mentions)
+            return await self._send_message(
+                self.chat.jid, text, link_preview, ghost_mentions=ghost_mentions
+            )
         await self.send_typing_status()
 
         try:
@@ -281,7 +292,12 @@ class Event:
             else (None, file_name)
         )
         response = await self.client.send_document(
-            self.chat.jid, document, caption, filename=file_name, quoted=quoted, ghost_mentions=ghost_mentions,
+            self.chat.jid,
+            document,
+            caption,
+            filename=file_name,
+            quoted=quoted,
+            ghost_mentions=ghost_mentions,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -319,7 +335,12 @@ class Event:
     ):
         quoted = self.message if quote else None
         response = await self.client.send_image(
-            self.chat.jid, photo, caption, quoted=quoted, viewonce=viewonce, ghost_mentions=ghost_mentions,
+            self.chat.jid,
+            photo,
+            caption,
+            quoted=quoted,
+            viewonce=viewonce,
+            ghost_mentions=ghost_mentions,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)

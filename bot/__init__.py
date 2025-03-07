@@ -47,16 +47,16 @@ from neonize.proto.Neonize_pb2 import Message as base_msg
 from neonize.proto.Neonize_pb2 import MessageInfo as base_msg_info
 from neonize.proto.Neonize_pb2 import MessageSource as base_msg_source
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
+    AudioMessage,
+    ContactMessage,
+    ContextInfo,
+    DocumentMessage,
+    ExtendedTextMessage,
+    GroupMention,
+    ImageMessage,
     Message,
     StickerMessage,
-    ContextInfo,
-    ExtendedTextMessage,
     VideoMessage,
-    ImageMessage,
-    AudioMessage,
-    DocumentMessage,
-    ContactMessage,
-    GroupMention,
 )
 from neonize.utils import jid, log
 
