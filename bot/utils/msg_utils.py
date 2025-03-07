@@ -173,10 +173,10 @@ class Event:
         self.constructed = True
         return self
 
-    async def _send_message(self, chat, message, link_preview=True):
+    async def _send_message(self, chat, message, link_preview: bool = True, ghost_mentions: str = None):
         await self.send_typing_status()
         response = await self.client.send_message(
-            to=chat, message=message, link_preview=link_preview
+            to=chat, message=message, link_preview=link_preview, ghost_mentions=ghost_mentions,
         )
         await self.send_typing_status(False)
         msg = self.gen_new_msg(response.ID)
@@ -207,20 +207,21 @@ class Event:
         quote: bool = True,
         link_preview: bool = True,
         reply_privately: bool = False,
+        ghost_mentions: str = None,
         message: MessageWithContextInfo = None,
     ):
         if not self.constructed:
             return
         if file:
-            return await self.reply_document(file, file_name, text, quote)
+            return await self.reply_document(file, file_name, text, quote, ghost_mentions=ghost_mentions)
         if image and file_name:
-            return await self.reply_photo(image, text, quote)
+            return await self.reply_photo(image, text, quote, ghost_mentions=ghost_mentions)
         text = text or message
         if not text:
             raise Exception("Specify a text to reply with.")
         # msg_id = self.id if quote else None
         if not quote:
-            return await self._send_message(self.chat.jid, text, link_preview)
+            return await self._send_message(self.chat.jid, text, link_preview, ghost_mentions=ghost_mentions)
         await self.send_typing_status()
 
         try:
@@ -229,6 +230,7 @@ class Event:
                 self.message,
                 link_preview=link_preview,
                 reply_privately=reply_privately,
+                ghost_mentions=ghost_mentions,
             )
         except httpx.HTTPStatusError:
             await logger(Exception)
@@ -237,6 +239,7 @@ class Event:
                 self.message,
                 link_preview=False,
                 reply_privately=reply_privately,
+                ghost_mentions=ghost_mentions,
             )
         # self.id = response.ID
         # self.text = text
@@ -269,6 +272,7 @@ class Event:
         file_name: str = None,
         caption: str = None,
         quote: bool = True,
+        ghost_mentions: str = None,
     ):
         quoted = self.message if quote else None
         _, file_name = (
@@ -277,7 +281,7 @@ class Event:
             else (None, file_name)
         )
         response = await self.client.send_document(
-            self.chat.jid, document, caption, filename=file_name, quoted=quoted
+            self.chat.jid, document, caption, filename=file_name, quoted=quoted, ghost_mentions=ghost_mentions,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -289,6 +293,7 @@ class Event:
         quote: bool = True,
         viewonce: bool = False,
         as_gif: bool = True,
+        ghost_mentions: str = None,
     ):
         quoted = self.message if quote else None
         response = await self.client.send_video(
@@ -299,6 +304,7 @@ class Event:
             viewonce=viewonce,
             gifplayback=as_gif,
             is_gif=True,
+            ghost_mentions=ghost_mentions,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -309,10 +315,11 @@ class Event:
         caption: str = None,
         quote: bool = True,
         viewonce: bool = False,
+        ghost_mentions: str = None,
     ):
         quoted = self.message if quote else None
         response = await self.client.send_image(
-            self.chat.jid, photo, caption, quoted=quoted, viewonce=viewonce
+            self.chat.jid, photo, caption, quoted=quoted, viewonce=viewonce, ghost_mentions=ghost_mentions,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -346,6 +353,7 @@ class Event:
         quote: bool = True,
         viewonce: bool = False,
         as_gif: bool = False,
+        ghost_mentions: str = None,
     ):
         quoted = self.message if quote else None
         response = await self.client.send_video(
@@ -355,6 +363,7 @@ class Event:
             quoted=quoted,
             viewonce=viewonce,
             gifplayback=as_gif,
+            ghost_mentions=ghost_mentions,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
