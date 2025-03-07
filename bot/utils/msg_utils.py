@@ -521,6 +521,7 @@ def tag_sudoers():
         tags += f"@{user} "
     return tags.rstrip()
 
+
 def tag_users(members: list):
     tags = str()
     for member in members:

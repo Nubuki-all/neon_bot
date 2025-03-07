@@ -597,7 +597,7 @@ async def tag_all_sudoers(event, args, client):
     try:
         if not event.text:
             return
-        acc_tup = ("@sudoer")
+        acc_tup = "@sudoer"
         if not event.text.startswith(acc_tup):
             return
         if not event.chat.is_group:
@@ -629,7 +629,7 @@ async def tag_all_owners(event, args, client):
     try:
         if not event.text:
             return
-        acc_tup = ("@owner")
+        acc_tup = "@owner"
         if not event.text.startswith(acc_tup):
             return
         if not event.chat.is_group:
@@ -652,7 +652,6 @@ async def tag_all_owners(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
-
 
 
 async def tag_everyone(event, args, client):
