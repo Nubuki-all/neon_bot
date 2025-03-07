@@ -609,7 +609,7 @@ async def tag_everyone(event, args, client):
             event,
             event.reply_to_message,
             "reply",
-            "_*Tagged everyone!*_"
+            "_*Tagged everyone!*_",
             ghost_mentions=tags,
         )
     except Exception:
