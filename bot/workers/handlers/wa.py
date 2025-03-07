@@ -35,6 +35,8 @@ from bot.utils.msg_utils import (
     get_args,
     get_user_info,
     tag_admins,
+    tag_owners,
+    tag_sudoers,
     tag_users,
     user_is_admin,
     user_is_allowed,
@@ -586,6 +588,71 @@ async def tag_all_admins(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+
+async def tag_all_sudoers(event, args, client):
+    """
+    Tags all sudoers in a group
+    """
+    try:
+        if not event.text:
+            return
+        acc_tup = ("@sudoer")
+        if not event.text.startswith(acc_tup):
+            return
+        if not event.chat.is_group:
+            return await event.react("🚫")
+        user = event.from_user.id
+        # group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not chat_is_allowed(event):
+                return
+            if not user_is_allowed(user):
+                return await event.react("⛔")
+        tags = tag_sudoers()
+        await clean_reply(
+            event,
+            event.reply_to_message,
+            "reply",
+            "_*Tagged all Sudoers!*_" if event.text.endswith("s") else tags.split()[0],
+            ghost_mentions=tags if event.text.endswith("s") else tags.split()[0],
+        )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def tag_all_owners(event, args, client):
+    """
+    Tags all owners in a group
+    """
+    try:
+        if not event.text:
+            return
+        acc_tup = ("@owner")
+        if not event.text.startswith(acc_tup):
+            return
+        if not event.chat.is_group:
+            return await event.react("🚫")
+        user = event.from_user.id
+        # group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not chat_is_allowed(event):
+                return
+            if not user_is_allowed(user):
+                return await event.react("⛔")
+        tags = tag_owners()
+        await clean_reply(
+            event,
+            event.reply_to_message,
+            "reply",
+            "_*Tagged all Owners!*_" if event.text.endswith("s") else tags.split()[0],
+            ghost_mentions=tags if event.text.endswith("s") else tags.split()[0],
+        )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
 
 
 async def tag_everyone(event, args, client):

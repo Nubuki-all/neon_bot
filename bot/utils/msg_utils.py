@@ -506,6 +506,21 @@ def tag_admins(members: list):
     return tags.rstrip()
 
 
+def tag_owners():
+    tags = str()
+    for user in conf.OWNER.split():
+        tags += f"@{user} "
+    return tags.rstrip()
+
+
+def tag_sudoers():
+    tags = str()
+    for user in bot.user_dict.keys():
+        if not bot.user_dict.get(user, {}).get("sudoer", False):
+            continue
+        tags += f"@{user} "
+    return tags.rstrip()
+
 def tag_users(members: list):
     tags = str()
     for member in members:

@@ -53,6 +53,8 @@ from .workers.handlers.wa import (
     sticker_reply,
     stickerize_image,
     tag_all_admins,
+    tag_all_owners,
+    tag_all_sudoers,
     tag_everyone,
     test_button,
     upscale_image,
@@ -265,6 +267,16 @@ async def _(client: NewAClient, message: Event):
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await tag_all_admins(message, None, client)
+
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await tag_all_owners(message, None, client)
+
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await tag_all_sudoers(message, None, client)
 
 
 @bot.register(None)
