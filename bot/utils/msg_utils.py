@@ -603,7 +603,7 @@ async def handler_helper(funcs):
 
 async def on_message(client: NewAClient, message: MessageEv):
     try:
-        await logger(e=message)
+        # await logger(e=message)
         event = construct_event(message)
         bot.pending_saved_messages.append(event)
         if get_poll_update_message(event.message):
