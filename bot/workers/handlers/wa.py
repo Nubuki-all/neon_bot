@@ -51,7 +51,7 @@ async def sticker_reply(event, args, client, overide=False):
     Sends a random sticker upon being tagged
     """
     try:
-        if not event.text or event.caption:
+        if not (event.text or event.caption):
             return
         if not overide:
             # if not event.text.startswith("@"):
@@ -63,7 +63,7 @@ async def sticker_reply(event, args, client, overide=False):
             me = await bot.client.get_me()
         reply = (
             event.reply_to_message
-            if len(event.text.split()) == 1 and not overide
+            if not event.caption and len(event.text.split()) == 1 and not overide
             else event
         )
         await event.send_typing_status()
