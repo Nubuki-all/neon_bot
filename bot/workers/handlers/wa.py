@@ -51,13 +51,13 @@ async def sticker_reply(event, args, client, overide=False):
     Sends a random sticker upon being tagged
     """
     try:
-        if not event.text:
+        if not event.text or event.caption:
             return
         if not overide:
-            if not event.text.startswith("@"):
-                return
+            # if not event.text.startswith("@"):
+                # return
             me = await bot.client.get_me()
-            if not event.text.startswith("@" + me.JID.User):
+            if not "@" + me.JID.User in (event.text or event.caption):
                 return
         else:
             me = await bot.client.get_me()
