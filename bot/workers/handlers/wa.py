@@ -55,7 +55,7 @@ async def sticker_reply(event, args, client, overide=False):
             return
         if not overide:
             # if not event.text.startswith("@"):
-                # return
+            # return
             me = await bot.client.get_me()
             if not "@" + me.JID.User in (event.text or event.caption):
                 return
