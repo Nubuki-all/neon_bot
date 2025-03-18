@@ -122,7 +122,7 @@ async def _(client: NewAClient, message: Event):
 
 @bot.register("roles")
 async def _(client: NewAClient, message: Event):
-    await event_handler(message, roles)
+    await event_handler(message, roles, client)
 
 
 @bot.register("cmds")
