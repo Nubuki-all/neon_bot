@@ -45,6 +45,7 @@ async def create_role(event, args, client):
             to_parse=args,
             get_unknown=True,
         )
+        args = args.casefold()
         if any(x in args for x in blocked_char):
             return await event.reply(
                 f"Creation of role with name: *{args}* failed!\n*Reason:* Role name contained invalid character(s)."
@@ -104,6 +105,7 @@ async def delete_role(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        args = args.casefold()
         chat_id = event.chat.id
         gc_roles = bot.group_dict.setdefault(chat_id, {}).setdefault("roles", {})
         if args not in gc_roles:
@@ -155,6 +157,7 @@ async def edit_role(event, args, client):
             to_parse=args,
             get_unknown=True,
         )
+        args = args.casefold()
         chat_id = event.chat.id
         gc_roles = bot.group_dict.setdefault(chat_id, {}).setdefault("roles", {})
         if args not in gc_roles:
@@ -223,6 +226,7 @@ async def exit_role(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        args = args.casefold()
         chat_id = event.chat.id
         gc_roles = bot.group_dict.setdefault(chat_id, {}).setdefault("roles", {})
         if args not in gc_roles:
@@ -255,6 +259,7 @@ async def join_role(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        args = args.casefold()
         chat_id = event.chat.id
         gc_roles = bot.group_dict.setdefault(chat_id, {}).setdefault("roles", {})
         if args not in gc_roles:
@@ -310,6 +315,7 @@ async def add_to_role(event, args, client):
             arg.r = args
         if not (event.reply_to_message or args):
             return await event.reply("Supply users through mentions or reply!")
+        arg.r = arg.r.casefold()
         chat_id = event.chat.id
         gc_roles = bot.group_dict.setdefault(chat_id, {}).setdefault("roles", {})
         if arg.r not in gc_roles:
@@ -345,7 +351,7 @@ async def add_to_role(event, args, client):
             return await event.reply("No new members to add to role was supplied.")
         role.setdefault("members", []).extend(members)
         await save2db2(bot.group_dict, "groups")
-        await event.reply(role_action_msg.format("Added users to", args))
+        await event.reply(role_action_msg.format("Added users to", arg.r))
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -378,6 +384,7 @@ async def remove_from_role(event, args, client):
             arg.r = args
         if not (event.reply_to_message or args):
             return await event.reply("Supply users through mentions or reply!")
+        arg.r = arg.r.casefold()
         chat_id = event.chat.id
         gc_roles = bot.group_dict.setdefault(chat_id, {}).setdefault("roles", {})
         if arg.r not in gc_roles:
@@ -414,7 +421,7 @@ async def remove_from_role(event, args, client):
         members = list(set(role.get("members")) - set(members))
         role["members"] = members
         await save2db2(bot.group_dict, "groups")
-        await event.reply(role_action_msg.format("Removed users from", args))
+        await event.reply(role_action_msg.format("Removed users from", arg.r))
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -437,10 +444,11 @@ async def tag_roles(event, client):
         if not gc_roles:
             return
         acc_list = []
+        text = event.text or event.caption
         for role_name in gc_roles:
             acc_list.append("@" + role_name)
         for mention in acc_list:
-            if mention not in (event.text or event.caption):
+            if mention not in (text.casefold()):
                 continue
             role = gc_roles.get(mention[1:])
             if not role.get("members"):
@@ -523,6 +531,7 @@ async def roles(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        args = args.casefold()
         if args in ("-l", "--list"):
             return await list_roles(event, args, client)
         elif args:
@@ -532,7 +541,8 @@ async def roles(event, args, client):
             if gc_roles.get(args):
                 return await role_info(event, args, client)
         pre = conf.CMD_PREFIX
-        msg = f"""{pre}new_role - *Create a new role in a group*
+        msg = (
+f"""{pre}new_role - *Create a new role in a group*
 {pre}del_role - *Delete a created role*
 {pre}edit_role - *Edit a created role*
 {pre}exit_role - *Leave a role*
@@ -543,6 +553,7 @@ async def roles(event, args, client):
 {pre}roles* - *List all roles in group*
 
 * requires the argument -l/--list"""
+        )
         await event.reply(msg)
     except Exception:
         await logger(Exception)
