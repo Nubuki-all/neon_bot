@@ -496,7 +496,7 @@ async def role_info(event, args, client):
     for user in role.get("members"):
         info = await client.contact.get_contact(jid.build_jid(user))
         name = info.PushName
-        msg += f"\n- {name}"
+        users += f"\n- {name}"
     msg = (
         f"*Role Name:* {args}\n"
         f"*Creator:* @{role.get('creator')}\n"
