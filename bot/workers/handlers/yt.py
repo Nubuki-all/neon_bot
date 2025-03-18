@@ -131,9 +131,7 @@ async def youtube_reply(event, args, client):
                         with open(file[:-3] + "webp", "rb") as file:
                             webp = file.read()
                         photo = await png_to_jpg(webp)
-                        reply = await event.reply_photo(
-                            photo, f"*{base_name}*"
-                        )
+                        reply = await event.reply_photo(photo, f"*{base_name}*")
                         await reply.reply_audio(file)
                 else:
                     await folder_upload(ytdl.folder, event, status_msg, audio)
