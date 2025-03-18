@@ -541,8 +541,7 @@ async def roles(event, args, client):
             if gc_roles.get(args):
                 return await role_info(event, args, client)
         pre = conf.CMD_PREFIX
-        msg = (
-f"""{pre}new_role - *Create a new role in a group*
+        msg = f"""{pre}new_role - *Create a new role in a group*
 {pre}del_role - *Delete a created role*
 {pre}edit_role - *Edit a created role*
 {pre}exit_role - *Leave a role*
@@ -553,7 +552,6 @@ f"""{pre}new_role - *Create a new role in a group*
 {pre}roles* - *List all roles in group*
 
 * requires the argument -l/--list"""
-        )
         await event.reply(msg)
     except Exception:
         await logger(Exception)
