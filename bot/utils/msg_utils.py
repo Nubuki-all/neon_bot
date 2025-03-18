@@ -504,6 +504,7 @@ def tag_all_users_in_role(members: list):
         tags += f"@{member} "
     return tags.rstrip()
 
+
 def tag_admins(members: list):
     tags = str()
     for member in members:
