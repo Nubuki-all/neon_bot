@@ -513,7 +513,7 @@ async def roles(event, args, client):
     Arguments:
     -l/--list : list available roles commands
     role_name : Get information of a particular role.
-    
+
     *Both arguments cannot be used together.
     """
     user = event.from_user.id
@@ -526,7 +526,9 @@ async def roles(event, args, client):
         if args in ("-l", "--list"):
             return await list_roles(event, args, client)
         elif args:
-            gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
+            gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault(
+                "roles", {}
+            )
             if gc_roles.get(args):
                 return await role_info(event, args, client)
         pre = conf.CMD_PREFIX
