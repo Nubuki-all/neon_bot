@@ -592,18 +592,24 @@ def register(key: str | None = None):
 
     return dec
 
+
 def add_handler(function, command: str | None = None, **kwargs):
     if command:
+
         async def _(client: NewAClient, event: Event):
             await event_handler(event, function, client, **kwargs)
+
     else:
-        async def _(client:NewAClient, event: Event):
+
+        async def _(client: NewAClient, event: Event):
             await function(event, client)
 
     register(command)(_)
 
+
 bot.register = register
 bot.add_handler = add_handler
+
 
 async def handler_helper(funcs):
     await asyncio.sleep(0.1)
