@@ -128,7 +128,10 @@ async def youtube_reply(event, args, client):
                     if not audio:
                         await event.reply_video(file, f"*{base_name}*")
                     else:
-                        with open(file[:-3] + "webp", "rb") as pfile:
+                        image = file[:-3] + "webp"
+                        if not file_exists(image):
+                            image = file[:-3] + "jpg"
+                        with open(image, "rb") as pfile:
                             webp = pfile.read()
                         photo = await png_to_jpg(webp)
                         reply = await event.reply_photo(photo, f"*{base_name}*")
