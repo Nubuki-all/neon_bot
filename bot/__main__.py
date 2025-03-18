@@ -39,6 +39,7 @@ from .workers.handlers.manage import (
     ytdl_disable,
     ytdl_enable,
 )
+from .workers.handlers.role import roles
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
 from .workers.handlers.wa import (
     delete_notes,
@@ -117,6 +118,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("meme")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, getmeme)
+
+
+@bot.register("roles")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, roles)
 
 
 @bot.register("cmds")
