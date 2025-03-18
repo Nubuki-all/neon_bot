@@ -2,10 +2,12 @@ import asyncio
 
 from bot import jid
 from bot.config import bot, conf
+from bot.utils.bot_utils import split_text
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
     chat_is_allowed,
+    clean_reply,
     get_args,
     get_mentioned,
     tag_all_users_in_role,
