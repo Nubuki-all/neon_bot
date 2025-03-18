@@ -390,7 +390,7 @@ class YoutubeDLHelper:
         else:
             self.opts["outtmpl"] = {
                 "default": f"{path}/{self._listener.name}",
-                "thumbnail": f"{path}/yt-dlp-thumb/{base_name}.%(ext)s",
+                "thumbnail": f"{path}/{base_name}.%(ext)s",
             }
 
         if qual.startswith("ba/b") and not self.is_playlist:
@@ -406,7 +406,7 @@ class YoutubeDLHelper:
             self._listener.name = f"{base_name}{self._ext}"
 
         if self._ext in [
-            # ".mp3",
+            ".mp3",
             ".mkv",
             ".mka",
             ".ogg",
@@ -419,7 +419,7 @@ class YoutubeDLHelper:
         ]:
             self.opts["postprocessors"].append(
                 {
-                    "already_have_thumbnail": False,
+                    "already_have_thumbnail": True,
                     "key": "EmbedThumbnail",
                 }
             )
