@@ -5,7 +5,7 @@ from clean_links.clean import clean_url
 from urlextract import URLExtract
 
 from bot.config import bot
-from bot.utils.bot_utils import sync_to_async
+from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import chat_is_allowed
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
@@ -128,8 +128,11 @@ async def youtube_reply(event, args, client):
                     if not audio:
                         await event.reply_video(file, f"*{base_name}*")
                     else:
+                        with open(file[:-3] + "webp", "rb") as file:
+                            webp = file.read()
+                        photo = await png_to_jpg(webp)
                         reply = await event.reply_photo(
-                            file[:-3] + "webp", f"*{base_name}*"
+                            photo, f"*{base_name}*"
                         )
                         await reply.reply_audio(file)
                 else:
