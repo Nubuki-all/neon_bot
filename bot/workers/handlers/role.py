@@ -108,7 +108,7 @@ async def delete_role(event, args, client):
                 f"Deletion of role with name: *{args}* failed!\n*Reason:* Role doesn't exist!"
             )
         role = gc_roles.get(args)
-        if roles.get("restricted"):
+        if role.get("restricted"):
             group_info = await client.get_group_info(event.chat.jid)
         if (
             role.get("restricted")
@@ -159,7 +159,7 @@ async def edit_role(event, args, client):
                 f"Editing of role with name: *{args}* failed!\n*Reason:* Role doesn't exist!"
             )
         role = gc_roles.get(args)
-        if roles.get("restricted"):
+        if role.get("restricted"):
             group_info = await client.get_group_info(event.chat.jid)
         if (
             role.get("restricted")
@@ -261,7 +261,7 @@ async def join_role(event, args, client):
         role = gc_roles.get(args)
         if user in role.get("members"):
             return await event.reply("Already a member of this role.")
-        if roles.get("restricted"):
+        if role.get("restricted"):
             group_info = await client.get_group_info(event.chat.jid)
         if (
             role.get("restricted")
@@ -297,7 +297,7 @@ async def add_to_role(event, args, client):
             return await event.react("⛔")
     try:
         arg, args = get_args(
-            ["-r", "store_true"],
+            "-r",
             to_parse=args,
             get_unknown=True,
         )
@@ -312,7 +312,7 @@ async def add_to_role(event, args, client):
         if arg.r not in gc_roles:
             return await event.reply(f"Role with name: {arg.r} doesn't exist!")
         role = gc_roles.get(arg.r)
-        if roles.get("restricted"):
+        if role.get("restricted"):
             group_info = await client.get_group_info(event.chat.jid)
         if (
             role.get("restricted")
@@ -365,7 +365,7 @@ async def remove_from_role(event, args, client):
             return await event.react("⛔")
     try:
         arg, args = get_args(
-            ["-r", "store_true"],
+            "-r",
             to_parse=args,
             get_unknown=True,
         )
@@ -380,7 +380,7 @@ async def remove_from_role(event, args, client):
         if arg.r not in gc_roles:
             return await event.reply(f"Role with name: {arg.r} doesn't exist!")
         role = gc_roles.get(arg.r)
-        if roles.get("restricted"):
+        if role.get("restricted"):
             group_info = await client.get_group_info(event.chat.jid)
         if (
             role.get("restricted")
@@ -433,8 +433,8 @@ async def tag_roles(event, client):
         if not gc_roles:
             return
         acc_list = []
-        for roles in gc_roles:
-            acc_list.append("@" + roles)
+        for role_name in gc_roles:
+            acc_list.append("@" + role_name)
         for mention in acc_list:
             if mention not in (event.text or event.caption):
                 continue
