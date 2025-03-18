@@ -488,7 +488,7 @@ async def list_roles(event, args, client):
         event = await event.reply(text)
 
 
-aaync def role_info(event, args, client):
+async def role_info(event, args, client):
     """Get role info of a particular role"""
     gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
     role = gc_roles.get(args)
