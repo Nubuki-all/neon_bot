@@ -532,8 +532,8 @@ async def roles(event, args, client):
             if gc_roles.get(args):
                 return await role_info(event, args, client)
         pre = conf.CMD_PREFIX
-        msg = f"""{pre}create_role - *Create a new role in a group*
-{pre}delete_role - *Delete a created role*
+        msg = f"""{pre}new_role - *Create a new role in a group*
+{pre}del_role - *Delete a created role*
 {pre}edit_role - *Edit a created role*
 {pre}exit_role - *Leave a role*
 {pre}join_role - *Join a role*
@@ -549,8 +549,8 @@ async def roles(event, args, client):
         await event.react("❌")
 
 
-bot.add_handler(create_role, "create_role", require_args=True)
-bot.add_handler(delete_role, "delete_role", require_args=True)
+bot.add_handler(create_role, "new_role", require_args=True)
+bot.add_handler(delete_role, "del_role", require_args=True)
 bot.add_handler(edit_role, "edit_role", require_args=True)
 bot.add_handler(exit_role, "exit_role", require_args=True)
 bot.add_handler(join_role, "join_role", require_args=True)
