@@ -577,13 +577,14 @@ async def tag_all_admins(event, args, client):
             if not user_is_allowed(user):
                 return await event.react("⛔")
         group_info = await client.get_group_info(event.chat.jid)
+        arg = event.text.split()[0]
         tags = tag_admins(group_info.Participants)
         await clean_reply(
             event,
             event.reply_to_message,
             "reply",
-            "_*Tagged all admins!*_" if event.text.endswith("s") else tags.split()[0],
-            ghost_mentions=tags if event.text.endswith("s") else tags.split()[0],
+            "_*Tagged all admins!*_" if arg.endswith("s") else tags.split()[0],
+            ghost_mentions=tags if arg.endswith("s") else tags.split()[0],
         )
     except Exception:
         await logger(Exception)
@@ -609,13 +610,14 @@ async def tag_all_sudoers(event, args, client):
                 return
             if not user_is_allowed(user):
                 return await event.react("⛔")
+        arg = event.text.split()[0]
         tags = tag_sudoers()
         await clean_reply(
             event,
             event.reply_to_message,
             "reply",
-            "_*Tagged all Sudoers!*_" if event.text.endswith("s") else tags.split()[0],
-            ghost_mentions=tags if event.text.endswith("s") else tags.split()[0],
+            "_*Tagged all Sudoers!*_" if arg.endswith("s") else tags.split()[0],
+            ghost_mentions=tags if arg.endswith("s") else tags.split()[0],
         )
     except Exception:
         await logger(Exception)
@@ -641,13 +643,14 @@ async def tag_all_owners(event, args, client):
                 return
             if not user_is_allowed(user):
                 return await event.react("⛔")
+        arg = event.text.split()[0]
         tags = tag_owners()
         await clean_reply(
             event,
             event.reply_to_message,
             "reply",
-            "_*Tagged all Owners!*_" if event.text.endswith("s") else tags.split()[0],
-            ghost_mentions=tags if event.text.endswith("s") else tags.split()[0],
+            "_*Tagged all Owners!*_" if arg.endswith("s") else tags.split()[0],
+            ghost_mentions=tags if arg.endswith("s") else tags.split()[0],
         )
     except Exception:
         await logger(Exception)
