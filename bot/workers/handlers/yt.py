@@ -129,7 +129,7 @@ async def youtube_reply(event, args, client):
                         await event.reply_video(file, f"*{base_name}*")
                     else:
                         reply = await event.reply_photo(
-                            file[:3] + "webp", f"*{base_name}*"
+                            file[:-3] + "webp", f"*{base_name}*"
                         )
                         await reply.reply_audio(file)
                 else:
