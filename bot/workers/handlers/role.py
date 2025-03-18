@@ -37,7 +37,7 @@ async def create_role(event, args, client):
             return await event.react("⛔")
     try:
         arg, args = get_args(
-            ["-c", "store_true"],
+            ["-r", "store_true"],
             ["-cr", "store_true"],
             to_parse=args,
             get_unknown=True,
@@ -146,7 +146,7 @@ async def edit_role(event, args, client):
             return await event.react("⛔")
     try:
         arg, args = get_args(
-            ["-c", "store_true"],
+            ["-r", "store_true"],
             ["-cr", "store_true"],
             "-n",
             to_parse=args,
