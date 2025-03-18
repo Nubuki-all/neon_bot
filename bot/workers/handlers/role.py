@@ -8,6 +8,7 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     get_args,
     get_mentioned,
+    tag_users,
     user_is_allowed,
     user_is_owner,
     user_is_privileged,
@@ -191,7 +192,7 @@ async def edit_role(event, args, client):
         if arg.cr and not user_is_owner(user):
             await event.reply("-cr: Flag can only be used by owner, ignoring…")
             arg.cr = False
-        gc_roles.update({args: {"restricted": arg.cr or arg.r, "strict": arg.cr}})
+        role.update({"restricted": arg.cr or arg.r, "strict": arg.cr})
         if new_name:
             gc_roles[new_name] = gc_roles.pop(args)
             await save2db2(bot.group_dict, "groups")
@@ -408,7 +409,7 @@ async def remove_from_role(event, args, client):
                 members.remove(member)
         if not members:
             return await event.reply("No new members to remove from role was supplied.")
-        role.setdefault("members", []).extend(members)
+        role.setdefault("members", []).remove(members)
         await save2db2(bot.group_dict, "groups")
         await event.reply(role_action_msg.format("Removed users from", args))
     except Exception:
@@ -466,7 +467,7 @@ async def list_roles(event, args, client):
     if not event.chat.is_group:
         return await event.react("🚫")
     msg = str()
-    gc_roles = bot.group_dict.setdefault(chat_id, {}).setdefault("roles", {})
+    gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
     no = 1
     for role_name in gc_roles:
         role = gc_roles.get(role_name)
@@ -505,9 +506,6 @@ async def roles(event, args, client):
 {pre}join_role - *Join a role*
 {pre}add2role - *Batch add users to role*
 {pre}rm_from_role - *Batch remove users from role*
-{pre}afk - *Enable AFK mode*
-{pre}random - *Get a random choice*
-{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}
 {pre}roles - *Get this message again*
 {pre}roles* - *List all roles in group*
 
