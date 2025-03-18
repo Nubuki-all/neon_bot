@@ -498,6 +498,12 @@ def get_mentioned(text: str):
     return [jid.group(1) for jid in re.finditer(r"@([0-9]{5,16}|0)", text)]
 
 
+def tag_all_users_in_role(members: list):
+    tags = str()
+    for member in members:
+        tags += f"@{member} "
+    return tags.rstrip()
+
 def tag_admins(members: list):
     tags = str()
     for member in members:

@@ -8,7 +8,7 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     get_args,
     get_mentioned,
-    tag_users,
+    tag_all_users_in_role,
     user_is_allowed,
     user_is_owner,
     user_is_privileged,
@@ -409,7 +409,8 @@ async def remove_from_role(event, args, client):
                 members.remove(member)
         if not members:
             return await event.reply("No new members to remove from role was supplied.")
-        role.setdefault("members", []).remove(members)
+        members = list(set(role.get("members")) - set(members))
+        role["members"] = members
         await save2db2(bot.group_dict, "groups")
         await event.reply(role_action_msg.format("Removed users from", args))
     except Exception:
@@ -448,7 +449,7 @@ async def tag_roles(event, client):
                     continue
             if role.get("strict") and not user_is_admin(user):
                 continue
-            tags = tag_users(role.get("members"))
+            tags = tag_all_users_in_role(role.get("members"))
             await clean_reply(
                 event,
                 event.reply_to_message,
