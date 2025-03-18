@@ -78,7 +78,7 @@ async def create_role(event, args, client):
                     "creator": user,
                     "members": [],
                     "restricted": arg.cr or arg.r,
-                    "strict": arg.cr,
+                    "locked": arg.cr,
                 }
             }
         )
@@ -118,7 +118,7 @@ async def delete_role(event, args, client):
             and not (
                 user_is_privileged(user) or user_is_admin(user, group_info.Participants)
             )
-        ) or (role.get("strict") and not user_is_owner(user)):
+        ) or (role.get("locked") and not user_is_owner(user)):
             return await event.reply("Insufficient permissions to delete this role")
         if role.get("creator") != user and not user_is_privileged(user):
             return await event.reply("Insufficient permissions to delete this role")
@@ -169,7 +169,7 @@ async def edit_role(event, args, client):
             and not (
                 user_is_privileged(user) or user_is_admin(user, group_info.Participants)
             )
-        ) or (role.get("strict") and not user_is_owner(user)):
+        ) or (role.get("locked") and not user_is_owner(user)):
             return await event.reply("Insufficient permissions to edit this role")
         if role.get("creator") != user and not user_is_privileged(user):
             return await event.reply("Insufficient permissions to edit this role")
@@ -194,7 +194,7 @@ async def edit_role(event, args, client):
         if arg.cr and not user_is_owner(user):
             await event.reply("-cr: Flag can only be used by owner, ignoring…")
             arg.cr = False
-        role.update({"restricted": arg.cr or arg.r, "strict": arg.cr})
+        role.update({"restricted": arg.cr or arg.r, "locked": arg.cr})
         if new_name:
             gc_roles[new_name] = gc_roles.pop(args)
             await save2db2(bot.group_dict, "groups")
@@ -271,7 +271,7 @@ async def join_role(event, args, client):
             and not (
                 user_is_privileged(user) or user_is_admin(user, group_info.Participants)
             )
-        ) or (role.get("strict") and not user_is_owner(user)):
+        ) or (role.get("locked") and not user_is_owner(user)):
             return await event.reply(
                 "Insufficient permissions to become a member of this role"
             )
@@ -322,7 +322,7 @@ async def add_to_role(event, args, client):
             and not (
                 user_is_privileged(user) or user_is_admin(user, group_info.Participants)
             )
-        ) or (role.get("strict") and not user_is_owner(user)):
+        ) or (role.get("locked") and not user_is_owner(user)):
             return await event.reply(
                 "Insufficient permissions to batch add members to this role"
             )
@@ -390,7 +390,7 @@ async def remove_from_role(event, args, client):
             and not (
                 user_is_privileged(user) or user_is_admin(user, group_info.Participants)
             )
-        ) or (role.get("strict") and not user_is_owner(user)):
+        ) or (role.get("locked") and not user_is_owner(user)):
             return await event.reply(
                 "Insufficient permissions to batch remove members to this role"
             )
@@ -449,7 +449,7 @@ async def tag_roles(event, client):
                 group_info = await client.get_group_info(event.chat.jid)
                 if not user_is_admin(user, group_info.Participants):
                     continue
-            if role.get("strict") and not user_is_admin(user):
+            if role.get("locked") and not user_is_admin(user):
                 continue
             tags = tag_all_users_in_role(role.get("members"))
             await clean_reply(
@@ -488,9 +488,33 @@ async def list_roles(event, args, client):
         event = await event.reply(text)
 
 
+aaync def role_info(event, args, client):
+    """Get role info of a particular role"""
+    gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
+    role = gc_roles.get(args)
+    users = str()
+    for user in role.get("members"):
+        info = await client.contact.get_contact(jid.build_jid(user))
+        name = info.PushName
+        msg += f"\n- {name}"
+    msg = (
+        f"*Role Name:* {args}\n"
+        f"*Creator:* @{role.get('creator')}\n"
+        f"*Restricted:* {role.get('restricted')}\n"
+        f"*Locked:* {role.get('locked')}\n\n"
+        f"*Members:*{users}"
+    )
+    await event.reply(msg)
+
+
 async def roles(event, args, client):
     """
-    List roles in group or list available roles commands if -l/--list is provided as argument.
+    List roles in group
+    Arguments:
+    -l/--list : list available roles commands
+    role_name : Get information of a particular role.
+    
+    *Both arguments cannot be used together.
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -501,6 +525,10 @@ async def roles(event, args, client):
     try:
         if args in ("-l", "--list"):
             return await list_roles(event, args, client)
+        elif args:
+            gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
+            if gc_roles.get(args):
+                return await role_info(event, args, client)
         pre = conf.CMD_PREFIX
         msg = f"""{pre}create_role - *Create a new role in a group*
 {pre}delete_role - *Delete a created role*
