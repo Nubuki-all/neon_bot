@@ -128,7 +128,9 @@ async def youtube_reply(event, args, client):
                     if not audio:
                         await event.reply_video(file, f"*{base_name}*")
                     else:
-                        reply = await event.reply_photo(file[:3]+"webp", f"*{base_name}*")
+                        reply = await event.reply_photo(
+                            file[:3] + "webp", f"*{base_name}*"
+                        )
                         await reply.reply_audio(file)
                 else:
                     await folder_upload(ytdl.folder, event, status_msg, audio)
