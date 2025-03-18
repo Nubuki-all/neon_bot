@@ -247,7 +247,7 @@ async def add_to_role(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-         arg, args = get_args(
+        arg, args = get_args(
             ["-r", "store_true"],
             to_parse=args,
             get_unknown=True,
