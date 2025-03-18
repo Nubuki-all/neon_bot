@@ -406,7 +406,7 @@ class YoutubeDLHelper:
             self._listener.name = f"{base_name}{self._ext}"
 
         if self._ext in [
-            ".mp3",
+            # ".mp3",
             ".mkv",
             ".mka",
             ".ogg",
