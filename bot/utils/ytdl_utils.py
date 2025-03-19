@@ -264,7 +264,7 @@ class YoutubeDLHelper:
             else:
                 outtmpl_ = "%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"
                 if self._ext == ".mp3":
-                    outtmpl_ = "%(title,fulltitle,alt_title)s • %(artist)s.%(ext)s"
+                    outtmpl_ = "%(fulltitle,alt_title)s • %(artist,uploader)s.%(ext)s"
                 realName = ydl.prepare_filename(result, outtmpl=outtmpl_)
                 ext = ospath.splitext(realName)[-1]
                 self.file_name = (
