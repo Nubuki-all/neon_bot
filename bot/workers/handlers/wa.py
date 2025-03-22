@@ -200,7 +200,7 @@ async def undelete(event, args, client):
         mentioned_ = False
         if args:
             arg, args = get_args(
-                "-a"
+                "-a",
                 to_parse=args,
                 get_unknown=True,
             )
