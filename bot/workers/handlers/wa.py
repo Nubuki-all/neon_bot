@@ -205,7 +205,13 @@ async def undelete(event, args, client):
                 to_parse=args,
                 get_unknown=True,
             )
-            amount = arg.a
+            if not arg.a.isdigit():
+                await event.reply(f"-a: what is this? '{arg.a}'???")
+            else:
+                amount = int(arg.a)
+                if amount < 1:
+                    await event.reply(f"-a: Sometimes i wonder…, resetting value…")
+                    amount = None
         amount = 1 if not amount else amount
         mentioned = get_mentioned(args or str())
         # mentioned_ = bool(mentioned) slower?

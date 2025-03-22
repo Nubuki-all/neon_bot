@@ -75,10 +75,10 @@ class Message_store:
         msgs = await self.get_messages(chat_id)
         for msg in reversed(msgs):
             if not hasattr(msg, "is_revoke"):
-                continue  # backward compatibility
+                continue #backward compatibility
             if not msg.is_revoke:
                 continue
-            if user_id and not msg.revoker_id == user_id:
+            if user_id and not msg.from_user.id == user_id:
                 continue
             del_ids.append(msg.revoked_id)
             if amount and len(del_ids) >= amount:

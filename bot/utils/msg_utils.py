@@ -89,7 +89,9 @@ class Event:
             "reaction",
             "video",
         ]
-        attrs.extend(["revoked_id", "revoker_id", "revoker_jid", "revoker_server"])
+        attrs.extend(
+            ["revoked_id"]
+        )
         for a in attrs:
             setattr(self, a, None)
 
@@ -121,10 +123,6 @@ class Event:
         if self.protocol and self.protocol.type == 0:
             self.is_revoke = True
             self.revoked_id = self.protocol.key.ID
-            self.revoker_id, self.revoker_server = self.protocol.key.remoteJID.split(
-                "@"
-            )
-            self.revoker_jid = jid.build_jid(self.revoker_id, self.revoker_server)
         self.caption = (extract_text(self._message) or None) if not self.text else None
 
         self.quoted = (
