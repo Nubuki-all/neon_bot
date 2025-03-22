@@ -119,7 +119,7 @@ class Event:
         self.text = self.text or self.short_text or None
         self._populate()
         self._construct_media()
-        if self.protocol and self.protocol.type == "REVOKE":
+        if self.protocol and self.protocol.type == "0":
             self.is_revoke = True
             self.revoked_id = self.protocol.key.ID
             self.revoker_id, self.revoker_server = self.protocol.key.remoteJID.split(
