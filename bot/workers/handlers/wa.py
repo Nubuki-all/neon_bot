@@ -18,6 +18,7 @@ from bot.fun.stickers import ran_stick
 from bot.others.msg_store import msg_store
 from bot.utils.bot_utils import (
     human_format_num,
+    list_to_str,
     png_to_jpg,
     split_text,
     sync_to_async,
@@ -230,7 +231,7 @@ async def undelete(event, args, client):
                 status_msg = await event.reply(
                     f"Fetching {len(del_ids)} deleted message(s) for: @{user_id}"
                 )
-                await send_deleted_msgs(event, event.chat.id, del_ids)
+                await send_deleted_msgs(event, event.chat.id, del_ids, verbose=True)
                 no_del_msg = False
                 await status_msg.delete()
                 mentioned.pop(0)
@@ -240,19 +241,21 @@ async def undelete(event, args, client):
 
         if not mentioned_:
             del_ids = await msg_store.get_deleted_messages_id(event.chat.id, amount)
-            if not del_ids:
-                return
-            await send_deleted_msgs(event, event.chat.id, del_ids)
-            no_del_msg = False
+            if del_ids:
+                await send_deleted_msgs(event, event.chat.id, del_ids)
+                no_del_msg = False
         if no_del_msg:
-            await event.reply("*No deleted messages found.*")
+            await event.reply("*No recently deleted messages found.*")
     except Exception:
         await logger(Exception)
         await event.react("❌")
 
 
-async def send_deleted_msgs(event, chat_id, del_ids):
+async def send_deleted_msgs(event, chat_id, del_ids, verbose=False):
     msgs = await msg_store.get_messages_from_ids(chat_id, del_ids)
+    if not msgs and verbose:
+        sep = " ,"
+        await event.reply(f"*Could not find message(s) with ID(s):* '{list_to_str(del_ids, sep)}'")
     chain_reply = event
     for msg in msgs:
         await msg.reply(".")

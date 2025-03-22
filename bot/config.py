@@ -41,7 +41,7 @@ class Config:
             self.IGNORE_PM = config("IGNORE_PM", default=True, cast=bool)
             self.LOG_GROUP = config("LOG_GROUP", default=0, cast=int)
             self.MAX_SAVED_MESSAGES = config(
-                "MAX_SAVED_MESSAGES", default=300, cast=int
+                "MAX_SAVED_MESSAGES", default=4000, cast=int
             )
             self.NO_GPU = config("NO_GPU", default=False, cast=bool)
             self.RSS_CHAT = config(
