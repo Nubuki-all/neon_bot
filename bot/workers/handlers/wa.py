@@ -932,4 +932,4 @@ bot.add_handler(rec_msg_ranking)
 bot.add_handler(msg_ranking, "msg_ranking")
 
 # test
-bot.add_handler(button, "button")
+bot.add_handler(test_button, "button")
