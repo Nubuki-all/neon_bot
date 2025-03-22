@@ -87,10 +87,10 @@ class Message_store:
         bot.force_save_messages = True
         async with msg_store_lock:
             return [
-                msg
+                event
                 for msg_id in msg_ids
-                if (msg := await sync_to_async(self._get_message, chat_id, msg_id))
-                is not None
+                if (msg := await sync_to_async(self._get_message, chat_id, msg_id)) is not None
+                for event in msg
             ]
 
     async def get_message(self, chat_id, msg_id):
