@@ -15,6 +15,7 @@ from urlextract import URLExtract
 from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
+from bot.others.msg_store import msg_store
 from bot.utils.bot_utils import (
     human_format_num,
     png_to_jpg,
@@ -33,6 +34,7 @@ from bot.utils.msg_utils import (
     construct_msg_and_evt,
     download_replied_media,
     get_args,
+    get_mentioned,
     get_user_info,
     tag_admins,
     tag_owners,
@@ -134,7 +136,7 @@ async def stickerize_image(event, args, client):
     """
     Turns replied image to sticker.
     Args:
-        Name of sticker
+        Name of sticker [Optional]
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -175,6 +177,72 @@ async def stickerize_image(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+
+async def undelete(event, args, client):
+    """
+    Undeletes a message;
+    Argument:
+      @mention : Specific user whose deleted messages should be retrieved; defaults to anyone
+    Optional Parameter(s):
+        -a : amount deleted messages to fetch; defaults to 1 (one)
+    """
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        amount=None
+        mentioned_ = False
+        if args:
+            arg, args = get_args(
+                "-a"
+                to_parse=args,
+                get_unknown=True,
+            )
+            amount = arg.a
+        amount = 1 if not amount else amount
+        mentioned = get_mentioned(args)
+        # mentioned_ = bool(mentioned) slower?
+        if mentioned:
+            mentioned_ = True
+        while mentioned:
+            user_id = mentioned[0]
+            try:
+                del_ids = await msg_store.get_deleted_messages_id(event.chat.id, amount, user_id)
+                if not del_ids:
+                    mentioned.pop(0)
+                    continue
+                status_msg = await event.reply(f"Fetching {len(del_ids)} deleted message(s) for: @{user_id}")
+                await send_deleted_msgs(event, event.chat.id, del_ids)
+                await status_msg.delete()
+                mentioned.pop(0)
+            except Exception:
+                await logger(Exception)
+                mentioned.pop(0)
+
+        if not mentioned_:
+            del_ids = await msg_store.get_deleted_messages_id(event.chat.id, amount)
+            if not del_ids:
+                return
+            await send_deleted_msgs(event, event.chat.id, del_ids)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def send_deleted_msgs(event, chat_id, del_ids):
+    msgs = await msg_store.get_messages_from_ids(chat_id, del_ids)
+    chain_reply = event
+    for msg in msgs:
+        await msg.reply(".")
+        await asyncio.sleep(1)
+        await chain_reply.reply(msg.message.Message)
+        await asyncio.sleep(3)
 
 
 async def upscale_image(event, args, client):
@@ -841,3 +909,23 @@ async def test_button(event, args, client):
         await event.reply(f"{info[0]} was pressed.\n*Value:* {info[1]}")
     except Exception:
         await logger(Exception)
+
+
+bot.add_handler(sanitize_url, "sanitize")
+bot.add_handler(stickerize_image, "sticker")
+bot.add_handler(undelete, "undel")
+bot.add_handler(upscale_image, "upscale")
+bot.add_handler(pick_random, "random")
+bot.add_handler(get_notes, "get")
+bot.add_handler(save_notes, "save")
+bot.add_handler(delete_notes, "del_note")
+bot.add_handler(get_notes2)
+bot.add_handler(tag_all_admins)
+bot.add_handler(tag_all_sudoers)
+bot.add_handler(tag_all_owners)
+bot.add_handler(tag_everyone)
+bot.add_handler(rec_msg_ranking)
+bot.add_handler(msg_ranking, "msg_ranking")
+
+# test
+bot.add_handler(button, "button")

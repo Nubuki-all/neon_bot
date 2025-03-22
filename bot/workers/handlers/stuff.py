@@ -113,6 +113,7 @@ async def getcmds(event, args, client):
 {pre}anime - *Fetch anime info from anilist*
 {pre}airing - *Fetch anime airing info from anilist*
 {pre}msg_ranking - *Get a group's msg ranking*
+{pre}undel - *Undelete a user messages*
 {pre}ping - *Check if bot is alive*
 {pre}bash - *[Dev.] Run bash commands*
 {pre}eval - *[Dev.] Evaluate python commands*

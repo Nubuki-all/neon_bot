@@ -130,49 +130,9 @@ async def _(client: NewAClient, message: Event):
     await event_handler(message, getcmds)
 
 
-@bot.register("msg_ranking")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, msg_ranking, bot.client)
-
-
-@bot.register("save")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, save_notes, require_args=True)
-
-
-@bot.register("get")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, get_notes)
-
-
-@bot.register("del_note")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, delete_notes, require_args=True)
-
-
 @bot.register("afk")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, activate_afk)
-
-
-@bot.register("sanitize")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, sanitize_url)
-
-
-@bot.register("sticker")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, stickerize_image)
-
-
-@bot.register("random")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, pick_random)
-
-
-@bot.register("upscale")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, upscale_image)
 
 
 @bot.register("rss")
@@ -260,40 +220,11 @@ async def _(client: NewAClient, message: Event):
     await event_handler(message, restart_handler)
 
 
-@bot.register("button")
-async def _(client: NewAClient, message: Event):
-    await event_handler(message, test_button)
-
+## AUTO ##
 
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await sticker_reply(message, None, client)
-
-
-@bot.register(None)
-async def _(client: NewAClient, message: Event):
-    await tag_all_admins(message, None, client)
-
-
-@bot.register(None)
-async def _(client: NewAClient, message: Event):
-    await tag_all_owners(message, None, client)
-
-
-@bot.register(None)
-async def _(client: NewAClient, message: Event):
-    await tag_all_sudoers(message, None, client)
-
-
-@bot.register(None)
-async def _(client: NewAClient, message: Event):
-    await tag_everyone(message, None, client)
-
-
-@bot.register(None)
-async def _(client: NewAClient, message: Event):
-    await get_notes2(message, None, client)
-
 
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
@@ -303,11 +234,6 @@ async def _(client: NewAClient, message: Event):
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await afk_helper(message, None, client)
-
-
-@bot.register(None)
-async def _(client: NewAClient, message: Event):
-    await rec_msg_ranking(message, None, client)
 
 
 @bot.client.event(MessageEv)

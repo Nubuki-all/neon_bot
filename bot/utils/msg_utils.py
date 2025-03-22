@@ -79,6 +79,12 @@ class Event:
             self.media = v
             break
 
+    def _populate(self):
+        atrrs = ["audio", "document", "image", "media", "protocol", "reaction", "video",]
+        atrrs.extend(["is_revoke", "revoked_id", "revoker_id", "revoker_jid", "revoker_server"])
+        for a in attrs:
+            setattr(self, a, None)
+
     def construct(self, message: MessageEv, add_replied: bool = True):
         self.chat = self.Chat()
         self.chat.construct(message)
@@ -101,15 +107,13 @@ class Event:
         # if self.mentioned:
         #    self.text = (self.text.split(maxsplit=1)[1]).strip()
         self.text = self.text or self.short_text or None
-        # To do expand quoted; has members [stanzaID, participant,
-        # quotedMessage.conversation]
-        self.audio = None
-        self.document = None
-        self.image = None
-        self.media = None
-        self.reaction = None
-        self.video = None
+        self._populate()
         self._construct_media()
+        if self.protocol and self.protocol.type == "REVOKE":
+            self.is_revoke = True
+            self.revoked_id = self.protocol.key.ID
+            self.revoker_id, self.revoker_server = self.protocol.key.remoteJID.split("@")
+            self.revoker_jid = jid.build_jid(self.revoker_id, self.revoker_server)
         self.caption = (extract_text(self._message) or None) if not self.text else None
 
         self.quoted = (
@@ -609,7 +613,7 @@ def add_handler(function, command: str | None = None, **kwargs):
     else:
 
         async def _(client: NewAClient, event: Event):
-            await function(event, client)
+            await function(event, None, client)
 
     register(command)(_)
 

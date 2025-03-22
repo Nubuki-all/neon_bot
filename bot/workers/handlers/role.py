@@ -427,7 +427,7 @@ async def remove_from_role(event, args, client):
         await event.react("❌")
 
 
-async def tag_roles(event, client):
+async def tag_roles(event, _, client):
     """
     Tags everyone in a role
     Arguments:
@@ -531,10 +531,10 @@ async def roles(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        args = args.casefold()
         if args in ("-l", "--list"):
             return await list_roles(event, args, client)
         elif args:
+            args = args.casefold()
             gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault(
                 "roles", {}
             )
