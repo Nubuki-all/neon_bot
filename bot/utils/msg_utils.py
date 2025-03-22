@@ -89,9 +89,7 @@ class Event:
             "reaction",
             "video",
         ]
-        attrs.extend(
-            ["revoked_id", "revoker_id", "revoker_jid", "revoker_server"]
-        )
+        attrs.extend(["revoked_id", "revoker_id", "revoker_jid", "revoker_server"])
         for a in attrs:
             setattr(self, a, None)
 
