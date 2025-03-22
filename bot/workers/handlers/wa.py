@@ -205,12 +205,13 @@ async def undelete(event, args, client):
                 to_parse=args,
                 get_unknown=True,
             )
-            if not arg.a.isdigit():
+            if arg.a and not arg.a.isdigit():
                 await event.reply(f"-a: what is this? '{arg.a}'???")
-            else:
+                await asyncio.sleep(2)
+            elif arg.a:
                 amount = int(arg.a)
                 if amount < 1:
-                    await event.reply(f"-a: Sometimes i wonder…, resetting value…")
+                    await event.reply(f"-a: Sometimes i wonder…, reseting value…")
                     amount = None
         amount = 1 if not amount else amount
         mentioned = get_mentioned(args or str())
