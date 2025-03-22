@@ -75,7 +75,7 @@ class Message_store:
         msgs = await self.get_messages(chat_id)
         for msg in reversed(msgs):
             if not hasattr(msg, "is_revoke"):
-                continue #backward compatibility
+                continue  # backward compatibility
             if not msg.is_revoke:
                 continue
             if user_id and not msg.from_user.id == user_id:
