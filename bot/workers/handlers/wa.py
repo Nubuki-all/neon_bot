@@ -250,7 +250,7 @@ async def send_deleted_msgs(event, chat_id, del_ids):
     for msg in msgs:
         await msg.reply(".")
         await asyncio.sleep(1)
-        await chain_reply.reply(msg.message.Message)
+        await chain_reply.reply(msg.media or msg.text)
         await asyncio.sleep(3)
 
 

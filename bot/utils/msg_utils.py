@@ -90,7 +90,7 @@ class Event:
             "video",
         ]
         attrs.extend(
-            ["is_revoke", "revoked_id", "revoker_id", "revoker_jid", "revoker_server"]
+            ["revoked_id", "revoker_id", "revoker_jid", "revoker_server"]
         )
         for a in attrs:
             setattr(self, a, None)
@@ -119,6 +119,7 @@ class Event:
         self.text = self.text or self.short_text or None
         self._populate()
         self._construct_media()
+        self.is_revoke = False
         if self.protocol and self.protocol.type == 0:
             self.is_revoke = True
             self.revoked_id = self.protocol.key.ID

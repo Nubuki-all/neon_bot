@@ -74,6 +74,8 @@ class Message_store:
         del_ids = []
         msgs = await self.get_messages(chat_id)
         for msg in reversed(msgs):
+            if not hasattr(msg, "is_revoke"):
+                continue #backward compatibility
             if not msg.is_revoke:
                 continue
             if user_id and not msg.revoker_id == user_id:
