@@ -255,7 +255,9 @@ async def send_deleted_msgs(event, chat_id, del_ids, verbose=False):
     msgs = await msg_store.get_messages_from_ids(chat_id, del_ids)
     if not msgs and verbose:
         sep = " ,"
-        await event.reply(f"*Could not find message(s) with ID(s):* '{list_to_str(del_ids, sep)}'")
+        await event.reply(
+            f"*Could not find message(s) with ID(s):* '{list_to_str(del_ids, sep)}'"
+        )
     chain_reply = event
     for msg in msgs:
         await msg.reply(".")
