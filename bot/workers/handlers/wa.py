@@ -196,7 +196,7 @@ async def undelete(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        amount=None
+        amount = None
         mentioned_ = False
         if args:
             arg, args = get_args(
@@ -213,11 +213,15 @@ async def undelete(event, args, client):
         while mentioned:
             user_id = mentioned[0]
             try:
-                del_ids = await msg_store.get_deleted_messages_id(event.chat.id, amount, user_id)
+                del_ids = await msg_store.get_deleted_messages_id(
+                    event.chat.id, amount, user_id
+                )
                 if not del_ids:
                     mentioned.pop(0)
                     continue
-                status_msg = await event.reply(f"Fetching {len(del_ids)} deleted message(s) for: @{user_id}")
+                status_msg = await event.reply(
+                    f"Fetching {len(del_ids)} deleted message(s) for: @{user_id}"
+                )
                 await send_deleted_msgs(event, event.chat.id, del_ids)
                 await status_msg.delete()
                 mentioned.pop(0)

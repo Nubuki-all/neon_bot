@@ -80,8 +80,18 @@ class Event:
             break
 
     def _populate(self):
-        atrrs = ["audio", "document", "image", "media", "protocol", "reaction", "video",]
-        atrrs.extend(["is_revoke", "revoked_id", "revoker_id", "revoker_jid", "revoker_server"])
+        atrrs = [
+            "audio",
+            "document",
+            "image",
+            "media",
+            "protocol",
+            "reaction",
+            "video",
+        ]
+        atrrs.extend(
+            ["is_revoke", "revoked_id", "revoker_id", "revoker_jid", "revoker_server"]
+        )
         for a in attrs:
             setattr(self, a, None)
 
@@ -112,7 +122,9 @@ class Event:
         if self.protocol and self.protocol.type == "REVOKE":
             self.is_revoke = True
             self.revoked_id = self.protocol.key.ID
-            self.revoker_id, self.revoker_server = self.protocol.key.remoteJID.split("@")
+            self.revoker_id, self.revoker_server = self.protocol.key.remoteJID.split(
+                "@"
+            )
             self.revoker_jid = jid.build_jid(self.revoker_id, self.revoker_server)
         self.caption = (extract_text(self._message) or None) if not self.text else None
 

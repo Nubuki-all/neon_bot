@@ -41,25 +41,7 @@ from .workers.handlers.manage import (
 )
 from .workers.handlers.role import roles
 from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
-from .workers.handlers.wa import (
-    delete_notes,
-    gc_handler,
-    get_notes,
-    get_notes2,
-    msg_ranking,
-    pick_random,
-    rec_msg_ranking,
-    sanitize_url,
-    save_notes,
-    sticker_reply,
-    stickerize_image,
-    tag_all_admins,
-    tag_all_owners,
-    tag_all_sudoers,
-    tag_everyone,
-    test_button,
-    upscale_image,
-)
+from .workers.handlers.wa import gc_handler, sticker_reply
 from .workers.handlers.yt import youtube_reply
 
 
@@ -222,9 +204,11 @@ async def _(client: NewAClient, message: Event):
 
 ## AUTO ##
 
+
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await sticker_reply(message, None, client)
+
 
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
