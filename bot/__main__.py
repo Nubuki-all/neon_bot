@@ -240,7 +240,7 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 ########### Start ############
 
 try:
-    bot.loop = asyncio.get_event_loop()
+    bot.loop = asyncio.new_event_loop()
     bot.loop.create_task(on_startup())
     if not bot.initialized_client:
         bot.loop.run_until_complete(

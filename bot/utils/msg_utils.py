@@ -80,7 +80,7 @@ class Event:
             break
 
     def _populate(self):
-        atrrs = [
+        attrs = [
             "audio",
             "document",
             "image",
@@ -89,7 +89,7 @@ class Event:
             "reaction",
             "video",
         ]
-        atrrs.extend(
+        attrs.extend(
             ["is_revoke", "revoked_id", "revoker_id", "revoker_jid", "revoker_server"]
         )
         for a in attrs:
