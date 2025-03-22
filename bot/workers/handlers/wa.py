@@ -198,6 +198,7 @@ async def undelete(event, args, client):
     try:
         amount = None
         mentioned_ = False
+        no_del_msg = True
         if args:
             arg, args = get_args(
                 "-a",
@@ -206,7 +207,7 @@ async def undelete(event, args, client):
             )
             amount = arg.a
         amount = 1 if not amount else amount
-        mentioned = get_mentioned(args)
+        mentioned = get_mentioned(args or str())
         # mentioned_ = bool(mentioned) slower?
         if mentioned:
             mentioned_ = True
@@ -223,6 +224,7 @@ async def undelete(event, args, client):
                     f"Fetching {len(del_ids)} deleted message(s) for: @{user_id}"
                 )
                 await send_deleted_msgs(event, event.chat.id, del_ids)
+                no_del_msg = False
                 await status_msg.delete()
                 mentioned.pop(0)
             except Exception:
@@ -234,6 +236,9 @@ async def undelete(event, args, client):
             if not del_ids:
                 return
             await send_deleted_msgs(event, event.chat.id, del_ids)
+            no_del_msg = False
+        if no_del_msg:
+            await event.reply("*No deleted messages found.*")
     except Exception:
         await logger(Exception)
         await event.react("❌")
