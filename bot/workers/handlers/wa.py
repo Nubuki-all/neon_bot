@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import datetime
 import io
 import random
 import uuid
@@ -11,6 +12,7 @@ from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import Message
 from PIL import Image
 from RealESRGAN import RealESRGAN
 from urlextract import URLExtract
+from wand.image import Image as wand_image
 
 from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
@@ -20,6 +22,7 @@ from bot.utils.bot_utils import (
     human_format_num,
     list_to_str,
     png_to_jpg,
+    same_week,
     split_text,
     sync_to_async,
     turn,
@@ -178,6 +181,36 @@ async def stickerize_image(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+async def sticker_to_image(event, args, client):
+    "Converts replied sticker back to media"
+    status_msg = None
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not event.reply_to_message.sticker:
+            return await event.reply("Kindly reply to a sticker!")
+        status_msg = await event.reply("Downloading sticker…")
+        file = await download_replied_media(event)
+        if event.reply_to_message.sticker.isAnimated:
+            await status_msg.edit("*Converting sticker to gif…*")
+            with wand_image(blob=file, format="webp") as img:
+                with img.convert('gif') as img2:
+                    gif = img2.make_blob(format='gif')
+            await event.reply_gif(gif)
+        else:
+            await status_msg.edit("*Converting sticker to image…*")
+            await event.reply_photo((await png_to_jpg(file)))
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+    finally:
+        if status_msg:
+            await status_msg.delete()
 
 
 async def undelete(event, args, client):
@@ -787,14 +820,21 @@ async def rec_msg_ranking(event, args, client):
             return
         if not chat_is_allowed(event):
             return
-        # if not (event.text or event.media):
-        if not (event.text or event.caption or event.audio):
+        if not (event.is_revoke or event.text or event.caption or event.audio):
             return
         chat_id = event.chat.id
         msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
         user = event.from_user.id
-        msg_rank[user] = msg_rank.setdefault(user, 0) + 1
-        msg_rank["total"] = msg_rank.setdefault("total", 0) + 1
+        if event.is_revoke:
+            msgs = await msg_store.get_messages_from_ids(chat_id, [event.revoked_id])
+            if msgs and msgs[0].from_user.id == user and (ts := msgs[0].message.Info.Timestamp):
+                date = datetime.datetime.fromtimestamp(ts/1000)
+                if same_week(date, 0, 4):
+                    value = -1
+        else:
+            value = 1
+        msg_rank[user] = msg_rank.setdefault(user, 0) + value
+        msg_rank["total"] = msg_rank.setdefault("total", 0) + value
         bot.msg_leaderboard_counter += 1
     except Exception:
         await logger(Exception)
@@ -936,6 +976,7 @@ async def test_button(event, args, client):
 
 bot.add_handler(sanitize_url, "sanitize")
 bot.add_handler(stickerize_image, "sticker")
+bot.add_handler(sticker_to_image, "stick2img")
 bot.add_handler(undelete, "undel")
 bot.add_handler(upscale_image, "upscale")
 bot.add_handler(pick_random, "random")

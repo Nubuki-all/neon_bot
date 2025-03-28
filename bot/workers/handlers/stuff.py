@@ -104,6 +104,7 @@ async def getcmds(event, args, client):
 {pre}meme - *Get a random meme*
 {pre}sanitize - *Sanitize link or message*
 {pre}sticker - *Turns images to stickers*
+{pre}stick2img - *Turns stickers to images/gifs*
 {pre}get - *Get previously saved item*
 {pre}save - *Save a replied text/media*
 {pre}del_note - *Delete a saved item*

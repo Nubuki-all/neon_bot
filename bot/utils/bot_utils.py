@@ -212,10 +212,10 @@ async def shutdown_services():
             await asyncio.sleep(1)
 
 
-def same_week(date, offset: int = 1):
+def same_week(date, day_offset: int = 1, hour_offset: int = 0):
     """returns true if datetime object is part of the current week"""
     d1 = date
-    d2 = datetime.datetime.today() + datetime.timedelta(days=offset)
+    d2 = datetime.datetime.today() + datetime.timedelta(days=day_offset, hours=hour_offset)
     return d1.isocalendar()[1] == d2.isocalendar()[1] and d1.year == d2.year
 
 

@@ -88,6 +88,7 @@ class Event:
             "protocol",
             "reaction",
             "video",
+            "sticker",
         ]
         attrs.extend(["revoked_id"])
         for a in attrs:
@@ -110,6 +111,7 @@ class Event:
         self.text_msg = message.Message.conversation
         self.short_text = self.text_msg
         self.text = self.ext_msg.text
+        self.timestamp = self.message.Info.Timestamp
         # mention_str = f"@{(self.w_id.split('@'))[0]}"
         # self.mentioned = self.text.startswith(mention_str) if self.text else False
         # if self.mentioned:
@@ -185,7 +187,7 @@ class Event:
         return self
 
     async def _send_message(
-        self, chat, message, link_preview: bool = True, ghost_mentions: str = None
+        self, chat, message, link_preview: bool = True, ghost_mentions: str = None, add_msg_secret: bool = False,
     ):
         await self.send_typing_status()
         response = await self.client.send_message(
@@ -193,6 +195,7 @@ class Event:
             message=message,
             link_preview=link_preview,
             ghost_mentions=ghost_mentions,
+            add_msg_secret=add_msg_secret,
         )
         await self.send_typing_status(False)
         msg = self.gen_new_msg(response.ID)
@@ -225,6 +228,7 @@ class Event:
         reply_privately: bool = False,
         ghost_mentions: str = None,
         message: MessageWithContextInfo = None,
+        add_msg_secret: bool = False,
     ):
         if not self.constructed:
             return
@@ -253,6 +257,7 @@ class Event:
                 link_preview=link_preview,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
+                add_msg_secret=add_msg_secret,
             )
         except httpx.HTTPStatusError:
             await logger(Exception)
@@ -262,6 +267,7 @@ class Event:
                 link_preview=False,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
+                add_msg_secret=add_msg_secret,
             )
         # self.id = response.ID
         # self.text = text
@@ -279,12 +285,13 @@ class Event:
         audio: str | bytes,
         ptt: bool = False,
         quote: bool = True,
+        add_msg_secret: bool = False,
     ):
         quoted = self.message if quote else None
 
         response = await self.client.send_audio(
             self.chat.jid, audio, ptt, quoted=quoted
-        )
+        , add_msg_secret=add_msg_secret)
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
 
@@ -295,6 +302,7 @@ class Event:
         caption: str = None,
         quote: bool = True,
         ghost_mentions: str = None,
+        add_msg_secret: bool = False,
     ):
         quoted = self.message if quote else None
         _, file_name = (
@@ -309,6 +317,7 @@ class Event:
             filename=file_name,
             quoted=quoted,
             ghost_mentions=ghost_mentions,
+            add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -321,6 +330,7 @@ class Event:
         viewonce: bool = False,
         as_gif: bool = True,
         ghost_mentions: str = None,
+        add_msg_secret: bool = False,
     ):
         quoted = self.message if quote else None
         response = await self.client.send_video(
@@ -332,6 +342,7 @@ class Event:
             gifplayback=as_gif,
             is_gif=True,
             ghost_mentions=ghost_mentions,
+            add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -343,6 +354,7 @@ class Event:
         quote: bool = True,
         viewonce: bool = False,
         ghost_mentions: str = None,
+        add_msg_secret: bool = False,
     ):
         quoted = self.message if quote else None
         response = await self.client.send_image(
@@ -352,6 +364,7 @@ class Event:
             quoted=quoted,
             viewonce=viewonce,
             ghost_mentions=ghost_mentions,
+            add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -364,6 +377,7 @@ class Event:
         packname: str = "",
         crop: bool = False,
         enforce_not_broken: bool = False,
+        add_msg_secret: bool = False,
     ):
         quoted = self.message if quote else None
         response = await self.client.send_sticker(
@@ -374,6 +388,7 @@ class Event:
             packname=packname,
             crop=crop,
             enforce_not_broken=enforce_not_broken,
+            add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -386,6 +401,7 @@ class Event:
         viewonce: bool = False,
         as_gif: bool = False,
         ghost_mentions: str = None,
+        add_msg_secret: bool = False,
     ):
         quoted = self.message if quote else None
         response = await self.client.send_video(
@@ -396,6 +412,7 @@ class Event:
             viewonce=viewonce,
             gifplayback=as_gif,
             ghost_mentions=ghost_mentions,
+            add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
@@ -462,6 +479,9 @@ async def download_replied_media(event) -> bytes:
     elif item := event.quoted_document:
         mtype = "document"
         media_type = MediaType.MediaDocument
+    elif item := event.reply_to_message.sticker:
+        mtype = "image"
+        media_type = MediaType.MediaImage
     else:
         raise Exception(
             inspect.cleandoc(
