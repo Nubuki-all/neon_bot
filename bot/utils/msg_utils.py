@@ -187,7 +187,12 @@ class Event:
         return self
 
     async def _send_message(
-        self, chat, message, link_preview: bool = True, ghost_mentions: str = None, add_msg_secret: bool = False,
+        self,
+        chat,
+        message,
+        link_preview: bool = True,
+        ghost_mentions: str = None,
+        add_msg_secret: bool = False,
     ):
         await self.send_typing_status()
         response = await self.client.send_message(
@@ -290,8 +295,8 @@ class Event:
         quoted = self.message if quote else None
 
         response = await self.client.send_audio(
-            self.chat.jid, audio, ptt, quoted=quoted
-        , add_msg_secret=add_msg_secret)
+            self.chat.jid, audio, ptt, quoted=quoted, add_msg_secret=add_msg_secret
+        )
         msg = self.gen_new_msg(response.ID)
         return construct_event(msg)
 

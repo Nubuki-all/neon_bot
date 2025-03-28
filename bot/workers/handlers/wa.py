@@ -182,6 +182,7 @@ async def stickerize_image(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def sticker_to_image(event, args, client):
     "Converts replied sticker back to media"
     status_msg = None
@@ -199,8 +200,8 @@ async def sticker_to_image(event, args, client):
         if event.reply_to_message.sticker.isAnimated:
             await status_msg.edit("*Converting sticker to gif…*")
             with wand_image(blob=file, format="webp") as img:
-                with img.convert('gif') as img2:
-                    gif = img2.make_blob(format='gif')
+                with img.convert("gif") as img2:
+                    gif = img2.make_blob(format="gif")
             await event.reply_gif(gif)
         else:
             await status_msg.edit("*Converting sticker to image…*")
@@ -827,8 +828,12 @@ async def rec_msg_ranking(event, args, client):
         user = event.from_user.id
         if event.is_revoke:
             msgs = await msg_store.get_messages_from_ids(chat_id, [event.revoked_id])
-            if msgs and msgs[0].from_user.id == user and (ts := msgs[0].message.Info.Timestamp):
-                date = datetime.datetime.fromtimestamp(ts/1000)
+            if (
+                msgs
+                and msgs[0].from_user.id == user
+                and (ts := msgs[0].message.Info.Timestamp)
+            ):
+                date = datetime.datetime.fromtimestamp(ts / 1000)
                 if same_week(date, 0, 4):
                     value = -1
         else:
