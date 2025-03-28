@@ -37,6 +37,6 @@ def save2db_lcl2(db):
     elif db == "rss":
         with open(local_rdb, "wb") as file:
             pickle.dump(bot.rss_dict, file)
-    elif db is "users":
+    elif db == "users":
         with open(local_udb, "wb") as file:
             pickle.dump(bot.user_dict, file)
