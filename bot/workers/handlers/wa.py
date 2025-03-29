@@ -193,6 +193,12 @@ async def sticker_to_image(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        if not event.reply_to_message:
+            return await event.reply_sticker(
+                "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif",
+                name="Reply to a sticker!",
+                packname="Qiqi.",
+            )
         if not event.reply_to_message.sticker:
             return await event.reply("Kindly reply to a sticker!")
         status_msg = await event.reply("Downloading sticker…")
