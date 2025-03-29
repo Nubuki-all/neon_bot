@@ -827,6 +827,7 @@ async def rec_msg_ranking(event, args, client):
         msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
         user = event.from_user.id
         if event.is_revoke:
+            value = 0
             msgs = await msg_store.get_messages_from_ids(chat_id, [event.revoked_id])
             if (
                 msgs
