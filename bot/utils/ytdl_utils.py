@@ -113,7 +113,7 @@ class YoutubeDLHelper:
             "progress_hooks": [self._on_download_progress],
             "logger": MyLogger(self, self._listener),
             "usenetrc": False,
-            # "cookiefile": "cookies.txt",
+            "cookiefile": "cookies.txt",
             "allow_multiple_video_streams": True,
             "allow_multiple_audio_streams": True,
             "noprogress": True,
