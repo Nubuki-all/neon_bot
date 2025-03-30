@@ -48,7 +48,7 @@ def get_video_name(base_name, with_quality=False):
         return base_name.strip()
 
 
-def extract_info(link, options={"ignoreerrors": True}):
+def extract_info(link, options={"cookiefile": "cookies.txt", "ignoreerrors": True}):
     with YoutubeDL(options) as ydl:
         result = ydl.extract_info(link, download=False)
         if result is None:
