@@ -48,7 +48,7 @@ def get_video_name(base_name, with_quality=False):
         return base_name.strip()
 
 
-def extract_info(link, options={"cookiefile": "cookies.txt", "ignoreerrors": True}):
+def extract_info(link, options={"cookiefile": ".cookies.txt", "ignoreerrors": True}):
     with YoutubeDL(options) as ydl:
         result = ydl.extract_info(link, download=False)
         if result is None:
@@ -113,7 +113,7 @@ class YoutubeDLHelper:
             "progress_hooks": [self._on_download_progress],
             "logger": MyLogger(self, self._listener),
             "usenetrc": False,
-            "cookiefile": "cookies.txt",
+            "cookiefile": ".cookies.txt",
             "allow_multiple_video_streams": True,
             "allow_multiple_audio_streams": True,
             "noprogress": True,

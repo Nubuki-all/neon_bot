@@ -169,4 +169,4 @@ cython_debug/
 Msg_store
 
 # cookies
-cookies.txt
+.cookies.txt
