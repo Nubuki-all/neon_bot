@@ -142,7 +142,7 @@ async def rss_list(event, args, client):
         return await event.reply(
             "*No subscriptions!*",
         )
-    list_feed = str()
+    list_feed = ""
     pre_event = event
 
     def parse_filter(ftr: str):
@@ -378,7 +378,7 @@ async def rss_sub(event, args, client):
         )
     inf_lists = []
     exf_lists = []
-    msg = str()
+    msg = ""
     # if arg.chat:
     # arg.chat = int(arg.chat)
     if arg.inf:
@@ -598,7 +598,7 @@ async def enable(event, args, client):
 
 async def list_sudoers(event, args, client):
     "Lists the sudoers."
-    msg = str()
+    msg = ""
     for user in bot.user_dict.keys():
         if not bot.user_dict.get(user, {}).get("sudoer", False):
             continue

@@ -24,7 +24,7 @@ async def get_logs(event, args, client):
             return
         arg = get_args("-t", to_parse=args)
         if arg.t and arg.t.isdigit() and (ind := int(arg.t)):
-            msg = str()
+            msg = ""
             for i in reversed(range(1, ind)):
                 msg += read_n_to_last_line(log_file_name, i)
                 msg += "\n"

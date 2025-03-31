@@ -24,9 +24,10 @@ class Config:
                 "ALWAYS_DEPLOY_LATEST", default=False, cast=bool
             )
             self.ALLOWED_CHATS = config("ALLOWED_CHATS", default="")
+            self.BACKUP_WA_DB = config("BACKUP_WA_DB", default="")
             self.BANNED_USERS = config(
                 "BANNED_USERS",
-                default=str(),
+                default="",
             )
             self.BLOCK_NSFW = config("BLOCK_NSFW", default=True, cast=bool)
             self.DISABLE_CIP = config("DISABLE_CIP", default=False, cast=bool)
@@ -36,7 +37,7 @@ class Config:
             self.DATABASE_URL = config("DATABASE_URL", default=None)
             self.DBNAME = config("DBNAME", default="Neon")
             self.DEBUG = config("DEBUG", default=False, cast=bool)
-            self.DEV = config("DEV", default=0, cast=str)
+            self.DEV = config("DEV", default="")
             self.DYNO = config("DYNO", default=None)
             self.IGNORE_PM = config("IGNORE_PM", default=True, cast=bool)
             self.LOG_GROUP = config("LOG_GROUP", default=0, cast=int)
@@ -46,7 +47,7 @@ class Config:
             self.NO_GPU = config("NO_GPU", default=False, cast=bool)
             self.RSS_CHAT = config(
                 "RSS_CHAT",
-                default=str(),
+                default="",
             )
             self.RSS_DELAY = config("RSS_DELAY", default=60, cast=int)
             self.OWNER = config(
@@ -89,6 +90,7 @@ class Runtime_Config:
         self.notes_dict = {}
         self.rss_dict = {}
         self.rss_ran_once = False
+        self.stop_back_up = False
         self.user_dict = {}
         self.version = None
 

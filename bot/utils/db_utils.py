@@ -1,11 +1,13 @@
 from pymongo.errors import ServerSelectionTimeoutError
 
 from bot import asyncio
-from bot.config import conf
+from bot.config import bot, conf
 from bot.startup.before import nfdb, pickle, rssdb, userdb
 
 from .bot_utils import sync_to_async
 from .local_db_utils import save2db_lcl2
+from .log_utils import logger
+from .os_utils import enshell, s_remove
 
 # i suck at using database -_-' (#3)
 # But hey if it works don't touch it
@@ -41,3 +43,87 @@ async def save2db2(data: dict | str, db: str):
     p_data = pickle.dumps(data)
     _update = {db: p_data}
     await save2db(db_cluster.get(db), _update)
+
+
+async def backup_wa_db():
+    if not conf.BACKUP_WA_DB and conf.WA_DB:
+        return
+    back_up_file = "psql/backup.dump",
+    cmd = [
+        "pg_dump",
+        f"--dbname='{conf.WA_DB}'",
+        "-Fc",
+        "-f",
+        back_up_file,
+        "-v",
+    ]
+    process, stdout, stderr = await enshell(cmd)
+    
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+        )
+    # Debug:
+    await logger(e=f"{stdout}\n\n{stderr}")
+
+    cmd = [
+        "pg_restore",
+        "--no-owner",
+        "--clean",
+        f"--dbname='{conf.BACKUP_WA_DB}'",
+        "-v",
+        back_up_file,
+    ]
+    process, stdout, stderr = await enshell(cmd)
+    
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+        )
+    # Debug:
+    await logger(e=f"{stdout}\n\n{stderr}")
+    s_remove(back_up_file)
+
+
+async def restore_wa_db():
+    if not bot.initialized_client:
+        return
+    if not conf.BACKUP_WA_DB and conf.WA_DB:
+        return
+    restore_file = "psql/restore.dump",
+    cmd = [
+        "pg_dump",
+        f"--dbname='{conf.BACKUP_WA_DB}'",
+        "-Fc",
+        "-f",
+        back_up_file,
+        "-v",
+    ]
+    process, stdout, stderr = await enshell(cmd)
+    
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+        )
+    # Debug:
+    await logger(e=f"{stdout}\n\n{stderr}")
+
+    cmd = [
+        "pg_restore",
+        "--no-owner",
+        "--clean",
+        f"--dbname='{conf.WA_DB}'",
+        "-v",
+        back_up_file,
+    ]
+    process, stdout, stderr = await enshell(cmd)
+    
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+        )
+    # Debug:
+    await logger(e=f"{stdout}\n\n{stderr}")
+    s_remove(restore_file)
+
+bot.backup_wa_db = backup_wa_db

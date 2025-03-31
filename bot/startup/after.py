@@ -7,6 +7,7 @@ from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
 from bot.others.msg_store import auto_save_msg
 from bot.utils.bot_utils import shutdown_services
+from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger
 from bot.utils.msg_rank import scheduler2
 from bot.utils.msg_utils import send_presence
@@ -70,6 +71,17 @@ async def update_presence():
             pass
         await asyncio.sleep(600)
 
+async def backup_database():
+    if not conf.BACKUP_WA_DB and conf.WA_DB:
+        return
+    while True:
+        if bot.stop_back_up:
+            return
+        try:
+            await backup_wa_db()
+        except Exception:
+            await logger(Exception)
+        await asyncio.sleep(600)
 
 async def wait_for_client():
     while True:
@@ -115,6 +127,8 @@ async def on_startup():
             # await logger(e="Please Restart bot.")
             # return
         asyncio.create_task(update_presence())
+        asyncio.create_task(backup_database()
         asyncio.create_task(auto_save_msg())
     except Exception:
         await logger(Exception)
+    

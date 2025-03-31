@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from neonize.utils.message import get_poll_update_message
 
@@ -35,12 +36,14 @@ async def create_sudo_button(
     user_id: str,
     selectable: int = 1,
     conf_btn: str | None = None,
+    quoted=None,
 ):
     async with sudo_btn_lock:
         poll_msg = await bot.client.build_poll_vote_creation(
             trunc_string(name, 255),
             [trunc_string(v[0], 100) for v in options.values()],
             selectable,
+            quoted,
         )
         msg = await bot.client.send_message(chat_jid, poll_msg)
         poll_info = {}
@@ -48,14 +51,17 @@ async def create_sudo_button(
             poll_info.update({get_sha256(trunc_string(value[0], 100)): key})
         poll_info.update(user=user_id)
         if conf_btn and selectable > 1:
-            poll_info.update({"conf_btn": get_sha256(trunc_string(conf_btn))})
+            poll_info.update({"conf_btn": get_sha256(trunc_string(conf_btn, 100))})
         active_poll_dict.update({msg.ID: poll_info})
         return poll_msg, msg.ID
 
 
 async def wait_for_button_response(msg_id: str, grace=0.1):
+    s_time = time.time()
     while True:
         await asyncio.sleep(grace)
+        if time.time() - s_time > 300:
+            return
         async with sudo_btn_lock:
             poll_info = active_poll_dict.get(msg_id)
             if not poll_info:

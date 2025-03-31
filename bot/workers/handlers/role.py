@@ -477,7 +477,7 @@ async def list_roles(event, args, client):
     """List all roles in a group"""
     if not event.chat.is_group:
         return await event.react("🚫")
-    msg = str()
+    msg = ""
     gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
     no = 1
     for role_name in gc_roles:
@@ -500,7 +500,7 @@ async def role_info(event, args, client):
     """Get role info of a particular role"""
     gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
     role = gc_roles.get(args)
-    users = str()
+    users = ""
     for user in role.get("members"):
         info = await client.contact.get_contact(jid.build_jid(user))
         name = info.PushName

@@ -9,6 +9,7 @@ html_telegraph_poster
 humanize
 lxml[html_clean]
 pymongo
+python-anilist
 python-decouple
 python-ffmpeg
 pytz

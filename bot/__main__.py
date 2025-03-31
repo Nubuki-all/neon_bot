@@ -17,6 +17,7 @@ from . import (
     traceback,
 )
 from .startup.after import on_startup
+from .utils.db_utils import restore_wa_db
 from .utils.msg_utils import Event, event_handler, on_message
 from .utils.os_utils import file_exists, re_x, s_remove
 from .workers.handlers.afk import activate_afk, afk_helper
@@ -241,6 +242,7 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 
 try:
     bot.loop = asyncio.new_event_loop()
+    bot.loop.run_until_complete(restore_wa_db())
     bot.loop.create_task(on_startup())
     if not bot.initialized_client:
         bot.loop.run_until_complete(

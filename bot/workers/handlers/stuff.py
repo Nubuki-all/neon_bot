@@ -37,7 +37,7 @@ async def gen_meme(link, pm=False):
         meme_list.append(pl)
         sb = result.get("subreddit")
         nsfw_text = "*🔞 NSFW*\n"
-        caption = f"{nsfw_text if nsfw else str()}*{title.strip()}*\n{pl}\n\nBy u/{author} in r/{sb}"
+        caption = f"{nsfw_text if nsfw else ''}*{title.strip()}*\n{pl}\n\nBy u/{author} in r/{sb}"
         url = result.get("url")
         filename = f"{_id}.{url.split('.')[-1]}"
         nsfw = False if pm else nsfw
@@ -62,7 +62,7 @@ async def getmeme(event, args, client):
     link = "https://meme-api.com/gimme"
     try:
         if args:
-            link += f"/{args}" if not args.isdigit() else str()
+            link += f"/{args}" if not args.isdigit() else ""
         caption, url, filename, nsfw = await gen_meme(link, not (event.chat.is_group))
         if not url:
             if nsfw:
@@ -156,7 +156,7 @@ async def gc_info(event, args, client):
             if not user_is_admin(user, group_info.Participants):
                 return await event.react("🚫")
         gc_owner = f"@{group_info.OwnerJID.User}" if group_info.OwnerJID.User else "MIA"
-        tags = str()
+        tags = ""
         for tag in tag_admins(group_info.Participants).split():
             tags += f"- {tag}\n"
         tags = tags.rstrip("\n")

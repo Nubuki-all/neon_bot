@@ -255,7 +255,7 @@ async def undelete(event, args, client):
                     await event.reply(f"-a: Sometimes i wonder…, reseting value…")
                     amount = None
         amount = 1 if not amount else amount
-        mentioned = get_mentioned(args or str())
+        mentioned = get_mentioned(args or "")
         # mentioned_ = bool(mentioned) slower?
         if mentioned:
             mentioned_ = True
@@ -405,7 +405,7 @@ async def pick_random(event, args, client):
             "-a",
             "-m",
             "-s",
-            to_parse=(args or str()),
+            to_parse=(args or ""),
             get_unknown=True,
         )
         items = event.quoted_text.split((arg.s or "\n"))
@@ -454,13 +454,13 @@ async def list_notes(event, args, client):
         reply = await event.reply("_Fetching notes…_")
         filter_ = True if args and args.casefold() in ("my notes", "me") else False
         msg = f"*{'Your l' if filter_ else 'L'}ist of notes in {chat_name}*"
-        msg_ = str()
+        msg_ = ""
         i = 1
         for title in list(notes.keys()):
             if filter_ and notes[title].get("user") != user:
                 continue
             user_name = notes[title].get("user_name")
-            msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if event.chat.is_group and not filter_ else str()}"
+            msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if event.chat.is_group and not filter_ else ''}"
             i += 1
         if not msg_:
             return await event.reply(
@@ -521,7 +521,7 @@ async def save_notes(event, args, client):
         elif event.quoted_image:
             if event.quoted_image.fileLength < 5000000:
                 note = await download_replied_media(event)
-                note = [note, (event.quoted_image.caption if not arg.c else str())]
+                note = [note, (event.quoted_image.caption if not arg.c else "")]
                 note_type = bytes
             else:
                 note = event.quoted_image
@@ -530,7 +530,7 @@ async def save_notes(event, args, client):
             note = event.quoted_msg
             note_type = Message
         if note_type == Message and arg.c:
-            note.caption = str()
+            note.caption = ""
         data = {
             args: {
                 "user": user,
@@ -881,7 +881,7 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
         "msg_ranking", {"total": 0}
     )
     i = 1
-    msg = str()
+    msg = ""
     sorted_ms_rank_dict = dict(
         sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
     )
@@ -892,7 +892,7 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
         user_info = await get_user_info(user)
         msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
         medals = get_medals(chat_id, user)
-        msg += f"    └{medals}\n" if medals else str()
+        msg += f"    └{medals}\n" if medals else ""
         i += 1
         if i > 10 and not full:
             break
@@ -914,7 +914,7 @@ def get_medals(chat_id, user):
         2: "🥈",
         3: "🥉",
     }
-    msg = str()
+    msg = ""
     for pos in list(user_rank):
         if not user_rank.get(pos):
             continue

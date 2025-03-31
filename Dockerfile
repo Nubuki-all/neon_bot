@@ -1,5 +1,5 @@
 # Base Image 
-FROM fedora:37
+FROM fedora:40
 
 # 1. Setup home directory, non interactive shell and timezone
 RUN mkdir -p /bot /neon && chmod 777 /bot
@@ -14,6 +14,14 @@ RUN dnf -qq -y update && dnf -qq -y install git bash xz wget curl python3-pip ps
 # 3. Install latest ffmpeg
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/64/) && \
     wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux${arch}-gpl-7.1.tar.xz && tar -xvf *xz && cp *7.1/bin/* /usr/bin && rm -rf *xz && rm -rf *7.1
+
+# Install postgresql repo & latest postgresql 
+RUN if [[ $(arch) == 'x86_64' ]]; then dnf -qq -y install "https://download.postgresql.org/pub/repos/yum/reporpms/F-$(. /etc/os-release; echo $VERSION_ID)-x86_64/pgdg-fedora-repo-latest.noarch.rpm"; fi
+RUN if [[ $(arch) == 'x86_64' ]]; then \
+        dnf -qq -y install postgresql17-server; \
+    else \
+        dnf -qq -y install postgresql-server; \
+    fi
 
 # 4. Copy files from repo to home directory
 COPY . .

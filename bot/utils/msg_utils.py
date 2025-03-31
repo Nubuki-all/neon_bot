@@ -535,14 +535,14 @@ def get_mentioned(text: str):
 
 
 def tag_all_users_in_role(members: list):
-    tags = str()
+    tags = ""
     for member in members:
         tags += f"@{member} "
     return tags.rstrip()
 
 
 def tag_admins(members: list):
-    tags = str()
+    tags = ""
     for member in members:
         if member.IsAdmin:
             tags += f"@{member.JID.User} "
@@ -550,14 +550,14 @@ def tag_admins(members: list):
 
 
 def tag_owners():
-    tags = str()
+    tags = ""
     for user in conf.OWNER.split():
         tags += f"@{user} "
     return tags.rstrip()
 
 
 def tag_sudoers():
-    tags = str()
+    tags = ""
     for user in bot.user_dict.keys():
         if not bot.user_dict.get(user, {}).get("sudoer", False):
             continue
@@ -566,7 +566,7 @@ def tag_sudoers():
 
 
 def tag_users(members: list):
-    tags = str()
+    tags = ""
     for member in members:
         tags += f"@{member.JID.User} "
     return tags.rstrip()
@@ -665,7 +665,10 @@ async def on_message(client: NewAClient, message: MessageEv):
         event = construct_event(message)
         bot.pending_saved_messages.append(event)
         if get_poll_update_message(event.message):
-            return await poll_as_button_handler(event)
+            future = asyncio.run_coroutine_threadsafe(
+                poll_as_button_handler(event), bot.loop
+            )
+            return future.result()
         if event.type == "text" and event.text:
             command, args = (
                 event.text.split(maxsplit=1)
@@ -735,12 +738,12 @@ async def parse_and_send_rss(data: dict, chat_ids: list = None):
         pics = data.get("pic")
         content = data.get("content")
         summary = sanitize_text(data.get("summary"))
-        tgh_link = str()
+        tgh_link = ""
         title = data.get("title")
         url = data.get("link")
         # auth_text = f" by {author}" if author else str()
         caption = f"*{title}*"
-        caption += f"\n> {summary}" if summary else str()
+        caption += f"\n> {summary}" if summary else ""
         if content:
             if len(content) > 65536:
                 content = (
