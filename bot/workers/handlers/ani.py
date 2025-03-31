@@ -73,7 +73,6 @@ async def anime_search(event, args, client):
 
     button_dict = []
     for i, anime in enumerate(search_result, start=1):
-        title = 
         text = anime.title.english or anime.title.romaji or anime.title.native
         button_dict.append(
             {

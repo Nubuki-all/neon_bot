@@ -127,7 +127,7 @@ async def on_startup():
             # await logger(e="Please Restart bot.")
             # return
         asyncio.create_task(update_presence())
-        asyncio.create_task(backup_database()
+        asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())
     except Exception:
         await logger(Exception)
