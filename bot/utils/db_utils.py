@@ -48,7 +48,7 @@ async def save2db2(data: dict | str, db: str):
 async def backup_wa_db():
     if not conf.BACKUP_WA_DB and conf.WA_DB:
         return
-    back_up_file = "psql/backup.dump",
+    back_up_file = ("psql/backup.dump",)
     cmd = [
         "pg_dump",
         f"--dbname='{conf.WA_DB}'",
@@ -58,10 +58,11 @@ async def backup_wa_db():
         "-v",
     ]
     process, stdout, stderr = await enshell(cmd)
-    
+
     if process.returncode != 0:
         raise RuntimeError(
-            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+            # type: ignore
+            f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
     await logger(e=f"{stdout}\n\n{stderr}")
@@ -75,10 +76,11 @@ async def backup_wa_db():
         back_up_file,
     ]
     process, stdout, stderr = await enshell(cmd)
-    
+
     if process.returncode != 0:
         raise RuntimeError(
-            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+            # type: ignore
+            f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
     await logger(e=f"{stdout}\n\n{stderr}")
@@ -90,7 +92,7 @@ async def restore_wa_db():
         return
     if not conf.BACKUP_WA_DB and conf.WA_DB:
         return
-    restore_file = "psql/restore.dump",
+    restore_file = ("psql/restore.dump",)
     cmd = [
         "pg_dump",
         f"--dbname='{conf.BACKUP_WA_DB}'",
@@ -100,10 +102,11 @@ async def restore_wa_db():
         "-v",
     ]
     process, stdout, stderr = await enshell(cmd)
-    
+
     if process.returncode != 0:
         raise RuntimeError(
-            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+            # type: ignore
+            f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
     await logger(e=f"{stdout}\n\n{stderr}")
@@ -117,13 +120,15 @@ async def restore_wa_db():
         back_up_file,
     ]
     process, stdout, stderr = await enshell(cmd)
-    
+
     if process.returncode != 0:
         raise RuntimeError(
-            f"stderr: {stderr} Return code: {process.returncode}"  # type: ignore
+            # type: ignore
+            f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
     await logger(e=f"{stdout}\n\n{stderr}")
     s_remove(restore_file)
+
 
 bot.backup_wa_db = backup_wa_db

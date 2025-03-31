@@ -71,6 +71,7 @@ async def update_presence():
             pass
         await asyncio.sleep(600)
 
+
 async def backup_database():
     if not conf.BACKUP_WA_DB and conf.WA_DB:
         return
@@ -82,6 +83,7 @@ async def backup_database():
         except Exception:
             await logger(Exception)
         await asyncio.sleep(600)
+
 
 async def wait_for_client():
     while True:
@@ -131,4 +133,3 @@ async def on_startup():
         asyncio.create_task(auto_save_msg())
     except Exception:
         await logger(Exception)
-    

@@ -6,9 +6,8 @@ from bot.utils.log_utils import logger
 from bot.utils.msg_utils import construct_msg_and_evt, get_args, user_is_allowed
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
 
-
-
 ani_client = anilist.AsyncClient()
+
 
 async def airing(event, args, client):
     """
@@ -65,7 +64,7 @@ async def anime(event, args, client):
 
 async def anime_search(event, args, client):
 
-    #query = args.replace(" ", "%20")
+    # query = args.replace(" ", "%20")
     search_result, pages = await ani_client.search_anime(args, limit=11)
 
     if not search_result:
@@ -74,12 +73,10 @@ async def anime_search(event, args, client):
     button_dict = []
     for i, anime in enumerate(search_result, start=1):
         text = anime.title.english or anime.title.romaji or anime.title.native
-        button_dict.append(
-            {
-                anime.id: [f"{i}. {text}", text]
-            }
-        )
-    title = f"{event.from_user.name} please select the anime you want to fetch info for."
+        button_dict.append({anime.id: [f"{i}. {text}", text]})
+    title = (
+        f"{event.from_user.name} please select the anime you want to fetch info for."
+    )
     poll_msg_, msg_id = await create_sudo_button(
         title, button_dict, event.chat.jid, user, 1, cfm_btn_txt, event.message
     )
@@ -92,4 +89,3 @@ async def anime_search(event, args, client):
         await event.reply("Time out!")
         return ""
     return f"{results[0]}"
-

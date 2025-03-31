@@ -3,8 +3,8 @@ import os
 import shlex
 import shutil
 import signal
-import sys
 import subprocess
+import sys
 from pathlib import Path
 from subprocess import run as bashrun
 
@@ -17,17 +17,19 @@ if not os.path.isdir("downloads/"):
 if not os.path.isdir("psql/"):
     os.mkdir("psql/")
 
+
 async def enshell(cmd):
     cmd = shlex.join(cmd) if isinstance(cmd, list) else cmd
     # Create a subprocess and wait for it to finish
     process = await asyncio.create_subprocess_shell(
-        cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, stdin=subprocess.DEVNULL,
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
     )
     stdout, stderr = await process.communicate()
     # Return the output of the command and the process object
     return (process, stdout.decode(), stderr.decode())
-
-
 
 
 def qclean():
