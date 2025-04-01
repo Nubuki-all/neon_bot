@@ -88,8 +88,6 @@ async def backup_wa_db():
 
 
 async def restore_wa_db():
-    if not bot.initialized_client:
-        return
     if not conf.BACKUP_WA_DB and conf.WA_DB:
         return
     restore_file = "psql/restore.dump"
@@ -115,6 +113,7 @@ async def restore_wa_db():
         "pg_restore",
         "--no-owner",
         "--clean",
+        "--if-exists",
         f"--dbname={conf.WA_DB}",
         "-v",
         restore_file,
