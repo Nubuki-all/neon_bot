@@ -70,10 +70,10 @@ async def anime_search(event, args, client):
     if not search_result:
         return None
 
-    button_dict = []
+    button_dict = {}
     for i, anime in enumerate(search_result, start=1):
         text = anime.title.english or anime.title.romaji or anime.title.native
-        button_dict.append({anime.id: [f"{i}. {text}", text]})
+        button_dict.update({anime.id: [f"{i}. {text}", text]})
     title = (
         f"{event.from_user.name} please select the anime you want to fetch info for."
     )
