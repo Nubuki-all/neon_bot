@@ -117,7 +117,7 @@ async def restore_wa_db():
         "--clean",
         f"--dbname={conf.WA_DB}",
         "-v",
-        back_up_file,
+        restore_file,
     ]
     process, stdout, stderr = await enshell(cmd)
 
