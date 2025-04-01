@@ -75,11 +75,16 @@ async def update_presence():
 async def backup_database():
     if not conf.BACKUP_WA_DB and conf.WA_DB:
         return
+    prevent_spam = True
     while True:
         if bot.stop_back_up:
             return
         try:
-            await backup_wa_db()
+            if not prevent_spam:
+                await backup_wa_db()
+                await logger(e="Backed up database!")
+            else:
+                prevent_spam = False
         except Exception:
             await logger(Exception)
         await asyncio.sleep(600)
