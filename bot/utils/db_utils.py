@@ -65,7 +65,7 @@ async def backup_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
 
     cmd = [
         "pg_restore",
@@ -85,7 +85,7 @@ async def backup_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
     s_remove(back_up_file)
 
 
@@ -109,7 +109,7 @@ async def restore_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
 
     cmd = [
         "pg_restore",
@@ -129,7 +129,7 @@ async def restore_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
     s_remove(restore_file)
 
 
