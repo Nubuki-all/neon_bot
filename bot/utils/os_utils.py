@@ -16,6 +16,8 @@ if not os.path.isdir("downloads/"):
     os.mkdir("downloads/")
 if not os.path.isdir("psql/"):
     os.mkdir("psql/")
+else:
+    os.system("rm -rf psql/*")
 
 
 async def enshell(cmd):
