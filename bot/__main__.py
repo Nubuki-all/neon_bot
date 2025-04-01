@@ -13,6 +13,7 @@ from . import (
     bot,
     con_ind,
     conf,
+    sys,
     time,
     traceback,
 )
@@ -242,7 +243,8 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 
 try:
     bot.loop = asyncio.new_event_loop()
-    bot.loop.run_until_complete(restore_wa_db())
+    if len(sys.argv) != 3:
+        bot.loop.run_until_complete(restore_wa_db())
     bot.loop.create_task(on_startup())
     if not bot.initialized_client:
         bot.loop.run_until_complete(
