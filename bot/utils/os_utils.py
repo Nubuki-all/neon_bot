@@ -125,5 +125,7 @@ def force_exit():
     os.kill(os.getpid(), signal.SIGKILL)
 
 
-def cpu_count():
+def get_cpu_count():
     return os.cpu_count() or 4
+
+cpu_count = get_cpu_count()

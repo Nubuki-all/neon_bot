@@ -6,7 +6,7 @@ from bot.startup.before import nfdb, pickle, rssdb, userdb
 
 from .bot_utils import sync_to_async
 from .local_db_utils import save2db_lcl2
-from .log_utils import logger
+from .log_utils import logger # noqa  # pylint: disable=unused-import
 from .os_utils import cpu_count, enshell, s_remove
 
 # i suck at using database -_-' (#3)
@@ -53,7 +53,7 @@ async def backup_wa_db():
         "pg_dump",
         f"--dbname={conf.WA_DB}",
         "-Fd",
-        f"-j {cpu_count()}",
+        f"-j {cpu_count}",
         "-f",
         back_up_file,
         "-v",
@@ -66,12 +66,12 @@ async def backup_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
 
     cmd = [
         "pg_restore",
         "--no-owner",
-        f"-j {cpu_count()}",
+        f"-j {cpu_count}",
         "--clean",
         "--if-exists",
         "-x",
@@ -87,7 +87,7 @@ async def backup_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
     s_remove(back_up_file, folders=True)
 
 
@@ -99,7 +99,7 @@ async def restore_wa_db():
         "pg_dump",
         f"--dbname={conf.BACKUP_WA_DB}",
         "-Fd",
-        f"-j {cpu_count()}",
+        f"-j {cpu_count}",
         "-f",
         restore_file,
         "-v",
@@ -112,12 +112,12 @@ async def restore_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
 
     cmd = [
         "pg_restore",
         "--no-owner",
-        f"-j {cpu_count()}",
+        f"-j {cpu_count}",
         "--clean",
         "--if-exists",
         "-x",
@@ -133,7 +133,7 @@ async def restore_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    await logger(e=f"{stdout}\n\n{stderr}")
+    # await logger(e=f"{stdout}\n\n{stderr}")
     s_remove(restore_file, folders=True)
 
 
