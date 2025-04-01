@@ -123,3 +123,6 @@ def touch(file):
 
 def force_exit():
     os.kill(os.getpid(), signal.SIGKILL)
+
+def cpu_count():
+    return os.cpu_count()

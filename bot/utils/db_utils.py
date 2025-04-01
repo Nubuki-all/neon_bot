@@ -7,7 +7,7 @@ from bot.startup.before import nfdb, pickle, rssdb, userdb
 from .bot_utils import sync_to_async
 from .local_db_utils import save2db_lcl2
 from .log_utils import logger
-from .os_utils import enshell, s_remove
+from .os_utils import cpu_count, enshell, s_remove
 
 # i suck at using database -_-' (#3)
 # But hey if it works don't touch it
@@ -53,7 +53,7 @@ async def backup_wa_db():
         "pg_dump",
         f"--dbname={conf.WA_DB}",
         "-Fc",
-        "-j $(nproc)",
+        f"-j {cpu_count()}",
         "-f",
         back_up_file,
         "-v",
@@ -71,7 +71,7 @@ async def backup_wa_db():
     cmd = [
         "pg_restore",
         "--no-owner",
-        "-j $(nproc)",
+        f"-j {cpu_count()}",
         "--clean",
         "--if-exists",
         "-x",
@@ -99,7 +99,7 @@ async def restore_wa_db():
         "pg_dump",
         f"--dbname={conf.BACKUP_WA_DB}",
         "-Fc",
-        "-j $(nproc)",
+        f"-j {cpu_count()}",
         "-f",
         restore_file,
         "-v",
@@ -117,7 +117,7 @@ async def restore_wa_db():
     cmd = [
         "pg_restore",
         "--no-owner",
-        "-j $(nproc)",
+        f"-j {cpu_count()}",
         "--clean",
         "--if-exists",
         "-x",
