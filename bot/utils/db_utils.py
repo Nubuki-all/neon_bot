@@ -52,7 +52,7 @@ async def backup_wa_db():
     cmd = [
         "pg_dump",
         f"--dbname={conf.WA_DB}",
-        "-Fc",
+        "-Fd",
         f"-j {cpu_count()}",
         "-f",
         back_up_file,
@@ -88,7 +88,7 @@ async def backup_wa_db():
         )
     # Debug:
     await logger(e=f"{stdout}\n\n{stderr}")
-    s_remove(back_up_file)
+    s_remove(back_up_file, folders=True)
 
 
 async def restore_wa_db():
@@ -98,7 +98,7 @@ async def restore_wa_db():
     cmd = [
         "pg_dump",
         f"--dbname={conf.BACKUP_WA_DB}",
-        "-Fc",
+        "-Fd",
         f"-j {cpu_count()}",
         "-f",
         restore_file,
@@ -134,7 +134,7 @@ async def restore_wa_db():
         )
     # Debug:
     await logger(e=f"{stdout}\n\n{stderr}")
-    s_remove(restore_file)
+    s_remove(restore_file, folders=True)
 
 
 bot.backup_wa_db = backup_wa_db

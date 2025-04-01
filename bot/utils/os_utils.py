@@ -126,4 +126,4 @@ def force_exit():
 
 
 def cpu_count():
-    return os.cpu_count()
+    return os.cpu_count() or 4
