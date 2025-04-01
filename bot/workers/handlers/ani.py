@@ -83,7 +83,7 @@ async def anime_search(event, args, client):
         event.chat.jid,
         event.from_user.id,
         1,
-        cfm_btn_txt,
+        None,
         event.message,
     )
     poll_msg = construct_msg_and_evt(
