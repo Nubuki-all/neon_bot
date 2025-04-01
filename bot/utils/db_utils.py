@@ -48,7 +48,7 @@ async def save2db2(data: dict | str, db: str):
 async def backup_wa_db():
     if not conf.BACKUP_WA_DB and conf.WA_DB:
         return
-    back_up_file = ("psql/backup.dump",)
+    back_up_file = "psql/backup.dump"
     cmd = [
         "pg_dump",
         f"--dbname='{conf.WA_DB}'",
@@ -92,13 +92,13 @@ async def restore_wa_db():
         return
     if not conf.BACKUP_WA_DB and conf.WA_DB:
         return
-    restore_file = ("psql/restore.dump",)
+    restore_file = "psql/restore.dump"
     cmd = [
         "pg_dump",
         f"--dbname='{conf.BACKUP_WA_DB}'",
         "-Fc",
         "-f",
-        back_up_file,
+        restore_file,
         "-v",
     ]
     process, stdout, stderr = await enshell(cmd)
