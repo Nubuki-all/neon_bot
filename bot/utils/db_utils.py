@@ -6,7 +6,7 @@ from bot.startup.before import nfdb, pickle, rssdb, userdb
 
 from .bot_utils import sync_to_async
 from .local_db_utils import save2db_lcl2
-from .log_utils import logger # noqa  # pylint: disable=unused-import
+from .log_utils import logger  # noqa  # pylint: disable=unused-import
 from .os_utils import cpu_count, enshell, s_remove
 
 # i suck at using database -_-' (#3)

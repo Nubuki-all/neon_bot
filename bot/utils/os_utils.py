@@ -128,4 +128,5 @@ def force_exit():
 def get_cpu_count():
     return os.cpu_count() or 4
 
+
 cpu_count = get_cpu_count()
