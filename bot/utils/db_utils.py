@@ -6,6 +6,7 @@ from bot.startup.before import nfdb, pickle, rssdb, userdb
 
 from .bot_utils import sync_to_async
 from .local_db_utils import save2db_lcl2
+from .log_utils import logger
 from .os_utils import enshell, s_remove
 
 # i suck at using database -_-' (#3)
@@ -52,6 +53,7 @@ async def backup_wa_db():
         "pg_dump",
         f"--dbname={conf.WA_DB}",
         "-Fc",
+        "-j $(nproc)",
         "-f",
         back_up_file,
         "-v",
@@ -64,11 +66,12 @@ async def backup_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    # await logger(e=f"{stdout}\n\n{stderr}")
+    await logger(e=f"{stdout}\n\n{stderr}")
 
     cmd = [
         "pg_restore",
         "--no-owner",
+        "-j $(nproc)",
         "--clean",
         "--if-exists",
         "-x",
@@ -84,7 +87,7 @@ async def backup_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    # await logger(e=f"{stdout}\n\n{stderr}")
+    await logger(e=f"{stdout}\n\n{stderr}")
     s_remove(back_up_file)
 
 
@@ -96,6 +99,7 @@ async def restore_wa_db():
         "pg_dump",
         f"--dbname={conf.BACKUP_WA_DB}",
         "-Fc",
+        "-j $(nproc)",
         "-f",
         restore_file,
         "-v",
@@ -108,11 +112,12 @@ async def restore_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    # await logger(e=f"{stdout}\n\n{stderr}")
+    await logger(e=f"{stdout}\n\n{stderr}")
 
     cmd = [
         "pg_restore",
         "--no-owner",
+        "-j $(nproc)",
         "--clean",
         "--if-exists",
         "-x",
@@ -128,7 +133,7 @@ async def restore_wa_db():
             f"stderr: {stderr} Return code: {process.returncode}"
         )
     # Debug:
-    # await logger(e=f"{stdout}\n\n{stderr}")
+    await logger(e=f"{stdout}\n\n{stderr}")
     s_remove(restore_file)
 
 
