@@ -71,7 +71,7 @@ async def backup_wa_db():
         "pg_restore",
         "--no-owner",
         "--clean",
-        f"--dbname='{conf.BACKUP_WA_DB}'",
+        f"--dbname={conf.BACKUP_WA_DB}",
         "-v",
         back_up_file,
     ]
@@ -95,7 +95,7 @@ async def restore_wa_db():
     restore_file = "psql/restore.dump"
     cmd = [
         "pg_dump",
-        f"--dbname='{conf.BACKUP_WA_DB}'",
+        f"--dbname={conf.BACKUP_WA_DB}",
         "-Fc",
         "-f",
         restore_file,
