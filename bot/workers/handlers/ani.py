@@ -78,7 +78,13 @@ async def anime_search(event, args, client):
         f"{event.from_user.name} please select the anime you want to fetch info for."
     )
     poll_msg_, msg_id = await create_sudo_button(
-        title, button_dict, event.chat.jid, event.from_user.id, 1, cfm_btn_txt, event.message
+        title,
+        button_dict,
+        event.chat.jid,
+        event.from_user.id,
+        1,
+        cfm_btn_txt,
+        event.message,
     )
     poll_msg = construct_msg_and_evt(
         event.chat.id, bot.me.JID.User, msg_id, None, event.chat.server, poll_msg_
