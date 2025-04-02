@@ -252,7 +252,7 @@ async def sticker(event, args, client):
 
         sticker = random.choice(result["results"])
         link = sticker["media_formats"]["mp4"]["url"]
-        duration = sticker["media_formats"]["mp4"]["duration"]
+        duration = sticker["media_formats"]["gif"]["duration"]
         if duration < 1:
             link = sticker["media_formats"]["png_transparent"]["url"]
         await event.reply_sticker(link)
