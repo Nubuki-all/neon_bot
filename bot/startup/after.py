@@ -87,7 +87,7 @@ async def backup_database():
                 prevent_spam = False
         except Exception:
             await logger(Exception)
-        await asyncio.sleep(600)
+        await asyncio.sleep(conf.WA_DB_BACKUP_INTERVAL)
 
 
 async def wait_for_client():

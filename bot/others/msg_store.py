@@ -25,7 +25,7 @@ class Message_store:
         if not messages:
             return
         msgs = [msg for msg in messages if msg.id == msg_id]
-        return self._patch(msgs)
+        return self._patch(*msgs)
 
     def _get_message_store(self):
         message_store = {}

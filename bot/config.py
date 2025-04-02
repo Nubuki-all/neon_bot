@@ -59,6 +59,7 @@ class Config:
             )
             self.TENOR_API_KEY = config("TENOR_API_KEY", default=None)
             self.WA_DB = config("WA_DB", default="db.sqlite3")
+            self.WA_DB_BACKUP_INTERVAL = config("WA_DB_BACKUP_INTERVAL", default=3600, cast=int)
         except Exception:
             print("Environment vars Missing; or")
             print("Something went wrong:")
