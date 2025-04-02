@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import httpx
 import itertools
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -8,6 +7,7 @@ from functools import partial
 from hashlib import sha256
 
 import aiohttp
+import httpx
 import pytz
 import requests
 from ffmpeg.asyncio import FFmpeg
@@ -16,6 +16,7 @@ from bot import LOGS, bot, telegraph_errors, time
 
 THREADPOOL = ThreadPoolExecutor(max_workers=1000)
 http = httpx.AsyncClient(http2=True)
+
 
 def gfn(fn):
     "gets module path"
@@ -242,16 +243,18 @@ async def screenshot_page(target_url: str):
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0",
     }
     data = {
-    "url": target_url,
-    # Sending a random CSS to make the API to generate a new screenshot.
-    "css": f"random-tag: {uuid.uuid4()}",
-    "render_when_ready": False,
-    "viewport_width": 1280,
-    "viewport_height": 720,
-    "device_scale": 2,
+        "url": target_url,
+        # Sending a random CSS to make the API to generate a new screenshot.
+        "css": f"random-tag: {uuid.uuid4()}",
+        "render_when_ready": False,
+        "viewport_width": 1280,
+        "viewport_height": 720,
+        "device_scale": 2,
     }
     try:
-        resp = await http.post("https://htmlcsstoimage.com/demo_run", headers=headers, json=data)
+        resp = await http.post(
+            "https://htmlcsstoimage.com/demo_run", headers=headers, json=data
+        )
         return resp.json()["url"]
     except (JSONDecodeError, KeyError) as e:
         raise Exception("Screenshot API returned an invalid response.") from e

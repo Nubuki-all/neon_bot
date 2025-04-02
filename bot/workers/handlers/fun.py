@@ -28,6 +28,7 @@ async def fun(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def gen_meme(link, pm=False):
     i = 1
     while True:
@@ -247,7 +248,6 @@ async def sticker(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
-
 
 
 bot.add_handler(fun, "fun")

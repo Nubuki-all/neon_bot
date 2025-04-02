@@ -520,7 +520,7 @@ async def roles(event, args, client):
     Help function for the role module
     Arguments:
         No argument : list all available roles commands
-        -l/--list : list all roles in a group 
+        -l/--list : list all roles in a group
         role_name : Get information of a particular role.
 
     *Both arguments cannot be used together.
