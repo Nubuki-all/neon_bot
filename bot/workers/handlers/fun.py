@@ -152,18 +152,21 @@ async def coub(event, args, client):
             return await event.reply("*Request Failed!*")
         try:
             content = random.choice(result["coubs"])
+            dl_link = None
+            external_dl = content["external_download"]
             permalink = content["permalink"]
-            links = content["external_download"]["url"]
+            if external_dl:
+                dl_link = external_dl["url"]
             title = content["title"]
         except IndexError:
             await event.reply("Couldn't fetch video…")
         else:
             ytdl = bot.group_dict.get(event.chat.id, {}).get("ytdl")
-            dl_msg = "\n\n*Attempting to upload…*" if ytdl else ""
+            dl_msg = "\n\n*Attempting to upload…*" if ytdl and dl_link else ""
             await event.reply(
                 f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}{dl_msg}"
             )
-            await youtube_reply(event, links, client)
+            await youtube_reply(event, dl_link, client)
     except Exception:
         await logger(Exception)
         await event.react("❌")
