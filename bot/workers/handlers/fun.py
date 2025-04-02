@@ -149,7 +149,7 @@ async def coub(event, args, client):
             args = "Genshin impact"
         random_ = ""
         page = 0
-        while True_:
+        while True:
             if page:
                 random_ = f"&page={page}"
             result = await get_json(
