@@ -174,6 +174,7 @@ async def screenshot(event, args, client):
                 await logger(Exception)
                 await event.reply(f"Screenshot generation failed for: {url}")
             else:
+                await logger(e=image_url)
                 await event.reply_photo(image_url, caption="Screenshot from webpage")
             await asyncio.sleep(3)
     except Exception:
