@@ -3,7 +3,12 @@ import random
 from bot.config import bot, conf
 from bot.utils.bot_utils import get_json
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import chat_is_allowed, clean_reply, user_is_allowed, user_is_privileged
+from bot.utils.msg_utils import (
+    chat_is_allowed,
+    clean_reply,
+    user_is_allowed,
+    user_is_privileged,
+)
 
 from .yt import youtube_reply
 
