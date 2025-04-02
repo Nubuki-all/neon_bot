@@ -176,13 +176,14 @@ async def dog(event, args, client):
         result = await get_json("https://random.dog/woof.json")
         if not result:
             return await event.reply("*Request Failed!*")
-        await logger(e=result["url"])
+        url = result["url"]
+        await logger(e=url)
         if url.casefold().endswith(".mp4"):
             return await event.reply_video(
                 url,
                 caption="*Woof!*",
             )
-        await event.reply_photo(result["url"], caption="*Woof!*")
+        await event.reply_photo(url, caption="*Woof!*")
     except Exception:
         await logger(Exception)
         await event.react("❌")
