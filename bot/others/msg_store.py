@@ -24,9 +24,8 @@ class Message_store:
         messages = message_store.get(chat_id)
         if not messages:
             return
-        for msg in messages:
-            if msg.id == msg_id:
-                return self._patch(msg)
+        msgs = [msg for msg in messages if msg.id == msg_id]
+        return self._patch(msgs)
 
     def _get_message_store(self):
         message_store = {}

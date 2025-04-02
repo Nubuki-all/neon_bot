@@ -57,6 +57,7 @@ class Config:
             self.TELEGRAPH_API = config(
                 "TELEGRAPH_API", default="https://api.telegra.ph"
             )
+            self.TENOR_API_KEY = config("TENOR_API_KEY", default=None)
             self.WA_DB = config("WA_DB", default="db.sqlite3")
         except Exception:
             print("Environment vars Missing; or")

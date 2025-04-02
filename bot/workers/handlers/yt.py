@@ -55,14 +55,14 @@ async def youtube_reply(event, args, client):
     Download and upload sent video from sent YouTube link
     """
     try:
-        if not event.text:
+        if not (event.text or args):
             return
         if event.chat.is_group and not chat_is_allowed(event):
             return
         if not bot.group_dict.get(event.chat.id, {}).get("ytdl"):
             return
         extractor = URLExtract()
-        urls = extractor.find_urls(event.text)
+        urls = extractor.find_urls(event.text or args)
         if not urls:
             return
         supported_links = []
@@ -84,9 +84,9 @@ async def youtube_reply(event, args, client):
                     audio = True
                     _format = "ba/b-mp3{0}"
                     quality = "-"
-                elif "shorts" in listener.link and "(720p)" in event.text:
+                elif "shorts" in listener.link and "(720p)" in (event.text or args):
                     quality = "1280"
-                elif "(480p)" in event.text:
+                elif "(480p)" in (event.text or args):
                     quality = "480"
                 else:
                     quality = "720"

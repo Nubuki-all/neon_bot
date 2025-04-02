@@ -24,6 +24,7 @@ from .utils.os_utils import file_exists, re_x, s_remove
 from .workers.handlers.afk import activate_afk, afk_helper
 from .workers.handlers.ani import airing, anime
 from .workers.handlers.dev import bash, eval_message, get_logs
+from .workers.handlers.fun import getmeme
 from .workers.handlers.manage import (
     ban,
     delete,
@@ -42,7 +43,7 @@ from .workers.handlers.manage import (
     ytdl_enable,
 )
 from .workers.handlers.role import roles
-from .workers.handlers.stuff import gc_info, getcmds, getmeme, hello, up
+from .workers.handlers.stuff import gc_info, getcmds, hello, up
 from .workers.handlers.wa import gc_handler, sticker_reply
 from .workers.handlers.yt import youtube_reply
 

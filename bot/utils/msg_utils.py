@@ -91,6 +91,7 @@ class Event:
             "sticker",
         ]
         attrs.extend(["revoked_id"])
+        attrs.extend(["senderKeyDistribution"])
         for a in attrs:
             setattr(self, a, None)
 
