@@ -86,11 +86,12 @@ async def bash(event, cmd, client):
 
 
 async def aexec2(code, client, message):
+    event = message
     exec(
-        f"async def __aexec2(client, message): "
+        f"async def __aexec2(client, message, event): "
         + "".join(f"\n {l}" for l in code.split("\n"))
     )
-    return await locals()["__aexec2"](client, message)
+    return await locals()["__aexec2"](client, message, event)
 
 
 async def eval_message(message, cmd, client):

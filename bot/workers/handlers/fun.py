@@ -18,7 +18,7 @@ async def fun(event, args, client):
         msg = (
             f"{pre}cat - *Get a random cat gif/pic*{s}"
             f"{pre}coub - *Fetches a random short video*{s}"
-            f"{pre}dog - *Get a random dog pic*{s}"
+            f"{pre}dog - *Get a random dog pic/video*{s}"
             f"{pre}gif - *Get a random GIF from search results*{s}"
             f"{pre}gsticker - *Get a random sticker from search results*{s}"
             f"{pre}meme - *Get a random meme*"
@@ -116,9 +116,8 @@ async def cat(event, args, client):
         url = result[0]["url"]
         if url.endswith(".gif"):
             await event.reply_gif(
+                url,
                 caption="*Meow!*",
-                gif=url,
-                viewonce=nsfw,
                 as_gif=True,
             )
         else:
@@ -166,7 +165,7 @@ async def coub(event, args, client):
 
 
 async def dog(event, args, client):
-    """Fetches a random dog pic"""
+    """Fetches a random dog pic/video"""
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -178,6 +177,11 @@ async def dog(event, args, client):
         if not result:
             return await event.reply("*Request Failed!*")
         await logger(e=result["url"])
+        if url.casefold().endswith(".mp4"):
+            return await event.reply_video(
+                url,
+                caption="*Woof!*",
+            )
         await event.reply_photo(result["url"], caption="*Woof!*")
     except Exception:
         await logger(Exception)
