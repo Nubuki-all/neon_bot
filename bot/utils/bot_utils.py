@@ -252,7 +252,7 @@ async def screenshot_page(target_url: str):
     }
     try:
         resp = await http.post("https://htmlcsstoimage.com/demo_run", headers=headers, json=data)
-        return link = resp.json()["url"]
+        return resp.json()["url"]
     except (JSONDecodeError, KeyError) as e:
         raise Exception("Screenshot API returned an invalid response.") from e
     except HTTPError as e:
