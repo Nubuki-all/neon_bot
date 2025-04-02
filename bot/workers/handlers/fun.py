@@ -1,6 +1,6 @@
 import random
 
-from yt import youtube_reply
+from .yt import youtube_reply
 
 from bot.config import bot, conf
 from bot.utils.bot_utils import get_json
