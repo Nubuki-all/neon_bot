@@ -274,7 +274,10 @@ async def sticker(event, args, client):
         link = sticker["media_formats"]["mp4"]["url"]
         duration = sticker["media_formats"]["gif"]["duration"]
         if duration < 1:
-            link = sticker["media_formats"].get("png_transparent") or sticker["media_formats"]["gif"]
+            link = (
+                sticker["media_formats"].get("png_transparent")
+                or sticker["media_formats"]["gif"]
+            )
             link = link["url"]
         await clean_reply(event, event.reply_to_message, "reply_sticker", link)
     except Exception:
