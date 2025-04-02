@@ -154,8 +154,10 @@ async def coub(event, args, client):
         except IndexError:
             await event.reply("Couldn't fetch video…")
         else:
+            ytdl = bot.group_dict.get(event.chat.id, {}).get("ytdl")
+            dl_msg = "\n\n*Attempting to upload…*" if ytdl else ""
             await event.reply(
-                f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}\n\n*Attempting to upload…*"
+                f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}{dl_msg}"
             )
             await youtube_reply(event, links, client)
     except Exception:
@@ -175,7 +177,7 @@ async def dog(event, args, client):
         result = await get_json("https://random.dog/woof.json")
         if not result:
             return await event.reply("*Request Failed!*")
-
+        await logger(e=result["url"])
         await event.reply_photo(result["url"], caption="*Woof!*")
     except Exception:
         await logger(Exception)
@@ -209,7 +211,7 @@ async def gif(event, args, client):
             await event.reply("*No results!*")
             return
 
-        gif_link = random.choice(rjson["results"])["media_formats"]["gif"]["url"]
+        gif_link = random.choice(result["results"])["media_formats"]["gif"]["url"]
         await event.reply_gif(gif_link)
     except Exception:
         await logger(Exception)
@@ -243,7 +245,7 @@ async def sticker(event, args, client):
             await event.reply("*No results!*")
             return
 
-        sticker_link = random.choice(rjson["results"])["media_formats"]["mp4"]["url"]
+        sticker_link = random.choice(result["results"])["media_formats"]["mp4"]["url"]
         await event.reply_sticker(sticker_link)
     except Exception:
         await logger(Exception)
