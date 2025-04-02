@@ -638,7 +638,22 @@ def ran_stick():
         "https://static.wikia.nocookie.net/gensin-impact/images/6/63/Icon_Emoji_Paimon%27s_Paintings_38_Xiangling_2.png",
         "https://static.wikia.nocookie.net/gensin-impact/images/b/b1/Icon_Emoji_Paimon%27s_Paintings_38_Hu_Tao_1.png",
         "https://static.wikia.nocookie.net/gensin-impact/images/a/a0/Icon_Emoji_Paimon%27s_Paintings_38_Hu_Tao_2.png",
-        'https://static.wikia.nocookie.net/gensin-impact/images/0/05/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_1.png', 'https://static.wikia.nocookie.net/gensin-impact/images/f/f6/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_2.png', 'https://static.wikia.nocookie.net/gensin-impact/images/4/4b/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_3.png', 'https://static.wikia.nocookie.net/gensin-impact/images/9/9c/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_4.png', 'https://static.wikia.nocookie.net/gensin-impact/images/1/11/Icon_Emoji_Paimon%27s_Paintings_39_Yumekui-Baku.png', 'https://static.wikia.nocookie.net/gensin-impact/images/5/53/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_5.png', 'https://static.wikia.nocookie.net/gensin-impact/images/3/38/Icon_Emoji_Paimon%27s_Paintings_39_Yae_Miko_1.png', 'https://static.wikia.nocookie.net/gensin-impact/images/8/85/Icon_Emoji_Paimon%27s_Paintings_39_Raiden_Shogun_1.png', 'https://static.wikia.nocookie.net/gensin-impact/images/f/f2/Icon_Emoji_Paimon%27s_Paintings_39_Yae_Miko_2.png', 'https://static.wikia.nocookie.net/gensin-impact/images/9/99/Icon_Emoji_Paimon%27s_Paintings_39_Raiden_Shogun_2.png', 'https://static.wikia.nocookie.net/gensin-impact/images/a/aa/Icon_Emoji_Paimon%27s_Paintings_39_Sangonomiya_Kokomi.png', 'https://static.wikia.nocookie.net/gensin-impact/images/6/6b/Icon_Emoji_Paimon%27s_Paintings_39_Yoimiya.png', 'https://static.wikia.nocookie.net/gensin-impact/images/2/2e/Icon_Emoji_Paimon%27s_Paintings_39_Sayu.png', 'https://static.wikia.nocookie.net/gensin-impact/images/a/a2/Icon_Emoji_Paimon%27s_Paintings_39_Thoma.png', 'https://static.wikia.nocookie.net/gensin-impact/images/c/c5/Icon_Emoji_Paimon%27s_Paintings_39_Xianyun.png', 'https://static.wikia.nocookie.net/gensin-impact/images/7/72/Icon_Emoji_Paimon%27s_Paintings_39_Kaedehara_Kazuha.png',
+        "https://static.wikia.nocookie.net/gensin-impact/images/0/05/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_1.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/f/f6/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_2.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/4/4b/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_3.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/9/9c/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_4.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/1/11/Icon_Emoji_Paimon%27s_Paintings_39_Yumekui-Baku.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/5/53/Icon_Emoji_Paimon%27s_Paintings_39_Yumemizuki_Mizuki_5.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/3/38/Icon_Emoji_Paimon%27s_Paintings_39_Yae_Miko_1.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/8/85/Icon_Emoji_Paimon%27s_Paintings_39_Raiden_Shogun_1.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/f/f2/Icon_Emoji_Paimon%27s_Paintings_39_Yae_Miko_2.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/9/99/Icon_Emoji_Paimon%27s_Paintings_39_Raiden_Shogun_2.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/a/aa/Icon_Emoji_Paimon%27s_Paintings_39_Sangonomiya_Kokomi.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/6/6b/Icon_Emoji_Paimon%27s_Paintings_39_Yoimiya.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/2/2e/Icon_Emoji_Paimon%27s_Paintings_39_Sayu.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/a/a2/Icon_Emoji_Paimon%27s_Paintings_39_Thoma.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/c/c5/Icon_Emoji_Paimon%27s_Paintings_39_Xianyun.png",
+        "https://static.wikia.nocookie.net/gensin-impact/images/7/72/Icon_Emoji_Paimon%27s_Paintings_39_Kaedehara_Kazuha.png",
     )
     y = random.choice(stickers)
     return y
