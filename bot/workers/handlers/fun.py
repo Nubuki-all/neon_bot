@@ -3,7 +3,7 @@ import random
 from bot.config import bot, conf
 from bot.utils.bot_utils import get_json
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import chat_is_allowed, user_is_allowed, user_is_privileged
+from bot.utils.msg_utils import chat_is_allowed, clean_reply, user_is_allowed, user_is_privileged
 
 from .yt import youtube_reply
 
@@ -217,7 +217,7 @@ async def gif(event, args, client):
             return
 
         gif_link = random.choice(result["results"])["media_formats"]["gif"]["url"]
-        await event.reply_gif(gif_link)
+        await clean_reply(event, event.reply_to_message, "reply_gif", gif_link)
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -255,7 +255,7 @@ async def sticker(event, args, client):
         duration = sticker["media_formats"]["gif"]["duration"]
         if duration < 1:
             link = sticker["media_formats"]["png_transparent"]["url"]
-        await event.reply_sticker(link)
+        await clean_reply(event, event.reply_to_message, "reply_sticker", link)
     except Exception:
         await logger(Exception)
         await event.react("❌")
