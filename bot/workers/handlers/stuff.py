@@ -28,8 +28,9 @@ async def getcmds(event, args, client):
     try:
         pre = conf.CMD_PREFIX
         msg = f"""{pre}start - *Hi!*
-{pre}meme - *Get a random meme*
+{pre}fun - *Get fun commands*
 {pre}sanitize - *Sanitize link or message*
+{pre}screenshot - *Generate a screenshot from a url*
 {pre}sticker - *Turns images to stickers*
 {pre}stick2img - *Turns stickers to images/gifs*
 {pre}get - *Get previously saved item*

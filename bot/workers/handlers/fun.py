@@ -10,6 +10,24 @@ from .yt import youtube_reply
 meme_list = []
 
 
+async def fun(event, args, client):
+    """Help Function for the fun module"""
+    try:
+        pre = conf.CMD_PREFIX
+        s = "\n"
+        msg = (
+            f"{pre}cat - *Get a random cat gif/pic*{s}"
+            f"{pre}coub - *Fetches a random short video*{s}"
+            f"{pre}dog - *Get a random dog pic*{s}"
+            f"{pre}gif - *Get a random GIF from search results*{s}"
+            f"{pre}gsticker - *Get a random sticker from search results*{s}"
+            f"{pre}meme - *Get a random meme*"
+        )
+        await event.reply(msg)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
 async def gen_meme(link, pm=False):
     i = 1
     while True:
@@ -82,6 +100,7 @@ async def getmeme(event, args, client):
 
 
 async def cat(event, args, client):
+    "Fetches a random cat gif/pic."
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -144,7 +163,7 @@ async def coub(event, args, client):
 
 
 async def dog(event, args, client):
-    """Fetch the image of a random dog"""
+    """Fetches a random dog pic"""
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -194,3 +213,47 @@ async def gif(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+
+async def sticker(event, args, client):
+    """
+    Fetches a random sticker that matches the search result
+    Argument:
+        search_term: what to search for.
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not conf.TENOR_API_KEY:
+            return await event.reply(
+                "TENOR_API_KEY is needed for this function to work."
+            )
+        if not args:
+            args = "genshin"
+        url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqinator&searchfilter=sticker"
+        result = await get_json(url)
+        if not result:
+            return await event.reply("*Request Failed!*")
+        if not result["results"]:
+            await event.reply("*No results!*")
+            return
+
+        sticker_link = random.choice(rjson["results"])["media_formats"]["mp4"]["url"]
+        await event.reply_sticker(sticker_link)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+
+bot.add_handler(fun, "fun")
+bot.add_handler(cat, "cat")
+bot.add_handler(coub, "coub")
+bot.add_handler(dog, "dog")
+bot.add_handler(gif, "gif")
+bot.add_handler(sticker, "gsticker")
+# bot.add_handler(meme, "meme")

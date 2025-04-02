@@ -1,6 +1,8 @@
 import asyncio
 import datetime
+import httpx
 import itertools
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from hashlib import sha256
@@ -13,7 +15,7 @@ from ffmpeg.asyncio import FFmpeg
 from bot import LOGS, bot, telegraph_errors, time
 
 THREADPOOL = ThreadPoolExecutor(max_workers=1000)
-
+http = httpx.AsyncClient(http2=True)
 
 def gfn(fn):
     "gets module path"
@@ -229,3 +231,29 @@ def get_sha256(string: str):
 
 def trunc_string(string: str, limit: int):
     return (string[: limit - 2] + "…") if len(string) > limit else string
+
+
+async def screenshot_page(target_url: str):
+    """
+    Generate screenshot from a url.
+    From https://github.com/AmanoTeam/EduuRobot/blob/df2cb53bc9453b08267c9885fabf6c61355a0fc3/eduu/plugins/prints.py#L81
+    """
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0",
+    }
+    data = {
+    "url": target_url,
+    # Sending a random CSS to make the API to generate a new screenshot.
+    "css": f"random-tag: {uuid.uuid4()}",
+    "render_when_ready": False,
+    "viewport_width": 1280,
+    "viewport_height": 720,
+    "device_scale": 2,
+    }
+    try:
+        resp = await http.post("https://htmlcsstoimage.com/demo_run", headers=headers, json=data)
+        return link = resp.json()["url"]
+    except (JSONDecodeError, KeyError) as e:
+        raise Exception("Screenshot API returned an invalid response.") from e
+    except HTTPError as e:
+        raise Exception("Screenshot API seems offline. Try again later.") from e

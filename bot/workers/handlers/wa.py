@@ -23,6 +23,7 @@ from bot.utils.bot_utils import (
     list_to_str,
     png_to_jpg,
     same_week,
+    screenshot_page,
     split_text,
     sync_to_async,
     turn,
@@ -128,6 +129,53 @@ async def sanitize_url(event, args, client):
         for url in urls:
             msg += f"\n\n{url}"
         return await clean_reply(event, event.reply_to_message, "reply", msg)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+    finally:
+        if status_msg:
+            await status_msg.delete()
+
+
+async def screenshot(event, args, client):
+    """
+    Generate screenshots from all links in replied message
+
+    Can also receive a link as argument
+    """
+    status_msg = None
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (event.quoted_text or args):
+            return await event.reply(f"{screenshot.__doc__}")
+        status_msg = await event.reply("Please wait…")
+        extractor = URLExtract()
+        if event.quoted_text:
+            msg = event.quoted_text
+            urls = extractor.find_urls(msg)
+            if not urls:
+                return await event.reply(
+                    f"*No link found in @{event.reply_to_message.from_user.id}'s message*"
+                )
+
+        else:
+            urls = extractor.find_urls(args)
+            if not urls:
+                return await event.reply(f"*No link found in your message*")
+        for url in urls:
+            try:
+                image_url = await screenshot_page(url)
+            except Exception:
+                await logger(Exception)
+                await event.reply(f"Screenshot generation failed for: {url}")
+            else:
+                await event.reply_photo(image_url, caption="Screenshot from webpage")
+            await asyncio.sleep(3)
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -986,22 +1034,25 @@ async def test_button(event, args, client):
         await logger(Exception)
 
 
+
+bot.add_handler(get_notes2)
+bot.add_handler(tag_everyone)
+bot.add_handler(tag_all_admins)
+bot.add_handler(tag_all_owners)
+bot.add_handler(tag_all_sudoers)
+bot.add_handler(rec_msg_ranking)
+
+bot.add_handler(get_notes, "get")
+bot.add_handler(undelete, "undel")
+bot.add_handler(save_notes, "save")
+bot.add_handler(pick_random, "random")
+bot.add_handler(delete_notes, "del_note")
 bot.add_handler(sanitize_url, "sanitize")
+bot.add_handler(screenshot, "screenshot")
+bot.add_handler(upscale_image, "upscale")
+bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
 bot.add_handler(sticker_to_image, "stick2img")
-bot.add_handler(undelete, "undel")
-bot.add_handler(upscale_image, "upscale")
-bot.add_handler(pick_random, "random")
-bot.add_handler(get_notes, "get")
-bot.add_handler(save_notes, "save")
-bot.add_handler(delete_notes, "del_note")
-bot.add_handler(get_notes2)
-bot.add_handler(tag_all_admins)
-bot.add_handler(tag_all_sudoers)
-bot.add_handler(tag_all_owners)
-bot.add_handler(tag_everyone)
-bot.add_handler(rec_msg_ranking)
-bot.add_handler(msg_ranking, "msg_ranking")
 
 # test
 bot.add_handler(test_button, "button")

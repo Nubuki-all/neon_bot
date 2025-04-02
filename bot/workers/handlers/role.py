@@ -517,10 +517,11 @@ async def role_info(event, args, client):
 
 async def roles(event, args, client):
     """
-    List roles in group
+    Help function for the role module
     Arguments:
-    -l/--list : list available roles commands
-    role_name : Get information of a particular role.
+        No argument : list all available roles commands
+        -l/--list : list all roles in a group 
+        role_name : Get information of a particular role.
 
     *Both arguments cannot be used together.
     """
@@ -551,7 +552,7 @@ async def roles(event, args, client):
 {pre}roles - *Get this message again*
 {pre}roles* - *List all roles in group*
 
-* requires the argument -l/--list"""
+*requires the argument -l/--list"""
         await event.reply(msg)
     except Exception:
         await logger(Exception)
