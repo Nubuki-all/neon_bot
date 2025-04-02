@@ -1,7 +1,7 @@
 from datetime import datetime as dt
 
 from bot.config import bot, conf
-from bot.utils.bot_utils import get_date_from_ts, get_json
+from bot.utils.bot_utils import get_date_from_ts
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
     chat_is_allowed,

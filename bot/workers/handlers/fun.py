@@ -1,18 +1,12 @@
 import random
-from datetime import datetime as dt
-
-from bot.config import bot, conf
-from bot.utils.bot_utils import get_date_from_ts, get_json
-from bot.utils.log_utils import logger
-from bot.utils.msg_utils import (
-    chat_is_allowed,
-    tag_admins,
-    user_is_admin,
-    user_is_allowed,
-    user_is_privileged,
-)
 
 from yt import youtube_reply
+
+from bot.config import bot, conf
+from bot.utils.bot_utils import get_json
+from bot.utils.log_utils import logger
+from bot.utils.msg_utils import chat_is_allowed, user_is_allowed, user_is_privileged
+
 meme_list = []
 
 
@@ -96,17 +90,17 @@ async def cat(event, args, client):
             return await event.react("⛔")
     try:
         result = await get_json("https://api.thecatapi.com/v1/images/search")
-    
+
         if not result:
             return await event.reply("*Request Failed!*")
         url = result[0]["url"]
         if url.endswith(".gif"):
             await event.reply_gif(
-                    caption="*Meow!*",
-                    gif=url,
-                    viewonce=nsfw,
-                    as_gif=True,
-                )
+                caption="*Meow!*",
+                gif=url,
+                viewonce=nsfw,
+                as_gif=True,
+            )
         else:
             await event.reply_photo(url, caption="*Meow!*")
     except Exception:
@@ -131,7 +125,7 @@ async def coub(event, args, client):
             args = "Genshin impact"
         result = await get_json(f"https://coub.com/api/v2/search/coubs?q={args}")
         if not result:
-                return await event.reply("*Request Failed!*")
+            return await event.reply("*Request Failed!*")
         try:
             content = random.choice(result["coubs"])
             permalink = content["permalink"]
@@ -140,7 +134,9 @@ async def coub(event, args, client):
         except IndexError:
             await event.reply("Couldn't fetch video…")
         else:
-            await event.reply(f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}\n\n*Attempting to upload…*")
+            await event.reply(
+                f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}\n\n*Attempting to upload…*"
+            )
             await youtube_reply(event, links, client)
     except Exception:
         await logger(Exception)
@@ -158,8 +154,8 @@ async def dog(event, args, client):
     try:
         result = await get_json("https://random.dog/woof.json")
         if not result:
-                return await event.reply("*Request Failed!*")
-    
+            return await event.reply("*Request Failed!*")
+
         await event.reply_photo(result["url"], caption="*Woof!*")
     except Exception:
         await logger(Exception)
@@ -180,9 +176,11 @@ async def gif(event, args, client):
             return await event.react("⛔")
     try:
         if not conf.TENOR_API_KEY:
-            return await event.reply("TENOR_API_KEY is needed for this function to work.")
+            return await event.reply(
+                "TENOR_API_KEY is needed for this function to work."
+            )
         if not args:
-            args="genshin"
+            args = "genshin"
         url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqi"
         result = await get_json(url)
         if not result:
@@ -190,7 +188,7 @@ async def gif(event, args, client):
         if not result["results"]:
             await event.reply("*No results!*")
             return
-    
+
         gif_link = random.choice(rjson["results"])["media_formats"]["gif"]["url"]
         await event.reply_gif(gif_link)
     except Exception:
