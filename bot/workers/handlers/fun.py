@@ -152,14 +152,16 @@ async def coub(event, args, client):
         while True_:
             if page:
                 random_ = f"&page={page}"
-            result = await get_json(f"https://coub.com/api/v2/search/coubs?q={args}{random_}")
+            result = await get_json(
+                f"https://coub.com/api/v2/search/coubs?q={args}{random_}"
+            )
             if not result:
                 return await event.reply("*Request Failed!*")
             if page:
                 break
             total_pages = result["total_pages"]
             page = random.choice(range(1, total_pages))
-        
+
         try:
             content = random.choice(result["coubs"])
             dl_link = None
