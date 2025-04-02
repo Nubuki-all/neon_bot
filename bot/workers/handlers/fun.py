@@ -251,9 +251,13 @@ async def sticker(event, args, client):
             return
 
         sticker_link = random.choice(result["results"])["media_formats"]["mp4"]["url"]
-        sticker_duration = random.choice(result["results"])["media_formats"]["mp4"]["duration"]
+        sticker_duration = random.choice(result["results"])["media_formats"]["mp4"][
+            "duration"
+        ]
         if sticker_duration < 1:
-            sticker_link = sticker_link = random.choice(result["results"])["media_formats"]["png_transparent"]["url"]
+            sticker_link = sticker_link = random.choice(result["results"])[
+                "media_formats"
+            ]["png_transparent"]["url"]
         await event.reply_sticker(sticker_link)
     except Exception:
         await logger(Exception)
