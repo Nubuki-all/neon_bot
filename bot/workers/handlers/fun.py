@@ -279,7 +279,15 @@ async def sticker(event, args, client):
                 or sticker["media_formats"]["gif"]
             )
             link = link["url"]
-        await clean_reply(event, event.reply_to_message, "reply_sticker", link)
+        me = await bot.client.get_me()
+        await clean_reply(
+            event,
+            event.reply_to_message,
+            "reply_sticker",
+            link,
+            name=args,
+            packname=me.PushName,
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")

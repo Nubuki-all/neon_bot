@@ -60,14 +60,12 @@ async def sticker_reply(event, args, client, overide=False):
     try:
         if not (event.text or event.caption):
             return
+        me = await bot.client.get_me()
         if not overide:
             # if not event.text.startswith("@"):
             # return
-            me = await bot.client.get_me()
             if not "@" + me.JID.User in (event.text or event.caption):
                 return
-        else:
-            me = await bot.client.get_me()
         reply = (
             event.reply_to_message
             if not event.caption and len(event.text.split()) == 1 and not overide
@@ -104,16 +102,17 @@ async def sanitize_url(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not (event.quoted_text or args):
+        quoted = event.reply_to_message
+        if not (quoted or args):
             return await event.reply(f"{sanitize_url.__doc__}")
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
-        if event.quoted_text:
-            msg = event.quoted_text
+        if quoted:
+            msg = (quoted.caption or quoted.text or "")
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
-                    f"*No link found in @{event.reply_to_message.from_user.id}'s message to sanitize*"
+                    f"*No link found in @{quoted.from_user.id}'s message to sanitize*"
                 )
             new_msg = msg
             sanitized_links = []
@@ -151,16 +150,17 @@ async def screenshot(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not (event.quoted_text or args):
+        quoted = event.reply_to_message
+        if not (quoted or args):
             return await event.reply(f"{screenshot.__doc__}")
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
-        if event.quoted_text:
-            msg = event.quoted_text
+        if quoted:
+            msg = (quoted.caption or quoted.text or "")
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
-                    f"*No link found in @{event.reply_to_message.from_user.id}'s message*"
+                    f"*No link found in @{quoted.from_user.id}'s message*"
                 )
 
         else:
