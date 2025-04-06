@@ -108,7 +108,7 @@ async def sanitize_url(event, args, client):
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
         if quoted:
-            msg = (quoted.caption or quoted.text or "")
+            msg = quoted.caption or quoted.text or ""
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
@@ -156,7 +156,7 @@ async def screenshot(event, args, client):
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
         if quoted:
-            msg = (quoted.caption or quoted.text or "")
+            msg = quoted.caption or quoted.text or ""
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
