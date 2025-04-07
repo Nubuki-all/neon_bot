@@ -1197,7 +1197,6 @@ async def detect_filters(event, args, client):
         return
     try:
         chat = event.chat.id
-        (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
         if not (filters := bot.filters_dict.get(chat)):
             return
         msg = event.caption or event.text
@@ -1209,10 +1208,11 @@ async def detect_filters(event, args, client):
             await asyncio.sleep(2)
     except Exception:
         await logger(Exception)
-        await event.react("❌")
+        # await event.react("❌")
 
 
 async def get_filters(event, args, client):
+    chat = event.chat.id
     if not (filters := bot.filters_dict.get(chat)):
         return
     # Tab to edit
