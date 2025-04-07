@@ -1228,12 +1228,9 @@ async def get_filters(event, args, client):
     )
     if filter_type == str:
         msg = filter_data  # + f"\n\nBy: @{user}"
-        return await clean_reply(event, event.reply_to_message, "reply", msg)
+        return await event.reply(msg)
     elif filter_type == bytes:
-        return await clean_reply(
-            event,
-            event.reply_to_message,
-            "reply_photo",
+        return await event.reply_photo(
             filter_data[0],
             filter_data[1],
             # (note[1] + f"\n\nBy: @{user}").lstrip("\n"),
@@ -1245,9 +1242,7 @@ async def get_filters(event, args, client):
         # note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
         if hasattr(filter_data, "viewOnce"):
             filter_data.viewOnce = False
-        return await clean_reply(
-            event, event.reply_to_message, "reply", message=filter_data
-        )
+        return await event.reply(message=filter_data)
 
 
 async def test_button(event, args, client):
