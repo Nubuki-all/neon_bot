@@ -108,7 +108,7 @@ async def sanitize_url(event, args, client):
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
         if quoted:
-            msg = (quoted.caption or quoted.text or "")
+            msg = quoted.caption or quoted.text or ""
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
@@ -156,7 +156,7 @@ async def screenshot(event, args, client):
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
         if quoted:
-            msg = (quoted.caption or quoted.text or "")
+            msg = quoted.caption or quoted.text or ""
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
@@ -1014,7 +1014,7 @@ async def save_filter(event, args, client):
     Saves a replied Text/media message to bot database;
     Can be retrieved when a message content matches {filter_name}
     Argument:
-        filter_name: name to save filter as & text to match in received messages 
+        filter_name: name to save filter as & text to match in received messages
         -c: clean caption
     """
     chat = event.chat.id
@@ -1035,7 +1035,9 @@ async def save_filter(event, args, client):
             return await event.reply(f"{save_filter.__doc__}")
         args = args.casefold()
         if not event.quoted_msg:
-            return await event.reply("Can only save replied text or media as filter reply.")
+            return await event.reply(
+                "Can only save replied text or media as filter reply."
+            )
         if args.casefold() in ("all", "notes", "my notes", "me") or len(args) < 3:
             return await event.reply(f"Given filter_name *{args}* is blocked.")
         if (filters := bot.filters_dict.setdefault(chat, {})).get(args):
@@ -1051,7 +1053,10 @@ async def save_filter(event, args, client):
         elif event.quoted_image:
             if event.quoted_image.fileLength < 5000000:
                 new_filter = await download_replied_media(event)
-                new_filter = [new_filter, (event.quoted_image.caption if not arg.c else "")]
+                new_filter = [
+                    new_filter,
+                    (event.quoted_image.caption if not arg.c else ""),
+                ]
                 filter_type = bytes
             else:
                 new_filter = event.quoted_image
@@ -1107,7 +1112,9 @@ async def list_filters(event, args, client):
             if filter_ and filters[title].get("user") != user:
                 continue
             user_name = filters[title].get("user_name")
-            msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if not filter_ else ''}"
+            msg_ += (
+                f"\n{i}. *{title}*{f' added by *{user_name}*' if not filter_ else ''}"
+            )
             i += 1
         if not msg_:
             return await event.reply(
@@ -1179,9 +1186,9 @@ async def delete_filters(event, args, client):
 async def detect_filters(event, args, client):
     """
     Get saved filters;
-    AUTO FUNCTION 
+    AUTO FUNCTION
     """
-    user = event.from_user.id
+    event.from_user.id
     if not event.chat.is_group:
         return
     if not chat_is_allowed(event):
@@ -1190,7 +1197,7 @@ async def detect_filters(event, args, client):
         return
     try:
         chat = event.chat.id
-        chat_name = (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
+        (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
         if not (filters := bot.filters_dict.get(chat)):
             return
         msg = event.caption or event.text
@@ -1235,9 +1242,7 @@ async def get_filters(event, args, client):
         # note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
         if hasattr(note, "viewOnce"):
             note.viewOnce = False
-        return await clean_reply(
-            event, event.reply_to_message, "reply", message=note
-        )
+        return await clean_reply(event, event.reply_to_message, "reply", message=note)
 
 
 async def test_button(event, args, client):
@@ -1268,8 +1273,7 @@ async def test_button(event, args, client):
         await logger(Exception)
 
 
-
-### Add command handlers 
+# Add command handlers
 bot.add_handler(get_notes2)
 bot.add_handler(tag_everyone)
 bot.add_handler(detect_filters)
