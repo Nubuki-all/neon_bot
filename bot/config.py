@@ -80,6 +80,7 @@ class Runtime_Config:
         self.current_games_dict = {}
         self.disable_cic = False
         self.docker_deployed = False
+        self.filters_dict = {}
         self.force_save_messages = False
         self.group_dict = {}
         self.games_dict = {}

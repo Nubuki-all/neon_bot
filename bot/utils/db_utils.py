@@ -18,6 +18,7 @@ _filter = {"_id": conf.PH_NUMBER}
 
 database = conf.DATABASE_URL
 db_cluster = {
+    "filter": nfdb,
     "note": nfdb,
     "rss": rssdb,
     "users": userdb,

@@ -108,7 +108,7 @@ async def sanitize_url(event, args, client):
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
         if quoted:
-            msg = quoted.caption or quoted.text or ""
+            msg = (quoted.caption or quoted.text or "")
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
@@ -156,7 +156,7 @@ async def screenshot(event, args, client):
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
         if quoted:
-            msg = quoted.caption or quoted.text or ""
+            msg = (quoted.caption or quoted.text or "")
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
@@ -546,6 +546,13 @@ async def save_notes(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        arg, args = get_args(
+            ["-c", "store_true"],
+            to_parse=args,
+            get_unknown=True,
+        )
+        if not args:
+            return await event.reply(f"{save_notes.__doc__}")
         if not event.quoted_msg:
             return await event.reply("Can only save replied text or media.")
         if args.casefold() in ("all", "notes", "my notes", "me"):
@@ -557,11 +564,6 @@ async def save_notes(event, args, client):
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
-        arg, args = get_args(
-            ["-c", "store_true"],
-            to_parse=args,
-            get_unknown=True,
-        )
         status_msg = await event.reply("…")
         # note gen:
         note_type = str
@@ -1007,6 +1009,238 @@ async def welcome_msg(gc_event):
     )
 
 
+async def save_filter(event, args, client):
+    """
+    Saves a replied Text/media message to bot database;
+    Can be retrieved when a message content matches {filter_name}
+    Argument:
+        filter_name: name to save filter as & text to match in received messages 
+        -c: clean caption
+    """
+    chat = event.chat.id
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not user_is_privileged(user):
+        group_info = await bot.client.get_group_info(event.chat.jid)
+        if not user_is_admin(user, group_info.Participants):
+            return
+    try:
+        arg, args = get_args(
+            ["-c", "store_true"],
+            to_parse=args,
+            get_unknown=True,
+        )
+        if not args:
+            return await event.reply(f"{save_filter.__doc__}")
+        args = args.casefold()
+        if not event.quoted_msg:
+            return await event.reply("Can only save replied text or media as filter reply.")
+        if args.casefold() in ("all", "notes", "my notes", "me") or len(args) < 3:
+            return await event.reply(f"Given filter_name *{args}* is blocked.")
+        if (filters := bot.filters_dict.setdefault(chat, {})).get(args):
+            if not user_is_owner(user) and user != filters[args]["user"]:
+                return await event.reply(
+                    f"Filter with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
+                )
+        status_msg = await event.reply("…")
+        # filter gen:
+        filter_type = str
+        if event.quoted_text:
+            new_filter = event.quoted_text
+        elif event.quoted_image:
+            if event.quoted_image.fileLength < 5000000:
+                new_filter = await download_replied_media(event)
+                new_filter = [new_filter, (event.quoted_image.caption if not arg.c else "")]
+                filter_type = bytes
+            else:
+                new_filter = event.quoted_image
+                filter_type = Message
+        elif event.quoted_msg:
+            new_filter = event.quoted_msg
+            filter_type = Message
+        if filter_type == Message and arg.c:
+            new_filter.caption = ""
+        data = {
+            args: {
+                "user": user,
+                "user_name": event.from_user.name,
+                "filter": new_filter,
+                "filter_type": filter_type,
+            }
+        }
+        filters.update(data)
+        await save2db2(bot.filters_dict, "filter")
+        await status_msg.edit(f"_Saved replied message to filters with name:_ *{args}*")
+    except DownloadError:
+        await status_msg.edit("*Download Failed!*\nPlease ask that it be resent.")
+        await status_msg.react("ℹ️")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def list_filters(event, args, client):
+    """
+    Fetches the list of filters in a chat:
+    Arguments: [None]
+    """
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        chat = event.chat.id
+        chat_name = 
+            (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
+        if not (filters := bot.filters_dict.get(chat)):
+            return await event.reply(f"*No filters found for chat: {chat_name}!*")
+        reply = await event.reply("_Fetching filters…_")
+        filter_ = True if args and args.casefold() in ("my filters", "me") else False
+        msg = f"*{'Your l' if filter_ else 'L'}ist of filters in {chat_name}*"
+        msg_ = ""
+        i = 1
+        for title in list(filters.keys()):
+            if filter_ and filters[title].get("user") != user:
+                continue
+            user_name = filters[title].get("user_name")
+            msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if not filter_ else ''}"
+            i += 1
+        if not msg_:
+            return await event.reply(
+                f"*You currently have no saved filters in {chat_name}*!"
+            )
+        msg += msg_
+
+        chain_reply = None
+        for text in split_text(msg):
+            chain_reply = (
+                await reply.edit(text)
+                if not chain_reply
+                else await chain_reply.reply(text)
+            )
+            await asyncio.sleep(2)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def delete_filters(event, args, client):
+    """
+    Delete saved filters:
+    Arguments:
+        filter_name: name of filter to delete
+        all: (Owner) delete all filters for this chat
+    """
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        chat = event.chat.id
+        group_info = await bot.client.get_group_info(event.chat.jid)
+        admin_user = user_is_admin(user, group_info.Participants)
+        chat_name = group_info.GroupName.Name
+
+        if not (filters := bot.filters_dict.get(chat)):
+            return await event.reply(f"_No filters found for chat:_ *{chat_name}*!")
+        args = args.casefold()
+        if args == "all":
+            if not (user_is_owner(user) or admin_user):
+                return await event.reply(f"*Permission denied.*")
+            bot.filters_dict.pop(chat)
+            await save2db2(bot.filters_dict, "filter")
+            return await event.reply(
+                f"_Successfully removed all filters in_ *{chat_name}*"
+            )
+        if not (svd_filter := filters.get(args)):
+            return await event.reply(
+                f"Filter with name: *{args}* not found in *{chat_name}!*"
+            )
+        if not (user_is_owner(user) or admin_user) and user != svd_filter["user"]:
+            return await event.reply(
+                "You can't delete this filter; Most likely because *you* did not add it."
+            )
+        filters.pop(args)
+        await save2db2(bot.filters_dict, "filter")
+        return await event.reply(f"_Successfully removed filter with title:_ *{args}*")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def detect_filters(event, args, client):
+    """
+    Get saved filters;
+    AUTO FUNCTION 
+    """
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not chat_is_allowed(event):
+        return
+    if not (event.caption or event.text):
+        return
+    try:
+        chat = event.chat.id
+        chat_name = (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
+        if not (filters := bot.filters_dict.get(chat)):
+            return
+        msg = event.caption or event.text
+        msg = msg.casefold()
+        match_list = [*filters]
+        matches = [m for m in match_list if m in msg]
+        for match in matches:
+            await get_filters(event, match, client)
+            await asyncio.sleep(2)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def get_filters(event, args, client):
+    if not (filters := bot.filters_dict.get(chat)):
+        return
+    # Tab to edit
+    if not (svd_filter := filters.get(args)):
+        return
+    user, filter_data, filter_type = (
+        svd_filter.get("user"),
+        svd_filter.get("filter"),
+        svd_filter.get("filter_type"),
+    )
+    if filter_type == str:
+        msg = filter_data  # + f"\n\nBy: @{user}"
+        return await clean_reply(event, event.reply_to_message, "reply", msg)
+    elif filter_type == bytes:
+        return await clean_reply(
+            event,
+            event.reply_to_message,
+            "reply_photo",
+            note[0],
+            note[1],
+            # (note[1] + f"\n\nBy: @{user}").lstrip("\n"),
+        )
+    elif note_type == Message:
+        note = copy.deepcopy(note)
+        newlines = "\n\n"
+        # note.caption += f"{ newlines if note.caption else str()}By: @{user}"
+        # note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
+        if hasattr(note, "viewOnce"):
+            note.viewOnce = False
+        return await clean_reply(
+            event, event.reply_to_message, "reply", message=note
+        )
+
+
 async def test_button(event, args, client):
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -1035,8 +1269,11 @@ async def test_button(event, args, client):
         await logger(Exception)
 
 
+
+### Add command handlers 
 bot.add_handler(get_notes2)
 bot.add_handler(tag_everyone)
+bot.add_handler(detect_filters)
 bot.add_handler(tag_all_admins)
 bot.add_handler(tag_all_owners)
 bot.add_handler(tag_all_sudoers)
@@ -1045,14 +1282,18 @@ bot.add_handler(rec_msg_ranking)
 bot.add_handler(get_notes, "get")
 bot.add_handler(undelete, "undel")
 bot.add_handler(save_notes, "save")
+bot.add_handler(save_filter, "filter")
 bot.add_handler(pick_random, "random")
+bot.add_handler(list_filters, "filters")
 bot.add_handler(delete_notes, "del_note")
 bot.add_handler(sanitize_url, "sanitize")
 bot.add_handler(screenshot, "screenshot")
 bot.add_handler(upscale_image, "upscale")
 bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
+bot.add_handler(delete_filters, "del_filter")
 bot.add_handler(sticker_to_image, "stick2img")
+
 
 # test
 bot.add_handler(test_button, "button")

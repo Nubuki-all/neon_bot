@@ -64,6 +64,7 @@ if conf.DATABASE_URL:
     nfdb = db["note_filter"]
 
     load_db(nfdb, "note", bot.notes_dict, "dict")
+    load_db(nfdb, "filter", bot.filters_dict, "dict")
     load_db(rssdb, "rss", bot.rss_dict, "dict")
     load_db(userdb, "groups", bot.group_dict, "dict")
     load_db(userdb, "users", bot.user_dict, "dict")
