@@ -1095,8 +1095,7 @@ async def list_filters(event, args, client):
             return await event.react("⛔")
     try:
         chat = event.chat.id
-        chat_name = 
-            (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
+        chat_name = (await bot.client.get_group_info(event.chat.jid)).GroupName.Name
         if not (filters := bot.filters_dict.get(chat)):
             return await event.reply(f"*No filters found for chat: {chat_name}!*")
         reply = await event.reply("_Fetching filters…_")
