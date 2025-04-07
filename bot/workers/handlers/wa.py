@@ -1034,7 +1034,8 @@ async def save_filter(event, args, client):
         if not args:
             return await event.reply(f"{save_filter.__doc__}")
         args = args.casefold()
-        if not event.quoted_msg:
+        quoted = event.reply_to_message
+        if not (event.quoted_msg or quoted.sticker):
             return await event.reply(
                 "Can only save replied text or media as filter reply."
             )
@@ -1061,8 +1062,8 @@ async def save_filter(event, args, client):
             else:
                 new_filter = event.quoted_image
                 filter_type = Message
-        elif event.quoted_msg:
-            new_filter = event.quoted_msg
+        elif event.quoted_msg or quoted.sticker:
+            new_filter = event.reply_to_message.sticker or event.quoted_msg
             filter_type = Message
         if filter_type == Message and arg.c:
             new_filter.caption = ""

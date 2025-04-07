@@ -36,6 +36,9 @@ async def getcmds(event, args, client):
 {pre}get - *Get previously saved item*
 {pre}save - *Save a replied text/media*
 {pre}del_note - *Delete a saved item*
+{pre}filter - *Filter given word with replied message*
+{pre}filters - *List filters*
+{pre}del_filter - *Delete filters*
 {pre}afk - *Enable AFK mode*
 {pre}random - *Get a random choice*
 {pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}
