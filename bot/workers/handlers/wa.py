@@ -1234,18 +1234,18 @@ async def get_filters(event, args, client):
             event,
             event.reply_to_message,
             "reply_photo",
-            note[0],
-            note[1],
+            filter_data[0],
+            filter_data[1],
             # (note[1] + f"\n\nBy: @{user}").lstrip("\n"),
         )
-    elif note_type == Message:
-        note = copy.deepcopy(note)
+    elif filter_type == Message:
+        filter_data = copy.deepcopy(filter_data)
         newlines = "\n\n"
         # note.caption += f"{ newlines if note.caption else str()}By: @{user}"
         # note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
-        if hasattr(note, "viewOnce"):
-            note.viewOnce = False
-        return await clean_reply(event, event.reply_to_message, "reply", message=note)
+        if hasattr(filter_data, "viewOnce"):
+            filter_data.viewOnce = False
+        return await clean_reply(event, event.reply_to_message, "reply", message=filter_data)
 
 
 async def test_button(event, args, client):
