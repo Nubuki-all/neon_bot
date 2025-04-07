@@ -1201,6 +1201,8 @@ async def detect_filters(event, args, client):
             return
         msg = event.caption or event.text
         msg = msg.casefold()
+        if (conf.CMD_PREFIX + "filter") in msg:
+            return
         match_list = [*filters]
         matches = [m for m in match_list if m in msg]
         for match in matches:
