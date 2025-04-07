@@ -1245,7 +1245,9 @@ async def get_filters(event, args, client):
         # note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
         if hasattr(filter_data, "viewOnce"):
             filter_data.viewOnce = False
-        return await clean_reply(event, event.reply_to_message, "reply", message=filter_data)
+        return await clean_reply(
+            event, event.reply_to_message, "reply", message=filter_data
+        )
 
 
 async def test_button(event, args, client):
