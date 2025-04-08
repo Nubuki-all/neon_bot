@@ -651,8 +651,8 @@ def add_handler(function, command: str | None = None, **kwargs):
     register(command)(_)
 
 
-bot.register = register
 bot.add_handler = add_handler
+bot.register = register
 
 
 async def handler_helper(funcs):
@@ -681,9 +681,7 @@ async def on_message(client: NewAClient, message: MessageEv):
                 # await func(client, event)
                 future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
                 future.result()
-        func_list = []
-        for func in function_dict[None]:
-            func_list.append(func(client, event))
+        func_list = [func(client, event) for func in function_dict[None]]
         future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
         future.result()
     except Exception:

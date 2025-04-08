@@ -1282,20 +1282,38 @@ bot.add_handler(tag_all_owners)
 bot.add_handler(tag_all_sudoers)
 bot.add_handler(rec_msg_ranking)
 
-bot.add_handler(get_notes, "get")
+
 bot.add_handler(undelete, "undel")
-bot.add_handler(save_notes, "save")
-bot.add_handler(save_filter, "filter")
 bot.add_handler(pick_random, "random")
 bot.add_handler(list_filters, "filters")
-bot.add_handler(delete_notes, "del_note")
 bot.add_handler(sanitize_url, "sanitize")
 bot.add_handler(screenshot, "screenshot")
 bot.add_handler(upscale_image, "upscale")
 bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
-bot.add_handler(delete_filters, "del_filter")
 bot.add_handler(sticker_to_image, "stick2img")
+bot.add_handler(get_notes, "get", require_args=True)
+
+bot.add_handler(
+    save_notes,
+    "save",
+    require_args=True,
+)
+bot.add_handler(
+    save_filter,
+    "filter",
+    require_args=True,
+)
+bot.add_handler(
+    delete_notes,
+    "del_note",
+    require_args=True,
+)
+bot.add_handler(
+    delete_filters,
+    "del_filter",
+    require_args=True,
+)
 
 
 # test
