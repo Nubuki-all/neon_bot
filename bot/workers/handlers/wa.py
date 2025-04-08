@@ -1206,7 +1206,7 @@ async def detect_filters(event, args, client):
             return
         match_list = [*filters]
         matches = [m for m in match_list if m in msg]
-        for match in matches:
+        for match in matches[:2]:
             await get_filters(event, match, client)
             await asyncio.sleep(2)
     except Exception:
