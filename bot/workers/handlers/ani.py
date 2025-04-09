@@ -70,6 +70,7 @@ async def anime_search(event, args, client):
     if not search_result:
         return None
 
+
     button_dict = {}
     for i, anime in enumerate(search_result, start=1):
         text = anime.title.english or anime.title.romaji or anime.title.native
@@ -77,6 +78,8 @@ async def anime_search(event, args, client):
     title = (
         f"{event.from_user.name} please select the anime you want to fetch info for."
     )
+    if i == 1:
+        return f"{anime.id}"
     poll_msg_, msg_id = await create_sudo_button(
         title,
         button_dict,
