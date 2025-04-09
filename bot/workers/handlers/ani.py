@@ -70,7 +70,6 @@ async def anime_search(event, args, client):
     if not search_result:
         return None
 
-
     button_dict = {}
     for i, anime in enumerate(search_result, start=1):
         text = anime.title.english or anime.title.romaji or anime.title.native
