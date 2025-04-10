@@ -60,7 +60,7 @@ async def sticker_reply(event, args, client, overide=False):
     try:
         if not (event.text or event.caption):
             return
-        me = await bot.client.get_me()
+        bot.me = me = await bot.client.get_me()
         if not overide:
             # if not event.text.startswith("@"):
             # return
@@ -217,7 +217,7 @@ async def stickerize_image(event, args, client):
         # forced = False if event.quoted_image else forced
         await event.send_typing_status()
         file = await download_replied_media(event)
-        me = await bot.client.get_me()
+        bot.me = me = await bot.client.get_me()
         return await event.reply_sticker(
             file,
             quote=True,
@@ -1189,10 +1189,12 @@ async def detect_filters(event, args, client):
     Get saved filters;
     AUTO FUNCTION
     """
-    event.from_user.id
+    user = event.from_user.id
     if not event.chat.is_group:
         return
     if not chat_is_allowed(event):
+        return
+    if bot.me and bot.me.JID.User == user:
         return
     if not (event.caption or event.text):
         return
