@@ -72,10 +72,12 @@ async def backup_wa_db():
     cmd = [
         "pg_restore",
         "--no-owner",
-        f"-j {cpu_count}",
+        "-j",
+        f"{cpu_count}",
         "--clean",
         "--if-exists",
         "-x",
+        "--disable-triggers",  # Disable foreign key checks during data restore
         f"--dbname={conf.BACKUP_WA_DB}",
         "-v",
         back_up_file,
@@ -118,9 +120,11 @@ async def restore_wa_db():
     cmd = [
         "pg_restore",
         "--no-owner",
-        f"-j {cpu_count}",
+        "-j",
+        f"{cpu_count}",
         "--clean",
         "--if-exists",
+        "--disable-triggers",  # Disable foreign key checks during data restore
         "-x",
         f"--dbname={conf.WA_DB}",
         "-v",

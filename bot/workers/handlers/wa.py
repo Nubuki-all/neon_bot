@@ -275,7 +275,7 @@ async def undelete(event, args, client):
     Argument:
       @mention : Specific user whose deleted messages should be retrieved; defaults to anyone
     Optional Parameter(s):
-        -a : amount deleted messages to fetch; defaults to 1 (one)
+        -a : amount of deleted messages to fetch; defaults to 1 (one)
     """
     if not event.chat.is_group:
         return await event.react("🚫")
