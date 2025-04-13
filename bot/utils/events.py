@@ -476,7 +476,7 @@ def register(key: str | None = None):
         nonlocal key
         if isinstance(key, int):
             function_dict.update({key: fn})
-        if not key:
+        elif not key:
             function_dict[key].append(fn)
         else:
             key = conf.CMD_PREFIX + key
