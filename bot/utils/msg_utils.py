@@ -12,8 +12,8 @@ from bot.config import bot, conf
 from bot.others.exceptions import ArgumentParserError
 
 from .bot_utils import post_to_tgph
+from .events import Event  # noqa  # isort: skip  # pylint: disable=unused-import
 from .events import (
-    Event,  # noqa  # isort: skip  # pylint: disable=unused-import
     construct_event,
     construct_message,
     construct_msg_and_evt,
