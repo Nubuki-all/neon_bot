@@ -19,8 +19,9 @@ from . import (
 )
 from .startup.after import on_startup
 from .utils.db_utils import restore_wa_db
-from .utils.msg_utils import Event, event_handler, on_message
+from .utils.events import Event, POLL, event_handler, on_message
 from .utils.os_utils import file_exists, re_x, s_remove
+from .utils.sudo_button_utils import poll_as_button_handler
 from .workers.handlers.afk import activate_afk, afk_helper
 from .workers.handlers.ani import airing, anime
 from .workers.handlers.dev import bash, eval_message, get_logs
@@ -221,6 +222,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await afk_helper(message, None, client)
+
+
+@bot.register(POLL)
+async def _(client: NewAClient, message: Event):
+    await poll_as_button_handler(message)
 
 
 @bot.client.event(MessageEv)
