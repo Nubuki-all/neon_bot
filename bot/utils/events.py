@@ -6,8 +6,8 @@ from collections import deque
 
 import httpx
 from neonize.types import MessageWithContextInfo
-from neonize.utils.enum import ChatPresence, ChatPresenceMedia, MediaType, Presence
-from neonize.utils.message import extract_text, get_poll_update_message
+from neonize.utils.enum import ChatPresence, ChatPresenceMedia
+from neonize.utils.message import extract_text
 
 from bot import (
     Message,
@@ -469,6 +469,7 @@ class Event:
 POLL = 1
 function_dict = {None: []}
 anti_duplicate = deque(maxlen=10)
+
 
 def register(key: str | None = None):
     def dec(fn):

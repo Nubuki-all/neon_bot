@@ -1,33 +1,25 @@
 import argparse
 import asyncio
-import copy
 import inspect
-import os
 import re
 from functools import partial
 
-import httpx
 from bs4 import BeautifulSoup
-from neonize.types import MessageWithContextInfo
-from neonize.utils.enum import ChatPresence, ChatPresenceMedia, MediaType, Presence
-from neonize.utils.message import extract_text, get_poll_update_message
+from neonize.utils.enum import MediaType, Presence
 
-from bot import (
-    Message,
-    MessageEv,
-    NewAClient,
-    base_msg,
-    base_msg_info,
-    base_msg_source,
-    jid,
-)
+from bot import jid
 from bot.config import bot, conf
 from bot.others.exceptions import ArgumentParserError
 
 from .bot_utils import post_to_tgph
-from .events import Event, construct_event, construct_message, construct_msg_and_evt, event_handler  # noqa  # pylint: disable=unused-import
+from .events import (
+    Event,  # noqa  # pylint: disable=unused-import
+    construct_event,
+    construct_message,
+    construct_msg_and_evt,
+    event_handler,
+)
 from .log_utils import logger
-from .sudo_button_utils import poll_as_button_handler
 
 
 async def download_replied_media(event: Event) -> bytes:
@@ -180,7 +172,6 @@ async def get_user_info(user_id):
     return await bot.client.contact.get_contact(jid.build_jid(user_id))
 
 
-
 async def send_presence(online=True):
     presence = Presence.AVAILABLE if online else Presence.UNAVAILABLE
     return await bot.client.send_presence(presence)
@@ -321,4 +312,3 @@ def get_args(*args, to_parse: str, get_unknown=False):
         unknown = " ".join(map(str, unknowns))
         return flag, unknown
     return flag
-
