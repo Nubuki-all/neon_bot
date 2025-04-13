@@ -6,6 +6,7 @@ from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
+    construct_msg_and_evt,
     user_is_allowed,
     user_is_privileged,
 )
@@ -175,10 +176,13 @@ async def coub(event, args, client):
         else:
             ytdl = bot.group_dict.get(event.chat.id, {}).get("ytdl")
             dl_msg = "\n\n*Attempting to upload…*" if ytdl and dl_link else ""
-            await event.reply(
+            text = (
                 f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}{dl_msg}"
             )
-            await youtube_reply(event, dl_link, client)
+            rep = await event.reply(text)
+            if dl_msg:
+                event_ = construct_msg_and_evt(event.chat.id, bot.me.JID.User, rep.ID, text, event.chat.server)
+                await youtube_reply(event_, dl_link, client)
     except Exception:
         await logger(Exception)
         await event.react("❌")
