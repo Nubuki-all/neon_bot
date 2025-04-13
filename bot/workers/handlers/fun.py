@@ -181,9 +181,7 @@ async def coub(event, args, client):
             )
             rep = await event.reply(text)
             if dl_msg:
-                event_ = construct_msg_and_evt(
-                    event.chat.id, bot.me.JID.User, rep.ID, text, event.chat.server
-                )
+                event_ = construct_msg_and_evt(event.chat.id, bot.me.JID.User, rep.id, text, event.chat.server)
                 await youtube_reply(event_, dl_link, client)
     except Exception:
         await logger(Exception)
