@@ -578,7 +578,7 @@ async def event_handler(
     disable_help: bool = False,
     split_args: str = " ",
     default_args: str = False,
-    use_default_args: str | None | False = False,
+    use_default_args: str | None | bool = False,
 ):
     args = (
         event.text.split(split_args, maxsplit=1)[1].strip()
