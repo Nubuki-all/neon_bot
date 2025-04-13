@@ -21,6 +21,7 @@ from .events import (
     construct_msg_and_evt,
     event_handler,
 )
+
 # isort: on
 
 from .log_utils import logger
