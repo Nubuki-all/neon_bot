@@ -14,6 +14,7 @@ from RealESRGAN import RealESRGAN
 from urlextract import URLExtract
 from wand.image import Image as wand_image
 
+from bot import Message
 from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
@@ -33,7 +34,6 @@ from bot.utils.bot_utils import (
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
-    Message,
     chat_is_allowed,
     clean_reply,
     construct_msg_and_evt,
