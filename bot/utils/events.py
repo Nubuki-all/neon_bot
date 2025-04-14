@@ -65,6 +65,8 @@ class Event:
 
     def _construct_media(self):
         for msg, v in self._message.ListFields():
+            if not msg.name.endswith("ContextInfo"):
+                self.name = msg.name
             if not msg.name.endswith("Message"):
                 continue
             setattr(self, msg.name.split("M")[0], v)
@@ -517,7 +519,8 @@ async def on_message(client: NewAClient, message: MessageEv):
                 function[POLL](client, event), bot.loop
             )
             return future.result()
-        _id = f"{event.chat.id}:{event.id}"
+
+        _id = f"{event.name}:{event.chat.id}:{event.id}"
         if _id in anti_duplicate:
             return
         anti_duplicate.append(_id)
