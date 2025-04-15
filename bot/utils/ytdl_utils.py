@@ -108,6 +108,7 @@ class YoutubeDLHelper:
         self.file_name = None
         self.start = None
         self.message = None
+        self.re_encode = False
         self.unfin_str = "🤍"
         self.opts = {
             "progress_hooks": [self._on_download_progress],
@@ -267,6 +268,14 @@ class YoutubeDLHelper:
                     outtmpl_ = (
                         "%(title,fulltitle,alt_title)s • %(artist,uploader)s.%(ext)s"
                     )
+                else:
+                    h264_formats = [
+                        fmt["format_id"] for fmt in result['formats']
+                        if (fmt.get('vcodec', '').startswith('avc1') or (fmt.get('vcodec') == 'h264')  # Handle both representations
+                        and fmt.get('acodec') != 'none')   # Exclude video-only formats
+                    ]
+                    if not h264_formats:
+                        self.re_encode = True
                 realName = ydl.prepare_filename(result, outtmpl=outtmpl_)
                 ext = ospath.splitext(realName)[-1]
                 self.file_name = (
@@ -408,6 +417,17 @@ class YoutubeDLHelper:
             )
             self._ext = ".mp4"
             self._listener.name = f"{base_name}{self._ext}"
+        elif self.re_encode:
+            self.opts["postprocessors"].append(
+                {
+                    "key": "FFmpegCopyStream",
+                }
+            )
+            self.opts["postprocessor_args"].update(
+                copystream = [
+                    "-c:v", "libx264", "-c:a", "copy"
+                ]
+            )
 
         if self._ext in [
             ".mp3",
