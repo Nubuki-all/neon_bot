@@ -77,8 +77,7 @@ async def youtube_reply(event, args, client):
         while job:
             try:
                 audio = False
-                # _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
-                _format = "bv*[ext=mp4][vcodec~='h264'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264'][filesize<100M][height<={0}] / bv*+ba/b"
+                _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
                 if "music" in listener.link:
