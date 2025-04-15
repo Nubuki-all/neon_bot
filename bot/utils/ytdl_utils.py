@@ -270,9 +270,15 @@ class YoutubeDLHelper:
                     )
                 else:
                     h264_formats = [
-                        fmt["format_id"] for fmt in result['formats']
-                        if (fmt.get('vcodec', '').startswith('avc1') or (fmt.get('vcodec') == 'h264')  # Handle both representations
-                        and fmt.get('acodec') != 'none')   # Exclude video-only formats
+                        fmt["format_id"]
+                        for fmt in result["formats"]
+                        if (
+                            fmt.get("vcodec", "").startswith("avc1")
+                            or (
+                                fmt.get("vcodec") == "h264"
+                            )  # Handle both representations
+                            and fmt.get("acodec") != "none"
+                        )  # Exclude video-only formats
                     ]
                     if not h264_formats:
                         self.re_encode = True
@@ -424,9 +430,7 @@ class YoutubeDLHelper:
                 }
             )
             self.opts["postprocessor_args"].update(
-                copystream = [
-                    "-c:v", "libx264", "-c:a", "copy"
-                ]
+                copystream=["-c:v", "libx264", "-c:a", "copy"]
             )
 
         if self._ext in [
