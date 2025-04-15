@@ -429,6 +429,7 @@ class YoutubeDLHelper:
                     "key": "FFmpegCopyStream",
                 }
             )
+            self.opts["postprocessor_args"] = {}
             self.opts["postprocessor_args"].update(
                 copystream=["-c:v", "libx264", "-c:a", "copy"]
             )
