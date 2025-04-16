@@ -1,7 +1,7 @@
 import random
 
 from bot.config import bot, conf
-from bot.utils.bot_utils import get_json
+from bot.utils.bot_utils import get_json, png_to_jpg
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
     chat_is_allowed,
@@ -96,6 +96,8 @@ async def getmeme(event, args, client):
                 viewonce=nsfw,
                 as_gif=True,
             )
+        if url.endswith(".png"):
+            url = await png_to_jpg(url)
         await event.reply_photo(
             caption=caption,
             photo=url,
