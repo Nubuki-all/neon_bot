@@ -57,6 +57,8 @@ async def youtube_reply(event, args, client):
     try:
         if not event.text:
             return
+        if "#no_ytdl" in event.text:
+            return
         if event.chat.is_group and not chat_is_allowed(event):
             return
         if not bot.group_dict.get(event.chat.id, {}).get("ytdl"):
