@@ -55,7 +55,7 @@ async def afk_helper(event, args, client):
                 text=event.text,
                 reply_privately=True,
                 message=event.media,
-                to=afk_dict.get("ph"),
+                to=jid.build_jid(afk_dict.get("ph")),
                 mentions_are_lids=event.lid_address,
             )
             reply = construct_msg_and_evt(
