@@ -27,8 +27,9 @@ async def auto_rank():
             msg = await get_ranking_msg(group, tag=True)
             if not msg:
                 continue
+            server = group_info["msg_ranking"]["server"]
             await bot.client.send_message(
-                jid.build_jid(group, "g.us"), msg, mentions_are_lids=True
+                jid.build_jid(group, "g.us"), msg, mentions_are_lids=(server == "lid")
             )
             await asyncio.sleep(3)
             if not (last_clear := groups.get("last_rank_clear")):

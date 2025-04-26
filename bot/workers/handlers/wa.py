@@ -887,7 +887,7 @@ async def rec_msg_ranking(event, args, client):
             return
         chat_id = event.chat.id
         msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
-        user = event.from_user.hid
+        user = event.from_user.id
         if event.is_revoke:
             value = 0
             msgs = await msg_store.get_messages_from_ids(chat_id, [event.revoked_id])
@@ -902,6 +902,7 @@ async def rec_msg_ranking(event, args, client):
         else:
             value = 1
         msg_rank[user] = msg_rank.setdefault(user, 0) + value
+        msg_rank["server"] = event.from_user.server
         msg_rank["total"] = msg_rank.setdefault("total", 0) + value
         bot.msg_leaderboard_counter += 1
     except Exception:
@@ -941,11 +942,12 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
     sorted_ms_rank_dict = dict(
         sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
     )
+    server = msg_rank_dict.get("server")
     for user in list(sorted_ms_rank_dict.keys()):
-        if user == "total":
+        if user in ("total", "server"):
             continue
         value = sorted_ms_rank_dict.get(user)
-        user_info = await get_user_info(user, "lid")
+        user_info = await get_user_info(user, server)
         msg += f"{i}. {(user_info.PushName or '👤 Unknown') if not tag else ('@'+ user)} · {human_format_num(value)}\n"
         medals = get_medals(chat_id, user)
         msg += f"    └{medals}\n" if medals else ""
