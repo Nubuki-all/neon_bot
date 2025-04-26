@@ -101,6 +101,12 @@ class Event:
     def construct(self, message: MessageEv, add_replied: bool = True):
         self.chat = self.Chat()
         self.chat.construct(message.Info.MessageSource)
+        self.outgoing = message.Info.MessageSource.IsFromMe
+        if self.outgoing:
+            if self.lid_address:
+                patch_msg_sender(self.message, message.Info.MessageSource.Sender, bot.me.JID)
+            else:
+                patch_msg_sender(self.message, message.Info.MessageSource.Sender, bot.me.LID)
         self.alt_user = self.User()
         self.alt_user.construct(message, alt=True)
         self.user = self.User()
@@ -193,13 +199,7 @@ class Event:
             or self.quoted_viewonce
         )
         self.reply_to_message = self.get_quoted_msg()
-        self.outgoing = message.Info.MessageSource.IsFromMe
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
-        if self.outgoing:
-            if self.lid_address:
-                patch_msg_sender(self.message, self.user.jid, bot.me.JID)
-            else:
-                patch_msg_sender(self.message, self.user.jid, bot.me.LID)
         self.constructed = True
         return self
 
