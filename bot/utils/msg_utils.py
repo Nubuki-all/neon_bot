@@ -20,6 +20,7 @@ from .events import (
     construct_message,
     construct_msg_and_evt,
     event_handler,
+    patch_msg_sender,
 )
 
 # isort: on

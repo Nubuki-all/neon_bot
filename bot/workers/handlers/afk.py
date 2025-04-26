@@ -13,6 +13,7 @@ from bot.utils.msg_utils import (
     get_afk_status,
     get_mentioned,
     get_user_info,
+    patch_msg_sender,
     user_is_allowed,
     user_is_privileged,
 )
@@ -51,11 +52,11 @@ async def afk_helper(event, args, client):
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
             await event.reply(afk_message.format(user_name, reason, since))
+            patch_msg_sender(replied.message, replied.user.jid, jid.build_jid(afk_dict.get("ph")))
             reply = await replied.reply(
                 text=event.text,
                 reply_privately=True,
                 message=event.media,
-                to=jid.build_jid(afk_dict.get("ph")),
                 mentions_are_lids=event.lid_address,
             )
             reply = construct_msg_and_evt(
