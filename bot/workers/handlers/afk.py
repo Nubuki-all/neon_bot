@@ -52,7 +52,9 @@ async def afk_helper(event, args, client):
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
             await event.reply(afk_message.format(user_name, reason, since))
-            patch_msg_sender(replied.message, replied.user.jid, jid.build_jid(afk_dict.get("ph")))
+            patch_msg_sender(
+                replied.message, replied.user.jid, jid.build_jid(afk_dict.get("ph"))
+            )
             reply = await replied.reply(
                 text=event.text,
                 reply_privately=True,
