@@ -90,7 +90,11 @@ async def afk_helper(event, args, client):
                     user_jid, (replied.text or replied._message)
                 )
                 reply = construct_msg_and_evt(
-                    alt_user, bot.me.JID.User, rep.ID, replied.text, Msg=replied._message
+                    alt_user,
+                    bot.me.JID.User,
+                    rep.ID,
+                    replied.text,
+                    Msg=replied._message,
                 )
                 await asyncio.sleep(1)
                 rep = await reply.reply(text=event.text, message=event.media)
@@ -141,7 +145,7 @@ async def activate_afk(event, args, client):
             "reason": args,
             "time": time.time(),
             "user_name": user_info.PushName,
-            "ph": event.from_user.id if event.lid_address else None
+            "ph": event.from_user.id if event.lid_address else None,
         }
         bot.user_dict.setdefault(event.from_user.hid, {}).update(afk=afk_dict)
         bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict)
