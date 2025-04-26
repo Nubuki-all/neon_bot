@@ -891,7 +891,7 @@ async def rec_msg_ranking(event, args, client):
             msgs = await msg_store.get_messages_from_ids(chat_id, [event.revoked_id])
             if (
                 msgs
-                and msgs[0].from_user.id == user
+                and msgs[0].from_user.id == event.from_user.id
                 and (ts := msgs[0].message.Info.Timestamp)
             ):
                 date = datetime.datetime.fromtimestamp(ts / 1000)
@@ -943,7 +943,7 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
         if user == "total":
             continue
         value = sorted_ms_rank_dict.get(user)
-        user_info = await get_user_info(user)
+        user_info = await get_user_info(user, "lid")
         msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
         medals = get_medals(chat_id, user)
         msg += f"    └{medals}\n" if medals else ""
