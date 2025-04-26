@@ -30,7 +30,7 @@ class Message_store:
 
     def _get_message_store(self):
         # if self.cached_messages:
-            # return self.cached_messages
+        # return self.cached_messages
         message_store = {}
         try:
             if file_exists(msg_store_file) and size_of(msg_store_file) > 0:
