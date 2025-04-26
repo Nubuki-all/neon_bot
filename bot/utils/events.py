@@ -101,16 +101,6 @@ class Event:
     def construct(self, message: MessageEv, add_replied: bool = True):
         self.chat = self.Chat()
         self.chat.construct(message.Info.MessageSource)
-        self.outgoing = message.Info.MessageSource.IsFromMe
-        if self.outgoing:
-            if self.lid_address:
-                patch_msg_sender(
-                    self.message, message.Info.MessageSource.Sender, bot.me.JID
-                )
-            else:
-                patch_msg_sender(
-                    self.message, message.Info.MessageSource.Sender, bot.me.LID
-                )
         self.alt_user = self.User()
         self.alt_user.construct(message, alt=True)
         self.user = self.User()
@@ -142,7 +132,7 @@ class Event:
             self.revoked_id = self.protocol.key.ID
         if self.message.Info.MessageSource.AddressingMode == 2:
             self.lid_address = True
-        self.from_user = self.alt_user if self.lid_address else self.user
+        self.from_user = copy.deepcopy(self.alt_user if self.lid_address else self.user)
         self.from_user.hid = self.user.id if self.lid_address else self.alt_user.id
         self.from_user.lid = self.user.jid if self.lid_address else self.alt_user.jid
         self.caption = (extract_text(self._message) or None) if not self.text else None
@@ -203,7 +193,19 @@ class Event:
             or self.quoted_viewonce
         )
         self.reply_to_message = self.get_quoted_msg()
+        self.outgoing = message.Info.MessageSource.IsFromMe
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
+        if self.outgoing:
+            if self.lid_address:
+                patch_msg_sender(self.message, self.user.jid, bot.me.JID)
+                self.from_user.jid = bot.me.JID
+                self.from_user.id = bot.me.JID.User
+                self.from_user.hid = self.user.id
+            else:
+                patch_msg_sender(self.message, self.user.jid, bot.me.LID)
+                self.from_user.jid = bot.me.LID
+                self.from_user.id = bot.me.LID.User
+                self.from_user.hid = self.user.id
         self.constructed = True
         return self
 
