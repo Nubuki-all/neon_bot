@@ -946,7 +946,7 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
             continue
         value = sorted_ms_rank_dict.get(user)
         user_info = await get_user_info(user, "lid")
-        msg += f"{i}. {user_info.PushName if not tag else ('@'+ user)} · {human_format_num(value)}\n"
+        msg += f"{i}. {(user_info.PushName or '👤 Unknown') if not tag else ('@'+ user)} · {human_format_num(value)}\n"
         medals = get_medals(chat_id, user)
         msg += f"    └{medals}\n" if medals else ""
         i += 1
