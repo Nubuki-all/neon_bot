@@ -64,7 +64,9 @@ async def sticker_reply(event, args, client, overide=False):
         if not overide:
             # if not event.text.startswith("@"):
             # return
-            if not "@" + (me.JID.User if not event.lid_address else me.LID.User) in (event.text or event.caption):
+            if not "@" + (me.JID.User if not event.lid_address else me.LID.User) in (
+                event.text or event.caption
+            ):
                 return
         reply = (
             event.reply_to_message
@@ -995,7 +997,11 @@ async def gc_handler(gc_msg):
 async def goodbye_msg(gc_event):
     msg = "_It was nice knowing you, {}!_"
     user_info = await get_user_info(gc_event.Leave[0].User)
-    await bot.client.send_message(gc_event.JID, msg.format(user_info.PushName or "@" + gc_event.Leave[0].User), mentions_are_lids=(gc_event.Leave[0].Server == "lid"))
+    await bot.client.send_message(
+        gc_event.JID,
+        msg.format(user_info.PushName or "@" + gc_event.Leave[0].User),
+        mentions_are_lids=(gc_event.Leave[0].Server == "lid"),
+    )
 
 
 async def welcome_msg(gc_event):
@@ -1006,7 +1012,9 @@ async def welcome_msg(gc_event):
     chat_name = group_info.GroupName.Name
     user_name = f"@{gc_event.Join[0].User}"
     await bot.client.send_message(
-        gc_event.JID, msg.format(user_name, chat_name, gc_event.JoinReason), mentions_are_lids=(gc_event.Join[0].Server == "lid")
+        gc_event.JID,
+        msg.format(user_name, chat_name, gc_event.JoinReason),
+        mentions_are_lids=(gc_event.Join[0].Server == "lid"),
     )
 
 

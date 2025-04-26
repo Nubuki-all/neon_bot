@@ -80,7 +80,7 @@ async def create_role(event, args, client):
                     "members": [],
                     "restricted": arg.cr or arg.r,
                     "locked": arg.cr,
-                    "lid": event.lid_address
+                    "lid": event.lid_address,
                 }
             }
         )
@@ -459,7 +459,9 @@ async def tag_roles(event, _, client):
             if role.get("locked") and not user_is_admin(user):
                 continue
             if not role.get("lid") and event.lid_address:
-                await event.reply("*Group has been migrated to lid, kindly delete and recreate role!*")
+                await event.reply(
+                    "*Group has been migrated to lid, kindly delete and recreate role!*"
+                )
                 continue
             tags = tag_all_users_in_role(role.get("members"))
             await clean_reply(
@@ -492,7 +494,7 @@ async def list_roles(event, args, client):
         # info = await client.contact.get_contact(jid.build_jid(creator))
         # name = info.FullName or info.PushName
         msg += f"\n{no}. {role_name} {warn} *Created by:* @{creator}"
-        
+
         no += 1
     if not msg:
         resp = "*No roles found in this group.*"

@@ -55,7 +55,11 @@ async def afk_helper(event, args, client):
                 text=event.text, reply_privately=True, message=event.media
             )
             reply = construct_msg_and_evt(
-                user, bot.me.JID.User, reply.id, event.text, Msg=event._message,
+                user,
+                bot.me.JID.User,
+                reply.id,
+                event.text,
+                Msg=event._message,
             )
             await asyncio.sleep(1)
             await reply.reply(
@@ -70,7 +74,9 @@ async def afk_helper(event, args, client):
             if not (afk_dict := get_afk_status(user)):
                 mentioned_users.pop(0)
                 continue
-            if replied and (replied.from_user.id == user or replied.from_user.hid == user):
+            if replied and (
+                replied.from_user.id == user or replied.from_user.hid == user
+            ):
                 mentioned_users.pop(0)
                 continue
             user_jid = jid.build_jid(user, event.user.server)
@@ -100,7 +106,7 @@ async def afk_helper(event, args, client):
             await asyncio.sleep(1)
             await reply.reply(
                 f"*@{event.from_user.hid} tagged you in @{jid.Jid2String(event.chat.jid)} while you were AFK!*",
-                mentions_are_lids=True
+                mentions_are_lids=True,
             )
             mentioned_users.pop(0)
     except Exception:
