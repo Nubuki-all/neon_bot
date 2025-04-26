@@ -104,9 +104,13 @@ class Event:
         self.outgoing = message.Info.MessageSource.IsFromMe
         if self.outgoing:
             if self.lid_address:
-                patch_msg_sender(self.message, message.Info.MessageSource.Sender, bot.me.JID)
+                patch_msg_sender(
+                    self.message, message.Info.MessageSource.Sender, bot.me.JID
+                )
             else:
-                patch_msg_sender(self.message, message.Info.MessageSource.Sender, bot.me.LID)
+                patch_msg_sender(
+                    self.message, message.Info.MessageSource.Sender, bot.me.LID
+                )
         self.alt_user = self.User()
         self.alt_user.construct(message, alt=True)
         self.user = self.User()
