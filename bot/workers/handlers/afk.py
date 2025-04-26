@@ -62,7 +62,7 @@ async def afk_helper(event, args, client):
                 mentions_are_lids=event.lid_address,
             )
             reply = construct_msg_and_evt(
-                user,
+                afk_dict.get("ph"),
                 bot.me.JID.User,
                 reply.id,
                 event.text,
