@@ -14,6 +14,7 @@ class Message_store:
 
     def __init__(self):
         self.msg_limit = conf.MAX_SAVED_MESSAGES
+        self.cached_messages = {}
         if not (file_exists(msg_store_file) and size_of(msg_store_file) > 0):
             with open(msg_store_file, "wb") as file:
                 pickle.dump({}, file)
@@ -28,6 +29,8 @@ class Message_store:
         return self._patch(*msgs)
 
     def _get_message_store(self):
+        if self.cached_messages:
+            return self.cached_messages
         message_store = {}
         try:
             if file_exists(msg_store_file) and size_of(msg_store_file) > 0:
@@ -38,6 +41,7 @@ class Message_store:
             log(e="Rebuilding…")
             with open(msg_store_file, "wb") as file:
                 pickle.dump({}, file)
+        self.cached_messages = message_store
         return message_store
 
     def _get_messages(self, chat_id):

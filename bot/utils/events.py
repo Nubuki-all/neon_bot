@@ -195,6 +195,11 @@ class Event:
         self.reply_to_message = self.get_quoted_msg()
         self.outgoing = message.Info.MessageSource.IsFromMe
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
+        if self.outgoing:
+            if self.lid_address:
+                patch_msg_sender(msg, self.user.jid, bot.me.JID)
+            else:
+                patch_msg_sender(msg, self.user.jid, bot.me.LID)
         self.constructed = True
         return self
 
