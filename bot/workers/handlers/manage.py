@@ -685,9 +685,11 @@ async def delete(event, args, client):
                 return await event.react("🚫")
         if not (reply := event.reply_to_message):
             return await event.reply("Reply to a  message to delete.")
-        me = await client.get_me()
+        me = bot.me = await client.get_me()
         if reply.from_user.id not in (me.JID.User, me.LID.User):
             return await event.reply("Reply to one of *my* messages to delete.")
+        # patch in the correct jid
+        reply.from_user.jid = me.JID
         await reply.delete()
         await event.react("✅")
     except Exception:
