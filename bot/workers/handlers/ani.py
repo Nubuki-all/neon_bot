@@ -89,7 +89,7 @@ async def anime_search(event, args, client):
         event.message,
     )
     poll_msg = construct_msg_and_evt(
-        event.chat.id, bot.me.JID.User, msg_id, None, event.chat.server, bot.me.JID.Server poll_msg_
+        event.chat.id, bot.me.JID.User, msg_id, None, event.chat.server, bot.me.JID.Server, poll_msg_
     )
     results = await wait_for_button_response(msg_id)
     await poll_msg.delete()
