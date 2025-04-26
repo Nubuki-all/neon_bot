@@ -52,7 +52,7 @@ async def afk_helper(event, args, client):
             since = time_formatter(time.time() - afk_dict.get("time"))
             await event.reply(afk_message.format(user_name, reason, since))
             reply = await replied.reply(
-                text=event.text, reply_privately=True, message=event.media
+                text=event.text, reply_privately=True, message=event.media, to=afk_dict.get("ph"), mentions_are_lids=event.lid_address,
             )
             reply = construct_msg_and_evt(
                 user,
@@ -101,7 +101,7 @@ async def afk_helper(event, args, client):
                 rep_id = rep.id
             else:
                 rep = await bot.client.send_message(
-                    user_jid, (event.text or event._message)
+                    user_jid, (event.text or event._message), mentions_are_lids=event.lid_address
                 )
                 rep_id = rep.ID
             reply = construct_msg_and_evt(

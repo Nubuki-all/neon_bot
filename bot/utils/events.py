@@ -244,6 +244,7 @@ class Event:
     async def reply(
         self,
         text: str = None,
+        to: JID = None,
         file: str | bytes = None,
         file_name: str = None,
         image: str = None,
@@ -279,6 +280,7 @@ class Event:
             response = await self.client.reply_message(
                 text,
                 copy.deepcopy(self.message),
+                to=to,
                 link_preview=link_preview,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
@@ -290,6 +292,7 @@ class Event:
             response = await self.client.reply_message(
                 text,
                 copy.deepcopy(self.message),
+                to=to,
                 link_preview=False,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
