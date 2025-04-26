@@ -939,10 +939,13 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
     )
     i = 1
     msg = ""
+    server = msg_rank_dict.get("server")
+    msg_rank_dict = msg_rank_dict.copy())
+    msg_rank_dict.pop("server")
     sorted_ms_rank_dict = dict(
         sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
     )
-    server = msg_rank_dict.get("server")
+    
     for user in list(sorted_ms_rank_dict.keys()):
         if user in ("total", "server"):
             continue
