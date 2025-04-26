@@ -44,9 +44,9 @@ async def afk_helper(event, args, client):
             await event.reply(unafk_message.format(user_name, since))
         reped = []
         if (replied := event.reply_to_message) and (
-            afk_dict := get_afk_status(replied.from_user.hid)
+            afk_dict := get_afk_status(replied.from_user.id)
         ):
-            user = replied.from_user.hid
+            user = replied.from_user.id
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
@@ -74,12 +74,13 @@ async def afk_helper(event, args, client):
             if not (afk_dict := get_afk_status(user)):
                 mentioned_users.pop(0)
                 continue
+            alt_user = afk_dict.get("ph") or user
             if replied and (
-                replied.from_user.id == user or replied.from_user.hid == user
+                replied.from_user.id == user or replied.from_user.id == alt_user
             ):
                 mentioned_users.pop(0)
                 continue
-            user_jid = jid.build_jid(user, event.user.server)
+            user_jid = jid.build_jid(alt_user)
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
@@ -89,7 +90,7 @@ async def afk_helper(event, args, client):
                     user_jid, (replied.text or replied._message)
                 )
                 reply = construct_msg_and_evt(
-                    user, bot.me.JID.User, rep.ID, replied.text, Msg=replied._message
+                    alt_user, bot.me.JID.User, rep.ID, replied.text, Msg=replied._message
                 )
                 await asyncio.sleep(1)
                 rep = await reply.reply(text=event.text, message=event.media)
@@ -100,7 +101,7 @@ async def afk_helper(event, args, client):
                 )
                 rep_id = rep.ID
             reply = construct_msg_and_evt(
-                user, bot.me.JID.User, rep_id, event.text, Msg=event._message
+                alt_user, bot.me.JID.User, rep_id, event.text, Msg=event._message
             )
             reped.append(user)
             await asyncio.sleep(1)
@@ -140,6 +141,7 @@ async def activate_afk(event, args, client):
             "reason": args,
             "time": time.time(),
             "user_name": user_info.PushName,
+            "ph": event.from_user.id if event.lid_address else None
         }
         bot.user_dict.setdefault(event.from_user.hid, {}).update(afk=afk_dict)
         bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict)
