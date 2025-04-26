@@ -513,7 +513,8 @@ async def role_info(event, args, client):
     role = gc_roles.get(args)
     users = ""
     for user in role.get("members"):
-        info = await client.contact.get_contact(jid.build_jid(user))
+        server = "s.whatsapp.net" if not role.get("lid") else "lid"
+        info = await client.contact.get_contact(jid.build_jid(user, server))
         name = info.PushName
         users += f"\n- {name}"
     msg = (
