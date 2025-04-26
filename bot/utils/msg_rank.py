@@ -27,7 +27,7 @@ async def auto_rank():
             msg = await get_ranking_msg(group, tag=True)
             if not msg:
                 continue
-            await bot.client.send_message(jid.build_jid(group, "g.us"), msg)
+            await bot.client.send_message(jid.build_jid(group, "g.us"), msg, mentions_are_lids=True)
             await asyncio.sleep(3)
             if not (last_clear := groups.get("last_rank_clear")):
                 groups["last_rank_clear"] = datetime.datetime.today()

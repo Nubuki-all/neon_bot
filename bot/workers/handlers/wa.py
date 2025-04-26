@@ -64,7 +64,7 @@ async def sticker_reply(event, args, client, overide=False):
         if not overide:
             # if not event.text.startswith("@"):
             # return
-            if not "@" + me.JID.User in (event.text or event.caption):
+            if not "@" + (me.JID.User if not event.lid_address else me.LID.User) in (event.text or event.caption):
                 return
         reply = (
             event.reply_to_message
@@ -319,7 +319,7 @@ async def undelete(event, args, client):
                     mentioned.pop(0)
                     continue
                 status_msg = await event.reply(
-                    f"Fetching {len(del_ids)} deleted message(s) for: @{user_id}"
+                    f"Fetching {len(del_ids)} deleted message(s) for: @{user_id if not event.lid_address else event.user.id}"
                 )
                 await send_deleted_msgs(event, event.chat.id, del_ids, verbose=True)
                 no_del_msg = False
@@ -883,7 +883,7 @@ async def rec_msg_ranking(event, args, client):
             return
         chat_id = event.chat.id
         msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
-        user = event.from_user.id
+        user = event.from_user.hid
         if event.is_revoke:
             value = 0
             msgs = await msg_store.get_messages_from_ids(chat_id, [event.revoked_id])
@@ -923,7 +923,7 @@ async def msg_ranking(event, args, client):
         msg = await get_ranking_msg(chat_id, full=full)
         if not msg:
             return await event.reply("Can't fetch ranking right now!")
-        return await event.reply(msg)
+        return await event.reply(msg, mentions_are_lids=True)
     except Exception:
         await logger(Exception)
 
@@ -995,7 +995,7 @@ async def gc_handler(gc_msg):
 async def goodbye_msg(gc_event):
     msg = "_It was nice knowing you, {}!_"
     user_info = await get_user_info(gc_event.Leave[0].User)
-    await bot.client.send_message(gc_event.JID, msg.format(user_info.PushName))
+    await bot.client.send_message(gc_event.JID, msg.format(user_info.PushName or "@" + gc_event.Leave[0].User), mentions_are_lids=(gc_event.Leave[0].Server == "lid"))
 
 
 async def welcome_msg(gc_event):
@@ -1006,7 +1006,7 @@ async def welcome_msg(gc_event):
     chat_name = group_info.GroupName.Name
     user_name = f"@{gc_event.Join[0].User}"
     await bot.client.send_message(
-        gc_event.JID, msg.format(user_name, chat_name, gc_event.JoinReason)
+        gc_event.JID, msg.format(user_name, chat_name, gc_event.JoinReason), mentions_are_lids=(gc_event.Join[0].Server == "lid")
     )
 
 

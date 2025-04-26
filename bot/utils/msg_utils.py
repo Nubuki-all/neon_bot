@@ -130,7 +130,7 @@ def tag_users(members: list):
 
 def user_is_admin(user: str, members: list):
     for member in members:
-        if user == member.JID.User:
+        if user == member.JID.User or user == member.PhoneNumber.User:
             return member.IsAdmin
 
 

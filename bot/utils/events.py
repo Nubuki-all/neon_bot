@@ -10,9 +10,11 @@ from neonize.utils.enum import ChatPresence, ChatPresenceMedia
 from neonize.utils.message import extract_text
 
 from bot import (
+    JID,
     Message,
     MessageEv,
     NewAClient,
+    SendResponse,
     base_msg,
     base_msg_info,
     base_msg_source,
@@ -45,22 +47,27 @@ class Event:
         def __init__(self):
             self.name = None
 
-        def construct(self, message: MessageEv):
-            self.jid = message.Info.MessageSource.Sender
-            self.id = self.jid.User
-            self.is_empty = message.Info.MessageSource.Sender.IsEmpty
+        def construct(self, message: MessageEv, alt=False):
             self.name = message.Info.Pushname
+            self.jid = (
+                message.Info.MessageSource.Sender
+                if not alt
+                else message.Info.MessageSource.SenderAlt
+            )
+            self.id = self.jid.User
+            self.is_empty = self.jid.IsEmpty
             self.server = self.jid.Server
+            self.is_hidden = self.server == "lid"
 
     class Chat:
         def __init__(self):
             self.name = None
 
-        def construct(self, message: MessageEv):
-            self.jid = message.Info.MessageSource.Chat
+        def construct(self, msg_source: base_msg_source):
+            self.jid = msg_source.Chat
             self.id = self.jid.User
-            self.is_empty = message.Info.MessageSource.Chat.IsEmpty
-            self.is_group = message.Info.MessageSource.IsGroup
+            self.is_empty = msg_source.Chat.IsEmpty
+            self.is_group = msg_source.IsGroup
             self.server = self.jid.Server
 
     def _construct_media(self):
@@ -86,16 +93,19 @@ class Event:
             "video",
             "sticker",
         ]
-        attrs.extend(["revoked_id"])
+        attrs.extend(["lid_address", "revoked_id"])
         attrs.extend(["pollUpdate", "senderKeyDistribution"])
         for a in attrs:
             setattr(self, a, None)
 
     def construct(self, message: MessageEv, add_replied: bool = True):
         self.chat = self.Chat()
-        self.chat.construct(message)
-        self.from_user = self.User()
-        self.from_user.construct(message)
+        self.chat.construct(message.Info.MessageSource)
+        self.alt_user = self.User()
+        self.alt_user.construct(message, alt=True)
+        self.user = self.User()
+        self.user.construct(message)
+
         self.message = message
 
         # To do support other message types
@@ -120,6 +130,11 @@ class Event:
         if self.protocol and self.protocol.type == 0:
             self.is_revoke = True
             self.revoked_id = self.protocol.key.ID
+        if self.message.Info.MessageSource.AddressingMode == 2:
+            self.lid_address = True
+        self.from_user = self.alt_user if self.lid_address else self.user
+        self.from_user.hid = self.user.id if self.lid_address else self.alt_user.id
+        self.from_user.lid = self.user.jid if self.lid_address else self.alt_user.jid
         self.caption = (extract_text(self._message) or None) if not self.text else None
 
         self.quoted = (
@@ -189,6 +204,7 @@ class Event:
         message,
         link_preview: bool = True,
         ghost_mentions: str = None,
+        mentions_are_lids: bool = False,
         add_msg_secret: bool = False,
     ):
         await self.send_typing_status()
@@ -197,10 +213,11 @@ class Event:
             message=message,
             link_preview=link_preview,
             ghost_mentions=ghost_mentions,
+            mentions_are_lids=mentions_are_lids or self.lid_address,
             add_msg_secret=add_msg_secret,
         )
         await self.send_typing_status(False)
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def delete(self):
@@ -210,7 +227,7 @@ class Event:
     async def edit(self, text: str):
         msg = Message(conversation=text)
         response = await self.client.edit_message(self.chat.jid, self.id, msg)
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def react(self, emoji: str):
@@ -230,6 +247,7 @@ class Event:
         reply_privately: bool = False,
         ghost_mentions: str = None,
         message: MessageWithContextInfo = None,
+        mentions_are_lids: bool = False,
         add_msg_secret: bool = False,
     ):
         if not self.constructed:
@@ -255,20 +273,22 @@ class Event:
         try:
             response = await self.client.reply_message(
                 text,
-                self.message,
+                copy.deepcopy(self.message),
                 link_preview=link_preview,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
+                mentions_are_lids=mentions_are_lids or self.lid_address,
                 add_msg_secret=add_msg_secret,
             )
         except httpx.HTTPStatusError:
             await logger(Exception)
             response = await self.client.reply_message(
                 text,
-                self.message,
+                copy.deepcopy(self.message),
                 link_preview=False,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
+                mentions_are_lids=mentions_are_lids or self.lid_address,
                 add_msg_secret=add_msg_secret,
             )
         # self.id = response.ID
@@ -279,7 +299,7 @@ class Event:
 
         # self.user.name = None
         await self.send_typing_status(False)
-        msg = self.gen_new_msg(response.ID, private=reply_privately)
+        msg = self.gen_new_msg(response, private=reply_privately)
         return construct_event(msg)
 
     async def reply_audio(
@@ -289,12 +309,12 @@ class Event:
         quote: bool = True,
         add_msg_secret: bool = False,
     ):
-        quoted = self.message if quote else None
+        quoted = copy.deepcopy(self.message) if quote else None
 
         response = await self.client.send_audio(
             self.chat.jid, audio, ptt, quoted=quoted, add_msg_secret=add_msg_secret
         )
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def reply_document(
@@ -304,9 +324,10 @@ class Event:
         caption: str = None,
         quote: bool = True,
         ghost_mentions: str = None,
+        mentions_are_lids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = self.message if quote else None
+        quoted = copy.deepcopy(self.message) if quote else None
         _, file_name = (
             os.path.split(document)
             if not file_name and isinstance(document, str)
@@ -319,9 +340,10 @@ class Event:
             filename=file_name,
             quoted=quoted,
             ghost_mentions=ghost_mentions,
+            mentions_are_lids=mentions_are_lids or self.lid_address,
             add_msg_secret=add_msg_secret,
         )
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def reply_gif(
@@ -332,9 +354,10 @@ class Event:
         viewonce: bool = False,
         as_gif: bool = True,
         ghost_mentions: str = None,
+        mentions_are_lids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = self.message if quote else None
+        quoted = copy.deepcopy(self.message) if quote else None
         response = await self.client.send_video(
             self.chat.jid,
             gif,
@@ -344,9 +367,10 @@ class Event:
             gifplayback=as_gif,
             is_gif=True,
             ghost_mentions=ghost_mentions,
+            mentions_are_lids=mentions_are_lids or self.lid_address,
             add_msg_secret=add_msg_secret,
         )
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def reply_photo(
@@ -356,9 +380,10 @@ class Event:
         quote: bool = True,
         viewonce: bool = False,
         ghost_mentions: str = None,
+        mentions_are_lids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = self.message if quote else None
+        quoted = copy.deepcopy(self.message) if quote else None
         response = await self.client.send_image(
             self.chat.jid,
             photo,
@@ -366,9 +391,10 @@ class Event:
             quoted=quoted,
             viewonce=viewonce,
             ghost_mentions=ghost_mentions,
+            mentions_are_lids=mentions_are_lids or self.lid_address,
             add_msg_secret=add_msg_secret,
         )
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def reply_sticker(
@@ -381,7 +407,7 @@ class Event:
         enforce_not_broken: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = self.message if quote else None
+        quoted = copy.deepcopy(self.message) if quote else None
         response = await self.client.send_sticker(
             self.chat.jid,
             file,
@@ -392,7 +418,7 @@ class Event:
             enforce_not_broken=enforce_not_broken,
             add_msg_secret=add_msg_secret,
         )
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def reply_video(
@@ -403,9 +429,10 @@ class Event:
         viewonce: bool = False,
         as_gif: bool = False,
         ghost_mentions: str = None,
+        mentions_are_lids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = self.message if quote else None
+        quoted = copy.deepcopy(self.message) if quote else None
         response = await self.client.send_video(
             self.chat.jid,
             video,
@@ -414,9 +441,10 @@ class Event:
             viewonce=viewonce,
             gifplayback=as_gif,
             ghost_mentions=ghost_mentions,
+            mentions_are_lids=mentions_are_lids or self.lid_address,
             add_msg_secret=add_msg_secret,
         )
-        msg = self.gen_new_msg(response.ID)
+        msg = self.gen_new_msg(response)
         return construct_event(msg)
 
     async def send_typing_status(self, typing=True):
@@ -435,15 +463,19 @@ class Event:
         # return construct_event(msg)
         return response
 
-    def gen_new_msg(
-        self, msg_id: str, user_id: str = None, chat_id: str = None, private=False
-    ):
+    def gen_new_msg(self, response: SendResponse, private=False):
         msg = copy.deepcopy(self.message)
-        msg.Info.ID = msg_id
+        msg.Info.ID = response.ID
+        msg.Info.Pushname = bot.me.PushName
+        msg.Info.Timestamp = response.Timestamp
+        patch_msg(msg, response.Message)
         if private:
             msg.Info.MessageSource.Chat.User = self.from_user.id
             msg.Info.MessageSource.Chat.Server = self.from_user.server
-        msg.Info.MessageSource.Sender.User = user_id or conf.PH_NUMBER
+        if self.lid_address:
+            patch_msg_sender(msg, bot.me.LID, bot.me.JID)
+        else:
+            patch_msg_sender(msg, bot.me.JID, bot.me.LID)
         return msg
 
     def get_quoted_msg(self):
@@ -463,6 +495,7 @@ class Event:
             self.quoted.stanzaID,
             None,
             server,
+            (self.quoted.participant.split("@"))[1],
             self.quoted.quotedMessage,
         )
         return construct_event(msg, False)
@@ -536,6 +569,8 @@ async def on_message(client: NewAClient, message: MessageEv):
                 # await func(client, event)
                 future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
                 future.result()
+        if not function_dict[None]:
+            return
         func_list = [func(client, event) for func in function_dict[None]]
         future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
         future.result()
@@ -550,7 +585,13 @@ def construct_event(message: MessageEv, add_replied=True):
 
 
 def construct_message(
-    chat_id, user_id, msg_id, text, server="s.whatsapp.net", Msg=None
+    chat_id,
+    user_id,
+    msg_id,
+    text,
+    server="s.whatsapp.net",
+    userver="s.whatsapp.net",
+    Msg=None,
 ):
     if text:
         message = Message(conversation=text)
@@ -563,7 +604,7 @@ def construct_message(
             ID=msg_id,
             MessageSource=base_msg_source(
                 Chat=jid.build_jid(chat_id, server),
-                Sender=jid.build_jid(user_id),
+                Sender=jid.build_jid(user_id, userver),
             ),
         ),
     )
@@ -571,6 +612,25 @@ def construct_message(
 
 def construct_msg_and_evt(*args, **kwargs):
     return construct_event(construct_message(*args, **kwargs))
+
+
+def patch_msg(msg: Message, new_msg: Message):
+    temp_msg = msg.__class__(
+        Message=new_msg,
+        Raw=new_msg,
+    )
+    msg.Message.Clear()
+    msg.Raw.Clear()
+    msg.MergeFrom(temp_msg)
+
+
+def patch_msg_sender(msg: Message, sender: JID, sender_alt: JID):
+    msg.Info.MessageSource.MergeFrom(
+        msg.Info.MessageSource.__class__(
+            Sender=sender,
+            SenderAlt=sender_alt,
+        )
+    )
 
 
 async def event_handler(

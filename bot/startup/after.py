@@ -120,6 +120,7 @@ async def on_startup():
             touch(con_ind)
             await logger(e="Please Restart bot.")
             # re_x()
+            bot.me = await bot.client.get_me()
             return
         else:
             await wait_for_client()
