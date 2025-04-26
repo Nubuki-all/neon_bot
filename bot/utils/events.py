@@ -197,9 +197,9 @@ class Event:
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
         if self.outgoing:
             if self.lid_address:
-                patch_msg_sender(msg, self.user.jid, bot.me.JID)
+                patch_msg_sender(self.message, self.user.jid, bot.me.JID)
             else:
-                patch_msg_sender(msg, self.user.jid, bot.me.LID)
+                patch_msg_sender(self.message, self.user.jid, bot.me.LID)
         self.constructed = True
         return self
 
