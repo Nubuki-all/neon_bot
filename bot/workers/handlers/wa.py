@@ -354,6 +354,8 @@ async def send_deleted_msgs(event, chat_id, del_ids, verbose=False):
         return await event.reply("*No recently deleted messages found.*")
     chain_reply = event
     for msg in msgs:
+        if not hasattr(msg, "lid_address"):
+            msg.lid_address = None
         await msg.reply(".")
         await asyncio.sleep(1)
         chain_reply = await chain_reply.reply(msg.media or msg.text)
