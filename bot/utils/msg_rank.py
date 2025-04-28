@@ -59,10 +59,11 @@ def update_users_rank(chat_id):
         sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
     )
     sorted_ms_rank_dict.pop("total")
+    sorted_ms_rank_dict.pop("server")
     t_three = [1, 2, 3]
     for i, user in zip(t_three, list(sorted_ms_rank_dict.keys())):
         user_rank = group.setdefault("msg_stats", {}).setdefault(user, {})
         user_rank[i] = user_rank.setdefault(i, 0) + 1
 
 
-scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=20)
+scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=20, minute=30)
