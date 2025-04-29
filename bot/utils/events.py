@@ -92,7 +92,7 @@ class Event:
             "reaction",
             "video",
             "sticker",
-            "stickerPack"
+            "stickerPack",
         ]
         attrs.extend(["lid_address", "revoked_id"])
         attrs.extend(["pollUpdate", "senderKeyDistribution"])

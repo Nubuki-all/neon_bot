@@ -1077,9 +1077,9 @@ async def save_filter(event, args, client):
             else:
                 new_filter = event.quoted_image
                 filter_type = Message
-        elif (new_filter := event.quoted_msg or quoted.sticker):
+        elif new_filter := event.quoted_msg or quoted.sticker:
             filter_type = Message
-        elif (new_filter := quoted.stickerPack):
+        elif new_filter := quoted.stickerPack:
             filter_type = Message
             if not new_filter.publisher:
                 new_filter.publisher = bot.me.PushName
