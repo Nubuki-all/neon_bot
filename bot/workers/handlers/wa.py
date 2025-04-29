@@ -1050,7 +1050,7 @@ async def save_filter(event, args, client):
             return await event.reply(f"{save_filter.__doc__}")
         args = args.casefold()
         quoted = event.reply_to_message
-        if not (event.quoted_msg or quoted.sticker):
+        if not (event.quoted_msg or quoted.sticker or quoted.stickerPack):
             return await event.reply(
                 "Can only save replied text or media as filter reply."
             )
@@ -1220,9 +1220,10 @@ async def detect_filters(event, args, client):
         chat = event.chat.id
         if not (filters := bot.filters_dict.get(chat)):
             return
+        cmd_pre = conf.CMD_PREFIX
         msg = event.caption or event.text
         msg = msg.casefold()
-        if (conf.CMD_PREFIX + "filter") in msg:
+        if msg.startswith((f"{cmd_pre}filter", f"{cmd_pre}del_filter")):
             return
         match_list = [*filters]
         matches = [m for m in match_list if m in msg]
