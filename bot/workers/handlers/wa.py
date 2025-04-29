@@ -1077,10 +1077,13 @@ async def save_filter(event, args, client):
             else:
                 new_filter = event.quoted_image
                 filter_type = Message
-        elif event.quoted_msg or quoted.sticker:
-            new_filter = event.reply_to_message.sticker or event.quoted_msg
+        elif (new_filter := event.quoted_msg or quoted.sticker):
             filter_type = Message
-        if filter_type == Message and arg.c:
+        elif (new_filter := quoted.stickerPack):
+            filter_type = Message
+            if not new_filter.publisher:
+                new_filter.publisher = bot.me.PushName
+        if filter_type == Message and arg.c and hasattr(new_filter, "caption"):
             new_filter.caption = ""
         data = {
             args: {
