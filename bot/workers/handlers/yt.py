@@ -90,7 +90,7 @@ async def youtube_reply(event, args, client):
                 elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
                 else:
-                    for qua in ["480", "360", "270"]:
+                    for qua in ["480", "360", "240", "144"]:
                         if f"({qua}p)" in text:
                             quality = qua
                             break
