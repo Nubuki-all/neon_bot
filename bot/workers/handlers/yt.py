@@ -91,10 +91,9 @@ async def youtube_reply(event, args, client):
                 elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
                 else:
-                    for qua in ["480", "360", "240", "144"]:
+                    for qua in ["480", "360", "270", "240", "144"]:
                         if f"({qua}p)" in text:
                             quality = qua
-                            await logger(e=qua)
                             break
                     else:
                         quality = "720"
@@ -109,7 +108,6 @@ async def youtube_reply(event, args, client):
                 if result.get("extractor").casefold() != "youtube":
                     _format = _alt_format
                 status_msg = await event.reply("*Downloading…*")
-                await logger(e=_format.format(quality))
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",
                     _format.format(quality),
