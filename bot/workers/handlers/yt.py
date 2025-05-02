@@ -64,7 +64,8 @@ async def youtube_reply(event, args, client):
         if not bot.group_dict.get(event.chat.id, {}).get("ytdl"):
             return
         extractor = URLExtract()
-        urls = extractor.find_urls(args or event.text)
+        text = args or event.text
+        urls = extractor.find_urls(text)
         if not urls:
             return
         supported_links = []
@@ -86,12 +87,15 @@ async def youtube_reply(event, args, client):
                     audio = True
                     _format = "ba/b-mp3{0}"
                     quality = "-"
-                elif "shorts" in listener.link and "(720p)" in (args or event.text):
+                elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
-                elif "(480p)" in (args or event.text):
-                    quality = "480"
                 else:
-                    quality = "720"
+                    for qua in ["480", "360", "270"]:
+                        if f"({qua})" in text:
+                            quality = qua
+                            break
+                    else:
+                        quality = "720"
                 try:
                     result = await sync_to_async(extract_info, listener.link)
                 except Exception:

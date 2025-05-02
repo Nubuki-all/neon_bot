@@ -1046,7 +1046,7 @@ async def save_filter(event, args, client):
             to_parse=args,
             get_unknown=True,
         )
-        if not args:
+        if not (args and event.reply_to_message):
             return await event.reply(f"{save_filter.__doc__}")
         args = args.casefold()
         quoted = event.reply_to_message
@@ -1283,7 +1283,7 @@ async def test_button(event, args, client):
             title, button_dict, event.chat.jid, user
         )
         poll_msg = construct_msg_and_evt(
-            event.chat.id, bot.me.JID.User, msg_id, None, event.chat.server, poll_msg_
+            event.chat.id, bot.me.JID.User, msg_id, None, event.chat.server, bot.me.JID.Server, poll_msg_
         )
         if not (results := await wait_for_button_response(msg_id)):
             await event.reply("yikes.")
