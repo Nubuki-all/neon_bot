@@ -91,7 +91,7 @@ async def youtube_reply(event, args, client):
                     quality = "1280"
                 else:
                     for qua in ["480", "360", "270"]:
-                        if f"({qua})" in text:
+                        if f"({qua}p)" in text:
                             quality = qua
                             break
                     else:
