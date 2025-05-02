@@ -81,6 +81,7 @@ async def youtube_reply(event, args, client):
             try:
                 audio = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
+                _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
                 if "music" in listener.link:
@@ -105,6 +106,8 @@ async def youtube_reply(event, args, client):
                     job.pop(0)
                     continue
                 playlist = "entries" in result
+                if result.get("extractor").casefold() != "youtube":
+                    _format = _alt_format
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",
