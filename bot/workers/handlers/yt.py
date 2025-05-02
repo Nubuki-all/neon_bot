@@ -93,6 +93,7 @@ async def youtube_reply(event, args, client):
                     for qua in ["480", "360", "240", "144"]:
                         if f"({qua}p)" in text:
                             quality = qua
+                            await logger(e=qua)
                             break
                     else:
                         quality = "720"
