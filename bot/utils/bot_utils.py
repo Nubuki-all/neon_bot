@@ -265,34 +265,35 @@ async def screenshot_page(target_url: str):
 
 
 def video_timestamp_to_seconds(timestamp: str) -> int:
-    parts = list(map(int, timestamp.split(':')))
+    parts = list(map(int, timestamp.split(":")))
     parts.reverse()
     total_seconds = 0
     for i, part in enumerate(parts):
-        total_seconds += part * (60 ** i)
+        total_seconds += part * (60**i)
     return total_seconds
+
 
 def is_valid_video_timestamp(s: str) -> bool:
     """
     Checks if the string matches the format (e.g., "01:20:30", "20:30", "30")
     """
-    if not re.fullmatch(r'^\d{1,2}(:\d{1,2}){0,2}$', s):
+    if not re.fullmatch(r"^\d{1,2}(:\d{1,2}){0,2}$", s):
         return False
-    
+
     # Step 2: Split into parts and convert to integers
-    parts = list(map(int, s.split(':')))
-    
+    parts = list(map(int, s.split(":")))
+
     # Step 3: Validate numeric ranges
     # Seconds (last part) must be 0-59
     if parts[-1] < 0 or parts[-1] > 59:
         return False
-    
+
     # Minutes (if present) must be 0-59
     if len(parts) >= 2 and (parts[-2] < 0 or parts[-2] > 59):
         return False
-    
+
     # Hours (if present) must be >=0 (no upper limit)
     if len(parts) == 3 and parts[0] < 0:
         return False
-    
+
     return True

@@ -11,11 +11,11 @@ from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
-    is_valid_trim_args,
     YoutubeDLHelper,
     extract_info,
     get_video_name,
     is_supported,
+    is_valid_trim_args,
 )
 
 
@@ -82,7 +82,7 @@ async def youtube_reply(event, args, client):
         while job:
             try:
                 audio = False
-                t_args = None 
+                t_args = None
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
@@ -108,12 +108,16 @@ async def youtube_reply(event, args, client):
                     job.pop(0)
                     continue
                 playlist = "entries" in result
-                if not (trimmed or audio or playlist) and (t_args := extract_bracketed_prefix(text)):
+                if not (trimmed or audio or playlist) and (
+                    t_args := extract_bracketed_prefix(text)
+                ):
                     trimmed = True
                     if not is_valid_trim_args(t_args, total_dur=result.get("duration")):
-                        await event.reply(
-                            f"{t_args} is not a valid trim argument!"
-                        ) if "-" in t_args else None
+                        (
+                            await event.reply(f"{t_args} is not a valid trim argument!")
+                            if "-" in t_args
+                            else None
+                        )
                         t_args = None
                 if result.get("extractor").casefold() != "youtube":
                     _format = _alt_format
@@ -167,4 +171,3 @@ async def youtube_reply(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
-

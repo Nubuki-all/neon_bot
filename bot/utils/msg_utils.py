@@ -324,5 +324,5 @@ def extract_bracketed_prefix(s: str) -> str | None:
     """
     Match string starting with [text] and capture the text
     """
-    match = re.match(r'^\[(.*?)\]', s)
+    match = re.match(r"^\[(.*?)\]", s)
     return match.group(1) if match else None

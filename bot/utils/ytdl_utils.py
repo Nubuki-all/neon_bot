@@ -12,7 +12,14 @@ from yt_dlp.utils import download_range_func
 
 from bot.fun.emojis import enhearts
 
-from .bot_utils import hbs, is_valid_video_timestamp, sync_to_async, time_formatter, value_check, video_timestamp_to_seconds
+from .bot_utils import (
+    hbs,
+    is_valid_video_timestamp,
+    sync_to_async,
+    time_formatter,
+    value_check,
+    video_timestamp_to_seconds,
+)
 from .log_utils import log
 from .os_utils import enshell, s_remove
 
@@ -62,7 +69,7 @@ def is_valid_trim_args(args: str, total_dur: float | None = None) -> bool:
     if len(s_args) > 2:
         return False
     for x in s_args:
-        if not(x.isdigit() or is_valid_video_timestamp(x)):
+        if not (x.isdigit() or is_valid_video_timestamp(x)):
             return False
     st_, et_ = map(video_timestamp_to_seconds, s_args)
     if st_ >= et_:
@@ -359,7 +366,9 @@ class YoutubeDLHelper:
         except Exception:
             log(Exception)
 
-    async def add_download(self, path, qual, playlist, message, options={}, trim_args=None):
+    async def add_download(
+        self, path, qual, playlist, message, options={}, trim_args=None
+    ):
         self.folder = path
         self.message = message
         if playlist:
@@ -401,11 +410,10 @@ class YoutubeDLHelper:
         if trim_args:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
             self.opts["download_ranges"] = download_range_func(
-                [],
-                [[float(s_time), float(e_time)]]
+                [], [[float(s_time), float(e_time)]]
             )
-            self.opts['force_keyframes_at_cuts'] = True
-            self.opts['format_sort'] = ['proto:https']
+            self.opts["force_keyframes_at_cuts"] = True
+            self.opts["format_sort"] = ["proto:https"]
 
         if options:
             self._set_options(options)
