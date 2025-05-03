@@ -8,12 +8,13 @@ from re import search as re_search
 from secrets import token_urlsafe
 
 from yt_dlp import DownloadError, YoutubeDL, extractor
+from yt_dlp.utils import download_range_func
 
 from bot.fun.emojis import enhearts
 
-from .bot_utils import hbs, sync_to_async, time_formatter, value_check
+from .bot_utils import hbs, is_valid_video_timestamp, sync_to_async, time_formatter, value_check, video_timestamp_to_seconds
 from .log_utils import log
-from .os_utils import s_remove
+from .os_utils import enshell, s_remove
 
 # Ripped almost all the code from;
 # https://github.com/anasty17/mirror-leech-telegram-bot/blob/master/bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py
@@ -54,6 +55,48 @@ def extract_info(link, options={"cookiefile": ".cookies.txt", "ignoreerrors": Tr
         if result is None:
             raise ValueError("Info result is None")
         return result
+
+
+def is_valid_trim_args(args: str, total_dur: float | None = None) -> bool:
+    s_args = args.split("-")
+    if len(s_args) > 2:
+        return False
+    for x in s_args:
+        if not(x.isdigit() or is_valid_video_timestamp(x)):
+            return False
+    st_, et_ = map(video_timestamp_to_seconds, s_args)
+    if st_ >= et_:
+        return False
+    if total_dur and et_ > int(total_dur):
+        return False
+    return True
+
+
+async def get_key_frames(path: str):
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-skip_frame",
+        "nokey",
+        "-show_entries",
+        "frame=pts_time",
+        "-of",
+        "csv=p=0",
+        "-print_format",
+        "json",
+        path,
+    ]
+    process, stdout, stderr = await enshell(cmd)
+    if process.returncode != 0:
+        raise RuntimeError(
+            # type: ignore
+            f"stderr: {stderr} Return code: {process.returncode}"
+        )
+    j = json.loads(stdout)
+    return [float(x["pts_time"]) for x in j["frames"]]
 
 
 class DummyListener:
@@ -316,7 +359,7 @@ class YoutubeDLHelper:
         except Exception:
             log(Exception)
 
-    async def add_download(self, path, qual, playlist, message, options={}):
+    async def add_download(self, path, qual, playlist, message, options={}, trim_args=None):
         self.folder = path
         self.message = message
         if playlist:
@@ -354,6 +397,15 @@ class YoutubeDLHelper:
                 self._ext = ".m4a"
             else:
                 self._ext = f".{audio_format}"
+
+        if trim_args:
+            s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
+            self.opts["download_ranges"] = download_range_func(
+                [],
+                [[float(s_time), float(e_time)]]
+            )
+            self.opts['force_keyframes_at_cuts'] = True
+            self.opts['format_sort'] = ['proto:https']
 
         if options:
             self._set_options(options)

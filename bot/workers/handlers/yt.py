@@ -7,10 +7,11 @@ from urlextract import URLExtract
 from bot.config import bot
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import chat_is_allowed
+from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
+    is_valid_trim_args,
     YoutubeDLHelper,
     extract_info,
     get_video_name,
@@ -63,6 +64,7 @@ async def youtube_reply(event, args, client):
             return
         if not bot.group_dict.get(event.chat.id, {}).get("ytdl"):
             return
+        trimmed = will_trim = False
         extractor = URLExtract()
         text = args or event.text
         urls = extractor.find_urls(text)
@@ -80,6 +82,7 @@ async def youtube_reply(event, args, client):
         while job:
             try:
                 audio = False
+                t_args = None 
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
@@ -105,6 +108,13 @@ async def youtube_reply(event, args, client):
                     job.pop(0)
                     continue
                 playlist = "entries" in result
+                if not (trimmed or audio or playlist) and (t_args := extract_bracketed_prefix(text)):
+                    trimmed = True
+                    if not is_valid_trim_args(t_args, total_dur=result.get("duration"):
+                        await event.reply(
+                            f"{t_args} is not a valid trim argument!"
+                        ) if "-" in t_args else None
+                        t_args = None
                 if result.get("extractor").casefold() != "youtube":
                     _format = _alt_format
                 status_msg = await event.reply("*Downloading…*")
@@ -113,6 +123,7 @@ async def youtube_reply(event, args, client):
                     _format.format(quality),
                     playlist,
                     status_msg,
+                    trim_args=t_args,
                 )
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled and listener.error:
@@ -156,3 +167,4 @@ async def youtube_reply(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+

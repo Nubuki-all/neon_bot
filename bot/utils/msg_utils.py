@@ -318,3 +318,11 @@ def get_args(*args, to_parse: str, get_unknown=False):
         unknown = " ".join(map(str, unknowns))
         return flag, unknown
     return flag
+
+
+def extract_bracketed_prefix(s: str) -> str | None:
+    """
+    Match string starting with [text] and capture the text
+    """
+    match = re.match(r'^\[(.*?)\]', s)
+    return match.group(1) if match else None
