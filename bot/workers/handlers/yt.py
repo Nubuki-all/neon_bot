@@ -110,7 +110,7 @@ async def youtube_reply(event, args, client):
                 playlist = "entries" in result
                 if not (trimmed or audio or playlist) and (t_args := extract_bracketed_prefix(text)):
                     trimmed = True
-                    if not is_valid_trim_args(t_args, total_dur=result.get("duration"):
+                    if not is_valid_trim_args(t_args, total_dur=result.get("duration")):
                         await event.reply(
                             f"{t_args} is not a valid trim argument!"
                         ) if "-" in t_args else None
