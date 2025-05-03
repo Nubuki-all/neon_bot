@@ -72,8 +72,8 @@ def is_valid_trim_args(args: str, total_dur: float | None = None) -> bool:
         if not (x.isdigit() or is_valid_video_timestamp(x)):
             return False
     st_, et_ = map(video_timestamp_to_seconds, s_args)
-    #if st_ >= et_:
-        #return False
+    # if st_ >= et_:
+    # return False
     if total_dur and et_ > int(total_dur):
         return False
     return True
