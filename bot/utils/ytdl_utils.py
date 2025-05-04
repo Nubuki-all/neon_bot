@@ -1,5 +1,6 @@
 import asyncio
 import math
+import shutil
 import time
 import uuid
 from os import listdir
@@ -104,6 +105,24 @@ async def get_key_frames(path: str):
         )
     j = json.loads(stdout)
     return [float(x["pts_time"]) for x in j["frames"]]
+
+
+async def trim_vid(start_time: int, end_time: int, input_file: str, output_file: str):
+    cmd = [
+        "ffmpeg",
+        "-i", input_file,
+        "-ss", f"{start_time}",
+        "-to", f"{end_time}",
+        "-c", "copy",
+        "-avoid_negative_ts", "1",
+        output_file,
+    ]
+    process, stdout, stderr = await enshell(cmd)
+    if process.returncode != 0:
+        raise RuntimeError(
+            # type: ignore
+            f"stderr: {stderr} Return code: {process.returncode}"
+        )
 
 
 class DummyListener:
@@ -414,17 +433,7 @@ class YoutubeDLHelper:
             else:
                 self._ext = f".{audio_format}"
 
-        if trim_args and twi:
-            s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
-            self.opts["force_keyframes_at_cuts"] = True
-            self.opts["external_downloader"] = "ffmpeg"
-            self.opts["external_downloader_args"] = [
-                "-ss",
-                str(s_time),
-                "-to",
-                str(e_time),
-            ]
-        elif trim_args:
+        if trim_args and not twi:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
             self.opts["download_ranges"] = download_range_func(
                 [], [[float(s_time), float(e_time)]]
@@ -558,6 +567,21 @@ class YoutubeDLHelper:
         if not qual.startswith("ba/b"):
             self._listener.name = f"{base_name}{self._ext}"
         """
+        if trim_args and twi:
+            start_time, end_time = map(video_timestamp_to_seconds, trim_args.split("-"))
+            file = f"{self.folder}/{self.name}"
+            k_f = await get_key_frames(file)
+            for x in reversed(k_f):
+                if x <= start_time:
+                    start_time = x
+                    break
+                
+            tmp_file = f"{self.folder}/temp.{self._ext}"
+            await trim_vid(start_time, end_time, file, tmp_file)
+            shutil.copy2(tmp_file, file)
+            s_remove(tmp_file)
+            
+        
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
