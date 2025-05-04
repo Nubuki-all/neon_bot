@@ -122,8 +122,8 @@ async def youtube_reply(event, args, client):
                         t_args = None
                 if result.get("extractor").casefold() != "youtube":
                     _format = _alt_format
-                if result.get("extractor").casefold() != "twitter":
-                    twi = False
+                if result.get("extractor").casefold() == "twitter":
+                    twi = True
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",
