@@ -110,11 +110,16 @@ async def get_key_frames(path: str):
 async def trim_vid(start_time: int, end_time: int, input_file: str, output_file: str):
     cmd = [
         "ffmpeg",
-        "-i", input_file,
-        "-ss", f"{start_time}",
-        "-to", f"{end_time}",
-        "-c", "copy",
-        "-avoid_negative_ts", "1",
+        "-i",
+        input_file,
+        "-ss",
+        f"{start_time}",
+        "-to",
+        f"{end_time}",
+        "-c",
+        "copy",
+        "-avoid_negative_ts",
+        "1",
         output_file,
     ]
     process, stdout, stderr = await enshell(cmd)
@@ -575,13 +580,11 @@ class YoutubeDLHelper:
                 if x <= start_time:
                     start_time = x
                     break
-                
+
             tmp_file = f"{self.folder}/temp.{self._ext}"
             await trim_vid(start_time, end_time, file, tmp_file)
             shutil.copy2(tmp_file, file)
             s_remove(tmp_file)
-            
-        
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
