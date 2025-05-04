@@ -108,7 +108,7 @@ async def get_key_frames(path: str):
     return [float(x["pts_time"]) for x in j["frames"]]
 
 
-async def trim_vid(start_time: int, end_time: int, input_file: str, output_file: str):
+async def trim_vid(start_time: int, end_time: int, input_file: str, output_file: str, seek=False):
     cmd = [
         "ffmpeg",
         "-i",
@@ -123,6 +123,20 @@ async def trim_vid(start_time: int, end_time: int, input_file: str, output_file:
         "1",
         output_file,
     ]
+    alt_cmd = [
+        "ffmpeg",
+        "-i",
+        "-ss",
+        f"{start_time}",
+        input_file,
+        "-c",
+        "copy",
+        "-avoid_negative_ts",
+        "1",
+        output_file,
+    ]
+    if seek:
+        cmd = alt_cmd
     process, stdout, stderr = await enshell(cmd)
     if process.returncode != 0:
         raise RuntimeError(
@@ -575,17 +589,22 @@ class YoutubeDLHelper:
         """
         if trim_args and twi:
             start_time, end_time = map(video_timestamp_to_seconds, trim_args.split("-"))
+
             file = f"{self.folder}/{self.name}"
             k_f = await get_key_frames(file)
             for x in reversed(k_f):
                 if x <= start_time:
-                    start_time = x
+                    seek_time = x
                     break
 
+            start_time = start_time - seek_time if seek_time != start_time else 0
             tmp_file = f"{self.folder}/temp.{self._ext}"
-            await trim_vid(start_time, end_time, file, tmp_file)
-            shutil.copy2(tmp_file, file)
+            tmp_file2 = f"{self.folder}/temp2.{self._ext}"
+            await trim_vid(seek_time, end_time, file, tmp_file, seek=True)
+            await trim_vid(start_time, end_time, tmp_file, tmp_file2)
+            shutil.copy2(tmp_file2, file)
             s_remove(tmp_file)
+            s_remove(tmp_file2)
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
