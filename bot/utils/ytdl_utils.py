@@ -367,14 +367,7 @@ class YoutubeDLHelper:
             log(Exception)
 
     async def add_download(
-        self,
-        path,
-        qual,
-        playlist,
-        message,
-        options={},
-        trim_args=None,
-        youtube=True,
+        self, path, qual, playlist, message, options={}, trim_args=None, twi=False,
     ):
         self.folder = path
         self.message = message
@@ -414,22 +407,20 @@ class YoutubeDLHelper:
             else:
                 self._ext = f".{audio_format}"
 
-        if trim_args and youtube:
+        if trim_args and twi:
+            s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
+            self.opts["external_downloader"] = "ffmpeg"
+            self.opts["external_downloader_args"] = [
+                "-ss", str(s_time),
+                "-to", str(e_time),
+            ]
+        elif trim_args:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
             self.opts["download_ranges"] = download_range_func(
                 [], [[float(s_time), float(e_time)]]
             )
             self.opts["force_keyframes_at_cuts"] = True
             self.opts["format_sort"] = ["proto:https"]
-        elif trim_args:
-            s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
-            self.opts["external_downloader"] = "ffmpeg"
-            self.opts["external_downloader_args"] = [
-                "-ss",
-                str(s_time),
-                "-to",
-                str(e_time),
-            ]
 
         if options:
             self._set_options(options)
