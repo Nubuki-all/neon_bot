@@ -108,7 +108,9 @@ async def get_key_frames(path: str):
     return [float(x["pts_time"]) for x in j["frames"]]
 
 
-async def trim_vid(start_time: int, end_time: int, input_file: str, output_file: str, seek=False):
+async def trim_vid(
+    start_time: int, end_time: int, input_file: str, output_file: str, seek=False
+):
     cmd = [
         "ffmpeg",
         "-i",
