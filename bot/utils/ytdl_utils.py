@@ -127,9 +127,9 @@ async def trim_vid(
     ]
     alt_cmd = [
         "ffmpeg",
-        "-i",
         "-ss",
         f"{start_time}",
+        "-i",
         input_file,
         "-c",
         "copy",
