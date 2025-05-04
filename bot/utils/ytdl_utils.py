@@ -600,10 +600,11 @@ class YoutubeDLHelper:
                     break
 
             start_time = start_time - seek_time if seek_time != start_time else 0
+            await logger(e=seek_time)
             tmp_file = f"{self.folder}/temp.{self._ext}"
             tmp_file2 = f"{self.folder}/temp2.{self._ext}"
             await trim_vid(seek_time, end_time, file, tmp_file, seek=True)
-            await trim_vid(start_time, end_time, tmp_file, tmp_file2)
+            await trim_vid(seek_time, end_time, tmp_file, tmp_file2)
             shutil.copy2(tmp_file2, file)
             s_remove(tmp_file)
             s_remove(tmp_file2)
