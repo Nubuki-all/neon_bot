@@ -416,6 +416,7 @@ class YoutubeDLHelper:
 
         if trim_args and twi:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
+            self.opts["force_keyframes_at_cuts"] = True
             self.opts["external_downloader"] = "ffmpeg"
             self.opts["external_downloader_args"] = [
                 "-ss",
