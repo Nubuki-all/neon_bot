@@ -83,7 +83,7 @@ async def youtube_reply(event, args, client):
             try:
                 audio = False
                 t_args = None
-                twi = False 
+                twi = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
@@ -123,7 +123,7 @@ async def youtube_reply(event, args, client):
                 if result.get("extractor").casefold() != "youtube":
                     _format = _alt_format
                 if result.get("extractor").casefold() != "twitter":
-                    twi=False
+                    twi = False
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",

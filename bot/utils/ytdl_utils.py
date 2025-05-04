@@ -367,7 +367,14 @@ class YoutubeDLHelper:
             log(Exception)
 
     async def add_download(
-        self, path, qual, playlist, message, options={}, trim_args=None, twi=False,
+        self,
+        path,
+        qual,
+        playlist,
+        message,
+        options={},
+        trim_args=None,
+        twi=False,
     ):
         self.folder = path
         self.message = message
@@ -411,8 +418,10 @@ class YoutubeDLHelper:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
             self.opts["external_downloader"] = "ffmpeg"
             self.opts["external_downloader_args"] = [
-                "-ss", str(s_time),
-                "-to", str(e_time),
+                "-ss",
+                str(s_time),
+                "-to",
+                str(e_time),
             ]
         elif trim_args:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
