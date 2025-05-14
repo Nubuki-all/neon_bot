@@ -1049,7 +1049,7 @@ async def save_filter(event, args, client):
     try:
         arg, args = get_args(
             ["-c", "store_true"],
-            ["-m", "store_true"]
+            ["-m", "store_true"],
             to_parse=args,
             get_unknown=True,
         )
@@ -1100,7 +1100,7 @@ async def save_filter(event, args, client):
                 "user_name": event.from_user.name,
                 "filter": new_filter,
                 "filter_type": filter_type,
-                "match_word": arg.m
+                "match_word": arg.m,
             }
         }
         filters.update(data)
