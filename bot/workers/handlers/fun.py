@@ -282,7 +282,7 @@ async def sticker(event, args, client):
         duration = sticker["media_formats"]["gif"]["duration"]
         animated = True if duration else False
         link = (
-            sticker["media_formats"].get("png_transparent")
+            sticker["media_formats"].get("gif_transparent")
             or sticker["media_formats"]["gif"]
         )
         link = link["url"]
