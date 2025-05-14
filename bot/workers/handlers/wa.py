@@ -202,16 +202,19 @@ async def stickerize_image(event, args, client):
     try:
         if args:
             arg, args = get_args(
-                ["-f", "store_false"],
+                ["-nl", "store_false"],
                 ["-c", "store_true"],
+                ["-f", "store_true"],
                 to_parse=args,
                 get_unknown=True,
             )
             crop = arg.c
             forced = arg.f
+            limit = arg.nl
         else:
             crop = False
-            forced = True
+            forced = False
+            limit = True 
         if not event.reply_to_message:
             return await event.reply("*Reply to a gif/image/video.*")
         if not (event.quoted_image or event.quoted_video):
@@ -227,7 +230,8 @@ async def stickerize_image(event, args, client):
             name=(args or random.choice((enquip(), enquip4()))),
             packname=me.PushName,
             crop=crop,
-            enforce_not_broken=forced,
+            enforce_not_broken=limit,
+            animated_gif=forced,
         )
         await event.send_typing_status(False)
     except Exception:

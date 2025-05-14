@@ -279,14 +279,15 @@ async def sticker(event, args, client):
             return
 
         sticker = random.choice(result["results"])
-        link = sticker["media_formats"]["mp4"]["url"]
         duration = sticker["media_formats"]["gif"]["duration"]
-        if not duration > 1:
-            link = (
-                sticker["media_formats"].get("png_transparent")
-                or sticker["media_formats"]["gif"]
-            )
-            link = link["url"]
+        animated = True if duration else False
+        link = (
+            sticker["media_formats"].get("png_transparent")
+            or sticker["media_formats"]["gif"]
+        )
+        link = link["url"]
+        # link = sticker["media_formats"]["mp4"]["url"]
+
         me = await bot.client.get_me()
         await clean_reply(
             event,
@@ -295,6 +296,8 @@ async def sticker(event, args, client):
             link,
             name=args,
             packname=me.PushName,
+            enforce_not_broken=True,
+            animated_gif=animated,
         )
     except Exception:
         await logger(Exception)
