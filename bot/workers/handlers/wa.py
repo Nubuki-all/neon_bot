@@ -38,6 +38,7 @@ from bot.utils.msg_utils import (
     clean_reply,
     construct_msg_and_evt,
     download_replied_media,
+    function_dict,
     get_args,
     get_mentioned,
     get_user_info,
@@ -1035,6 +1036,7 @@ async def save_filter(event, args, client):
     Argument:
         filter_name: name to save filter as & text to match in received messages
         -c: clean caption
+        -m: match only words
     """
     chat = event.chat.id
     user = event.from_user.id
@@ -1047,6 +1049,7 @@ async def save_filter(event, args, client):
     try:
         arg, args = get_args(
             ["-c", "store_true"],
+            ["-m", "store_true"]
             to_parse=args,
             get_unknown=True,
         )
@@ -1059,6 +1062,8 @@ async def save_filter(event, args, client):
                 "Can only save replied text or media as filter reply."
             )
         if args.casefold() in ("all", "notes", "my notes", "me") or len(args) < 3:
+            return await event.reply(f"Given filter_name *{args}* is blocked.")
+        if not user_is_owner(user) and args in function_dict:
             return await event.reply(f"Given filter_name *{args}* is blocked.")
         if (filters := bot.filters_dict.setdefault(chat, {})).get(args):
             if not user_is_owner(user) and user != filters[args]["user"]:
@@ -1095,6 +1100,7 @@ async def save_filter(event, args, client):
                 "user_name": event.from_user.name,
                 "filter": new_filter,
                 "filter_type": filter_type,
+                "match_word": arg.m
             }
         }
         filters.update(data)
@@ -1231,9 +1237,15 @@ async def detect_filters(event, args, client):
             return
         match_list = [*filters]
         matches = [m for m in match_list if m in msg]
-        for match in matches[:2]:
-            await asyncio.sleep(2)
-            await get_filters(event, match, client)
+        filtered = 0
+        await asyncio.sleep(2)
+        for match in matches:
+            result = await get_filters(event, match, client)
+            if result:
+                filtered += 1
+                await asyncio.sleep(2)
+            if filtered >= 2:
+                break
     except Exception:
         await logger(Exception)
         # await event.react("❌")
@@ -1246,6 +1258,10 @@ async def get_filters(event, args, client):
     # Tab to edit
     if not (svd_filter := filters.get(args)):
         return
+    if svd_filter.get("match_word"):
+        msg = event.caption or event.text
+        if not f" {args} " in f" {msg} ":
+            return
     user, filter_data, filter_type = (
         svd_filter.get("user"),
         svd_filter.get("filter"),

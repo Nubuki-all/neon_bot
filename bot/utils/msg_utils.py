@@ -20,6 +20,7 @@ from .events import (
     construct_message,
     construct_msg_and_evt,
     event_handler,
+    function_dict,
     patch_msg_sender,
 )
 
