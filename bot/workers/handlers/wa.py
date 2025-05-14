@@ -214,7 +214,7 @@ async def stickerize_image(event, args, client):
         else:
             crop = False
             forced = False
-            limit = True 
+            limit = True
         if not event.reply_to_message:
             return await event.reply("*Reply to a gif/image/video.*")
         if not (event.quoted_image or event.quoted_video):
