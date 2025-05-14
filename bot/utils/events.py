@@ -420,6 +420,7 @@ class Event:
         packname: str = "",
         crop: bool = False,
         enforce_not_broken: bool = False,
+        animated_gif: bool = False,
         add_msg_secret: bool = False,
     ):
         quoted = copy.deepcopy(self.message) if quote else None
@@ -431,6 +432,7 @@ class Event:
             packname=packname,
             crop=crop,
             enforce_not_broken=enforce_not_broken,
+            animated_gif=animated_gif,
             add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response)
