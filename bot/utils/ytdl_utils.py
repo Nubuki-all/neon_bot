@@ -364,7 +364,8 @@ class YoutubeDLHelper:
                         fmt["format_id"]
                         for fmt in result["formats"]
                         if (
-                            fmt.get("vcodec", "").startswith("avc1")
+                            (fmt.get("vcodec") and
+                            fmt.get("vcodec", "").startswith("avc1"))
                             or (
                                 fmt.get("vcodec") == "h264"
                             )  # Handle both representations
