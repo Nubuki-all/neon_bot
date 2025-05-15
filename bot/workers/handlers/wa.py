@@ -1260,7 +1260,7 @@ async def get_filters(event, args, client):
         return
     if svd_filter.get("match_word"):
         msg = event.caption or event.text
-        if not f" {args} " in f" {msg} ":
+        if not f" {args} " in f" {msg.casefold()} ":
             return
     user, filter_data, filter_type = (
         svd_filter.get("user"),
