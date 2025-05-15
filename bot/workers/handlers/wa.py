@@ -1035,6 +1035,7 @@ async def save_filter(event, args, client):
     Can be retrieved when a message content matches {filter_name}
     Argument:
         filter_name: name to save filter as & text to match in received messages
+        -a: match any word
         -c: clean caption
         -m: match only words
     """
@@ -1048,6 +1049,7 @@ async def save_filter(event, args, client):
             return
     try:
         arg, args = get_args(
+            ["-a", "store_true"],
             ["-c", "store_true"],
             ["-m", "store_true"],
             to_parse=args,
@@ -1100,6 +1102,7 @@ async def save_filter(event, args, client):
                 "user_name": event.from_user.name,
                 "filter": new_filter,
                 "filter_type": filter_type,
+                "match_any": arg.a
                 "match_word": arg.m,
             }
         }
@@ -1258,6 +1261,10 @@ async def get_filters(event, args, client):
     # Tab to edit
     if not (svd_filter := filters.get(args)):
         return
+    if svd_filter.get("match_any"):
+        msg = event.caption or event.text
+        if not set(args.split()) <= set(msg.casefold().split()):
+            return
     if svd_filter.get("match_word"):
         msg = event.caption or event.text
         if not f" {args} " in f" {msg.casefold()} ":
