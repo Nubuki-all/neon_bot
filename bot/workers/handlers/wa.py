@@ -1102,7 +1102,7 @@ async def save_filter(event, args, client):
                 "user_name": event.from_user.name,
                 "filter": new_filter,
                 "filter_type": filter_type,
-                "match_any": arg.a
+                "match_any": arg.a,
                 "match_word": arg.m,
             }
         }
