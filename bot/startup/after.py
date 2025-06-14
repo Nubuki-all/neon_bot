@@ -9,7 +9,8 @@ from bot.utils.bot_utils import shutdown_services
 from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger
 from bot.utils.msg_rank import scheduler2
-from bot.utils.msg_store import auto_save_msg
+from bot.utils.msg_store import Base as sql_base
+from bot.utils.msg_store import auto_save_msg, engine
 from bot.utils.msg_utils import send_presence
 from bot.utils.os_utils import file_exists, force_exit, touch
 from bot.utils.rss_utils import scheduler
@@ -115,6 +116,8 @@ async def on_startup():
                 getattr(signal, signame),
                 lambda: asyncio.create_task(on_termination()),
             )
+        async with engine.begin() as conn:
+            await conn.run_sync(sql_base.metadata.create_all)
         if not file_exists(con_ind):
             await wait_on_client()
             touch(con_ind)
