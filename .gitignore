@@ -164,9 +164,9 @@ cython_debug/
 # connection indicator 
 .CONNECTED
 
-# pickle db
+# Dbs
 *.pkl
-Msg_store
+*.db
 
 # cookies
 .cookies.txt
