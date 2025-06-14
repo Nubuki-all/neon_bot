@@ -1,5 +1,6 @@
 aiohttp
 aiohttp_retry
+aiosqlite
 apscheduler
 beautifulsoup4
 clean_links
@@ -13,6 +14,7 @@ python-anilist
 python-decouple
 python-ffmpeg
 pytz
+sqlalchemy
 urlextract
 w3lib
 Wand

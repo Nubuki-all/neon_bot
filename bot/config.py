@@ -41,9 +41,7 @@ class Config:
             self.DYNO = config("DYNO", default=None)
             self.IGNORE_PM = config("IGNORE_PM", default=True, cast=bool)
             self.LOG_GROUP = config("LOG_GROUP", default=0, cast=int)
-            self.MAX_SAVED_MESSAGES = config(
-                "MAX_SAVED_MESSAGES", default=4000, cast=int
-            )
+            self.MSG_STORE = config("MSG_STORE", default="sqlite+aiosqlite:///msg_store.db")
             self.NO_GPU = config("NO_GPU", default=False, cast=bool)
             self.RSS_CHAT = config(
                 "RSS_CHAT",

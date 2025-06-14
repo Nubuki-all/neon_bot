@@ -5,7 +5,7 @@ import aiohttp
 from bot import Message, asyncio, bot, con_ind, conf, jid, sys, version_file
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
-from bot.others.msg_store import auto_save_msg
+from bot.utils.msg_store import auto_save_msg
 from bot.utils.bot_utils import shutdown_services
 from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger

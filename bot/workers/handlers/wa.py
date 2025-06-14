@@ -18,7 +18,7 @@ from bot import Message
 from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
-from bot.others.msg_store import msg_store
+from bot.utils.msg_store import get_deleted_message_ids, get_messages
 from bot.utils.bot_utils import (
     human_format_num,
     list_to_str,
@@ -319,14 +319,14 @@ async def undelete(event, args, client):
         while mentioned:
             user_id = mentioned[0]
             try:
-                del_ids = await msg_store.get_deleted_messages_id(
+                del_ids = await get_deleted_message_ids(
                     event.chat.id, amount, user_id
                 )
                 if not del_ids:
                     mentioned.pop(0)
                     continue
                 status_msg = await event.reply(
-                    f"Fetching {len(del_ids)} deleted message(s) for: @{user_id if not event.lid_address else event.user.id}"
+                    f"Fetching {len(del_ids)} deleted message(s) for: @{user_id}"
                 )
                 await send_deleted_msgs(event, event.chat.id, del_ids, verbose=True)
                 no_del_msg = False
@@ -337,7 +337,7 @@ async def undelete(event, args, client):
                 mentioned.pop(0)
 
         if not mentioned_:
-            del_ids = await msg_store.get_deleted_messages_id(event.chat.id, amount)
+            del_ids = await get_deleted_message_ids(event.chat.id, amount)
             if del_ids:
                 await send_deleted_msgs(event, event.chat.id, del_ids)
                 no_del_msg = False
@@ -349,7 +349,7 @@ async def undelete(event, args, client):
 
 
 async def send_deleted_msgs(event, chat_id, del_ids, verbose=False):
-    msgs = await msg_store.get_messages_from_ids(chat_id, del_ids)
+    msgs = await get_messages(chat_id, del_ids)
     if not msgs and verbose:
         sep = " ,"
         return await event.reply(
@@ -895,7 +895,7 @@ async def rec_msg_ranking(event, args, client):
         user = event.from_user.id
         if event.is_revoke:
             value = 0
-            msgs = await msg_store.get_messages_from_ids(chat_id, [event.revoked_id])
+            msgs = await get_messages(chat_id, event.revoked_id)
             if (
                 msgs
                 and msgs[0].from_user.id == event.from_user.id
