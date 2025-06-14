@@ -155,7 +155,7 @@ async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
                 )
                 .order_by(Message.timestamp.desc())
                 .limit(limit)
-                if msg_ids
+                if user_ids
                 else select(Message)
                 .where(Message.chat_id.in_(chat_ids), Message.is_revoke)
                 .order_by(Message.timestamp.desc())
