@@ -101,14 +101,14 @@ async def get_messages(
                     and_(
                         Message.chat_id.in_(chat_ids),
                         Message.id.in_(msg_ids),
-                        Message.visble == visible,
+                        Message.visible == visible,
                     )
                 )
                 .order_by(Message.timestamp.desc())
                 .limit(limit)
                 if msg_ids
                 else select(Message)
-                .where(Message.chat_id.in_(chat_ids), Message.visble == visible)
+                .where(Message.chat_id.in_(chat_ids), Message.visible == visible)
                 .order_by(Message.timestamp.desc())
                 .limit(limit)
             )
