@@ -66,4 +66,11 @@ def update_users_rank(chat_id):
         user_rank[i] = user_rank.setdefault(i, 0) + 1
 
 
-scheduler2.add_job(id="msg_ranking", func=auto_rank, trigger="cron", hour=20, misfire_grace_time=None, max_instances=1)
+scheduler2.add_job(
+    id="msg_ranking",
+    func=auto_rank,
+    trigger="cron",
+    hour=20,
+    misfire_grace_time=None,
+    max_instances=1,
+)

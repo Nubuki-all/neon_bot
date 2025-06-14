@@ -1,37 +1,29 @@
 import asyncio
-from typing import List
-from typing import Optional
-from sqlalchemy import Column
-from sqlalchemy import ForeignKey, Index, Integer
-from sqlalchemy import LargeBinary
-from sqlalchemy import String
-from sqlalchemy import and_, select
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
+
+from sqlalchemy import Index, Integer, LargeBinary, String, and_, select
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from bot import base_msg, msg_store_lock
 from bot.config import bot, conf
 from bot.utils.db_utils import save2db2
-from bot.utils.log_utils import log, logger
-from bot.utils.msg_utils import Event, construct_event
+from bot.utils.log_utils import logger
+from bot.utils.msg_utils import construct_event
+
 
 class Base(DeclarativeBase):
     pass
 
+
 class Message(Base):
     __tablename__ = "Wa_Message"
     __table_args__ = (
-        Index('idx_chat_id', 'chat_id', 'timestamp'),
-        Index('idx_chat_w_id', 'chat_id', 'id', 'timestamp'),
-        Index('idx_chat_w_type', 'chat_id', 'timestamp', 'type'),
-        Index('idx_chat_w_revoke', 'chat_id', 'is_revoke', 'timestamp'),
-        Index('idx_chat_w_user', 'chat_id', 'timestamp', 'user_id'),
-        Index('idx_chat_w_visible_id', 'chat_id', 'id', 'timestamp', 'visible'),
+        Index("idx_chat_id", "chat_id", "timestamp"),
+        Index("idx_chat_w_id", "chat_id", "id", "timestamp"),
+        Index("idx_chat_w_type", "chat_id", "timestamp", "type"),
+        Index("idx_chat_w_revoke", "chat_id", "is_revoke", "timestamp"),
+        Index("idx_chat_w_user", "chat_id", "timestamp", "user_id"),
+        Index("idx_chat_w_visible_id", "chat_id", "id", "timestamp", "visible"),
     )
     _id: Mapped[int] = mapped_column(primary_key=True)
     chat_id: Mapped[str] = mapped_column(String(30))
@@ -58,12 +50,13 @@ class Message(Base):
             f"visible={self.visible!r})"
         )
 
+
 engine = create_async_engine(
     conf.MSG_STORE,
     pool_size=5,
     max_overflow=10,
     pool_timeout=30,
-    connect_args={"timeout": 10}
+    connect_args={"timeout": 10},
 )
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 async with engine.begin() as conn:
@@ -75,80 +68,104 @@ def load_proto(data):
     msg.ParseFromString(data)
     return msg
 
+
 async def save_messages(msgs):
     async with async_session() as session:
-        items = [Message(
-            chat_id=event.chat.id,
-            id=event.id,
-            is_revoke=event.is_revoke,
-            raw=event.message.SerializeToString(),
-            revoked_id=event.revoked_id,
-            timestamp=event.timestamp,
-            type=event.name,
-            user_id=event.user.id,
-            visible=(event.media or event.text),
-        ) for event in msgs]
+        items = [
+            Message(
+                chat_id=event.chat.id,
+                id=event.id,
+                is_revoke=event.is_revoke,
+                raw=event.message.SerializeToString(),
+                revoked_id=event.revoked_id,
+                timestamp=event.timestamp,
+                type=event.name,
+                user_id=event.user.id,
+                visible=(event.media or event.text),
+            )
+            for event in msgs
+        ]
         async with session.begin():
             session.add_all(items)
         await session.commit()
 
 
-async def get_messages(chat_ids: list | str, msg_ids: list | str = None, limit: int = None, visible=True):
+async def get_messages(
+    chat_ids: list | str, msg_ids: list | str = None, limit: int = None, visible=True
+):
     try:
         chat_ids = [*chat_ids]
         msg_ids = [*msg_ids] if msg_ids else None
         async with async_session() as session:
-            stmt = select(Message).where(
-                and_(
-                    Message.chat_id.in_(chat_ids),
-                    Message.id.in_(msg_ids),
-                    Message.visble == visible
+            stmt = (
+                select(Message)
+                .where(
+                    and_(
+                        Message.chat_id.in_(chat_ids),
+                        Message.id.in_(msg_ids),
+                        Message.visble == visible,
+                    )
                 )
-            ).order_by(Message.timestamp.desc()).limit(limit) if msg_ids else select(Message).where(
-                Message.chat_id.in_(chat_ids),
-                Message.visble == visible
-            ).order_by(Message.timestamp.desc()).limit(limit)
+                .order_by(Message.timestamp.desc())
+                .limit(limit)
+                if msg_ids
+                else select(Message)
+                .where(Message.chat_id.in_(chat_ids), Message.visble == visible)
+                .order_by(Message.timestamp.desc())
+                .limit(limit)
+            )
             results = await session.scalars(stmt)
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
     except Exception as e:
         raise e
 
-async def get_messages_by_type(chat_ids: list | str, types: list | str, limit: int = None):
+
+async def get_messages_by_type(
+    chat_ids: list | str, types: list | str, limit: int = None
+):
     try:
         chat_ids = [*chat_ids]
         types = [*types]
         async with async_session() as session:
-            stmt = select(Message).where(
-                and_(
-                    Message.chat_id.in_(chat_ids),
-                    Message.type.in_(types) 
-                )
-            ).order_by(Message.timestamp.desc()).limit(limit)
+            stmt = (
+                select(Message)
+                .where(and_(Message.chat_id.in_(chat_ids), Message.type.in_(types)))
+                .order_by(Message.timestamp.desc())
+                .limit(limit)
+            )
             results = await session.scalars(stmt)
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
     except Exception as e:
         raise e
+
 
 async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
     try:
         chat_ids = [*chat_ids]
         user_ids = [*user_ids] if user_ids else None
         async with async_session() as session:
-            stmt = select(Message).where(
-                and_(
-                    Message.chat_id.in_(chat_ids),
-                    Message.user_id.in_(user_ids),
-                    Message.is_revoke
+            stmt = (
+                select(Message)
+                .where(
+                    and_(
+                        Message.chat_id.in_(chat_ids),
+                        Message.user_id.in_(user_ids),
+                        Message.is_revoke,
+                    )
                 )
-            ).order_by(Message.timestamp.desc()).limit(limit) if msg_ids else select(Message).where(
-                Message.chat_id.in_(chat_ids),
-                Message.is_revoke
-            ).order_by(Message.timestamp.desc()).limit(limit)
+                .order_by(Message.timestamp.desc())
+                .limit(limit)
+                if msg_ids
+                else select(Message)
+                .where(Message.chat_id.in_(chat_ids), Message.is_revoke)
+                .order_by(Message.timestamp.desc())
+                .limit(limit)
+            )
             results = await session.scalars(stmt)
         return [msg_data.revoked_id for msg_data in results]
     except Exception as e:
         raise e
-    
+
 
 async def auto_save_msg():
     bot.auto_save_msg_is_running = True

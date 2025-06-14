@@ -18,7 +18,6 @@ from bot import Message
 from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
-from bot.utils.msg_store import get_deleted_message_ids, get_messages
 from bot.utils.bot_utils import (
     human_format_num,
     list_to_str,
@@ -33,6 +32,7 @@ from bot.utils.bot_utils import (
 )
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
+from bot.utils.msg_store import get_deleted_message_ids, get_messages
 from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
@@ -319,9 +319,7 @@ async def undelete(event, args, client):
         while mentioned:
             user_id = mentioned[0]
             try:
-                del_ids = await get_deleted_message_ids(
-                    event.chat.id, amount, user_id
-                )
+                del_ids = await get_deleted_message_ids(event.chat.id, amount, user_id)
                 if not del_ids:
                     mentioned.pop(0)
                     continue

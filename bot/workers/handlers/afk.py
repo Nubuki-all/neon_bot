@@ -3,10 +3,10 @@ import time
 
 from bot import jid
 from bot.config import bot
-from bot.utils.msg_store import get_messages
 from bot.utils.bot_utils import time_formatter
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
+from bot.utils.msg_store import get_messages
 from bot.utils.msg_utils import (
     chat_is_allowed,
     construct_msg_and_evt,
