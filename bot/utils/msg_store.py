@@ -112,7 +112,7 @@ async def get_messages(
                 .order_by(Message.timestamp.desc())
                 .limit(limit)
             )
-            results = await session.scalars(stmt)
+            results = (await session.scalars(stmt)).all()
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
     except Exception as e:
         raise e
@@ -131,7 +131,7 @@ async def get_messages_by_type(
                 .order_by(Message.timestamp.desc())
                 .limit(limit)
             )
-            results = await session.scalars(stmt)
+            results = (await session.scalars(stmt)).all()
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
     except Exception as e:
         raise e
@@ -159,7 +159,7 @@ async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
                 .order_by(Message.timestamp.desc())
                 .limit(limit)
             )
-            results = await session.scalars(stmt)
+            results = (await session.scalars(stmt)).all()
         return [msg_data.revoked_id for msg_data in results]
     except Exception as e:
         raise e
