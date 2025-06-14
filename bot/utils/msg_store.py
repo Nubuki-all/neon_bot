@@ -92,8 +92,9 @@ async def get_messages(
     chat_ids: list | str, msg_ids: list | str = None, limit: int = None, visible=True
 ):
     try:
-        chat_ids = [*chat_ids]
-        msg_ids = [*msg_ids] if msg_ids else None
+        chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
+        if msg_ids:
+            msg_ids = [msg_ids] if isinstance(msg_ids, str) else [*msg_ids]
         async with async_session() as session:
             stmt = (
                 select(Message)
@@ -122,8 +123,8 @@ async def get_messages_by_type(
     chat_ids: list | str, types: list | str, limit: int = None
 ):
     try:
-        chat_ids = [*chat_ids]
-        types = [*types]
+        chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
+        types = [types] if isinstance(types, str) else [*types]
         async with async_session() as session:
             stmt = (
                 select(Message)
@@ -139,8 +140,9 @@ async def get_messages_by_type(
 
 async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
     try:
-        chat_ids = [*chat_ids]
-        user_ids = [*user_ids] if user_ids else None
+        chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
+        if user_ids:
+            user_ids = [user_ids] if isinstance(user_ids, str) else [*user_ids]
         async with async_session() as session:
             stmt = (
                 select(Message)
