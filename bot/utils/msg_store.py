@@ -79,7 +79,7 @@ async def save_messages(msgs):
                 timestamp=event.timestamp,
                 type=event.name,
                 user_id=event.user.id,
-                visible=(event.media or event.text),
+                visible=True if (event.media or event.text) else False,
             )
             for event in msgs
         ]
