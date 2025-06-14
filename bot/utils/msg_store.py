@@ -171,7 +171,7 @@ async def auto_save_msg():
         if messages := bot.pending_saved_messages:
             async with msg_store_lock:
                 try:
-                    while len(messages) < 15 and not bot.force_save_messages:
+                    while len(messages) < 2 and not bot.force_save_messages:
                         await asyncio.sleep(1)
                     await save_messages(messages)
                     if bot.msg_leaderboard_counter > 10:
