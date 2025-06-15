@@ -512,6 +512,7 @@ class Event:
         # msg = self.gen_new_msg(
         # self.quoted.stanzaID, (self.quoted.participant.split("@"))[0], self.chat.id, self.text, self.chat.jid.Server
         # )
+        await logger(e=self.quoted.participant)
         if self.quoted.remoteJID:
             chat_id, server = self.quoted.remoteJID.split("@", maxsplit=1)
         else:
@@ -576,10 +577,6 @@ async def on_message(client: NewAClient, message: MessageEv):
         # await logger(e=message)
         event = construct_event(message)
         if event.pollUpdate:
-            # future = asyncio.run_coroutine_threadsafe(
-            #    function_dict[POLL](client, event), bot.loop
-            # )
-            # return future.result()
             return await function_dict[POLL](client, event)
 
         _id = f"{event.name}:{event.chat.id}:{event.id}"
@@ -595,17 +592,11 @@ async def on_message(client: NewAClient, message: MessageEv):
             )
             func = function_dict.get(command)
             if func:
-                print("Got to event runner!")
                 await func(client, event)
-                # future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
-                # future.result()
         if not function_dict[None]:
             return
         funcs = [func(client, event) for func in function_dict[None]]
         await asyncio.gather(*funcs)
-        # future = asyncio.run_coroutine_threadsafe(handler_helper(funcs), bot.loop)
-        # future.result()
-        print("Left event runner!")
     except Exception:
         await logger(e="Unhandled Exception:")
         await logger(Exception)

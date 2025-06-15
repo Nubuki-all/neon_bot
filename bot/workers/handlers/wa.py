@@ -221,9 +221,9 @@ async def stickerize_image(event, args, client):
             return await event.reply("*Replied message is not a gif/image/video.*")
 
         # forced = False if event.quoted_image else forced
-        await event.send_typing_status()
         file = await event.reply_to_message.download()
         bot.me = me = await bot.client.get_me()
+        await event.send_typing_status()
         return await event.reply_sticker(
             file,
             quote=True,
