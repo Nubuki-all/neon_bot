@@ -37,7 +37,6 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
     construct_msg_and_evt,
-    download_media,
     function_dict,
     get_args,
     get_mentioned,

@@ -6,10 +6,8 @@ from collections import deque
 
 import httpx
 from neonize.types import MessageWithContextInfo
-from neonize.utils.enum import MediaType, MediaTypeToMMS, Presence
-from neonize.utils.message import get_message_type
-from neonize.utils.enum import ChatPresence, ChatPresenceMedia
-from neonize.utils.message import extract_text
+from neonize.utils.enum import ChatPresence, ChatPresenceMedia, MediaType
+from neonize.utils.message import extract_text, get_message_type
 
 from bot import (
     JID,
@@ -239,14 +237,13 @@ class Event:
         return
 
     async def download(self, path: str = None):
-        if not(self.audio or self.document or self.sticker or self.video):
-            raise Exception ("Not a downloadable event!")
+        if not (self.audio or self.document or self.sticker or self.video):
+            raise Exception("Not a downloadable event!")
         bytes_ = await download_media(self._message)
         if not path:
             return bytes_
         with open(path, "wb") as file:
             file.write(bytes_)
-        
 
     async def edit(self, text: str):
         msg = Message(conversation=text)
@@ -665,6 +662,7 @@ def patch_msg_sender(msg: Message, sender: JID, sender_alt: JID):
         )
     )
 
+
 async def download_media(message: Message) -> bytes:
     item = get_message_type(message)
     media_type = MediaType.from_message(message)
@@ -684,6 +682,7 @@ async def download_media(message: Message) -> bytes:
         media_type,
         mms_type,
     )
+
 
 async def event_handler(
     event: Event,
