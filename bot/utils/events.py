@@ -22,7 +22,7 @@ from bot import (
 )
 from bot.config import bot, conf
 
-from .log_utils import logger
+from .log_utils import log, logger
 
 
 class Event:
@@ -512,7 +512,7 @@ class Event:
         # msg = self.gen_new_msg(
         # self.quoted.stanzaID, (self.quoted.participant.split("@"))[0], self.chat.id, self.text, self.chat.jid.Server
         # )
-        await logger(e=self.quoted.participant)
+        log(e=self.quoted.participant)
         if self.quoted.remoteJID:
             chat_id, server = self.quoted.remoteJID.split("@", maxsplit=1)
         else:
