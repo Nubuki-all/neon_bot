@@ -249,7 +249,7 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 ########### Start ############
 
 try:
-    bot.loop = asyncio.get_event_loop()
+    bot.loop = asyncio.new_event_loop()
     # bot.loop = bot.client.loop
     if len(sys.argv) != 3:
         bot.loop.run_until_complete(restore_wa_db())
