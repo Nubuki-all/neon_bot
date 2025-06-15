@@ -37,7 +37,7 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
     construct_msg_and_evt,
-    download_replied_media,
+    download_media,
     function_dict,
     get_args,
     get_mentioned,
@@ -223,7 +223,7 @@ async def stickerize_image(event, args, client):
 
         # forced = False if event.quoted_image else forced
         await event.send_typing_status()
-        file = await download_replied_media(event)
+        file = await event.reply_to_message.download()
         bot.me = me = await bot.client.get_me()
         return await event.reply_sticker(
             file,
@@ -259,7 +259,7 @@ async def sticker_to_image(event, args, client):
         if not event.reply_to_message.sticker:
             return await event.reply("Kindly reply to a sticker!")
         status_msg = await event.reply("Downloading sticker…")
-        file = await download_replied_media(event)
+        file = await event.reply_to_message.download()
         if event.reply_to_message.sticker.isAnimated:
             await status_msg.edit("*Converting sticker to gif…*")
             with wand_image(blob=file, format="webp") as img:
@@ -399,7 +399,7 @@ async def upscale_image(event, args, client):
             return await event.reply(
                 "What?, initial upscale not good enough for you? 😒"
             )
-        file = await download_replied_media(event)
+        file = await event.reply_to_message.download()
 
         if waiting_for_turn():
             await event.react("⏰")
@@ -579,7 +579,7 @@ async def save_notes(event, args, client):
             note = event.quoted_text
         elif event.quoted_image:
             if event.quoted_image.fileLength < 5000000:
-                note = await download_replied_media(event)
+                note = await event.reply_to_message.download()
                 note = [note, (event.quoted_image.caption if not arg.c else "")]
                 note_type = bytes
             else:
@@ -1077,7 +1077,7 @@ async def save_filter(event, args, client):
             new_filter = event.quoted_text
         elif event.quoted_image:
             if event.quoted_image.fileLength < 5000000:
-                new_filter = await download_replied_media(event)
+                new_filter = await event.reply_to_message.download()
                 new_filter = [
                     new_filter,
                     (event.quoted_image.caption if not arg.c else ""),
