@@ -583,9 +583,9 @@ async def on_message(client: NewAClient, message: MessageEv):
             )
             func = function_dict.get(command)
             if func:
-                # await func(client, event)
-                future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
-                future.result()
+                await func(client, event)
+                # future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
+                # future.result()
         if not function_dict[None]:
             return
         func_list = [func(client, event) for func in function_dict[None]]
