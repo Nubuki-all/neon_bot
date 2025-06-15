@@ -237,7 +237,9 @@ class Event:
         return
 
     async def download(self, path: str = None):
-        if not (self.audio or self.document or self.image or self.sticker or self.video):
+        if not (
+            self.audio or self.document or self.image or self.sticker or self.video
+        ):
             raise Exception("Not a downloadable event!")
         bytes_ = await download_media(self._message)
         if not path:
