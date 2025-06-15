@@ -9,7 +9,6 @@ from . import (
     LoggedOutEv,
     MessageEv,
     NewAClient,
-    asyncio,
     bot,
     con_ind,
     conf,

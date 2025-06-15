@@ -567,8 +567,8 @@ async def on_message(client: NewAClient, message: MessageEv):
         if event.pollUpdate:
             # future = asyncio.run_coroutine_threadsafe(
             #    function_dict[POLL](client, event), bot.loop
-            #)
-            #return future.result()
+            # )
+            # return future.result()
             return await function_dict[POLL](client, event)
 
         _id = f"{event.name}:{event.chat.id}:{event.id}"
