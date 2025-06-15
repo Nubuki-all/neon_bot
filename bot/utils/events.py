@@ -237,7 +237,7 @@ class Event:
         return
 
     async def download(self, path: str = None):
-        if not (self.audio or self.document or self.sticker or self.video):
+        if not (self.audio or self.document or self.image or self.sticker or self.video):
             raise Exception("Not a downloadable event!")
         bytes_ = await download_media(self._message)
         if not path:
@@ -622,6 +622,8 @@ def construct_message(
     server="s.whatsapp.net",
     userver="s.whatsapp.net",
     Msg=None,
+    user_id2=None,
+    userver2="lid",
 ):
     if text:
         message = Message(conversation=text)
@@ -635,6 +637,7 @@ def construct_message(
             MessageSource=base_msg_source(
                 Chat=jid.build_jid(chat_id, server),
                 Sender=jid.build_jid(user_id, userver),
+                SenderAlt=jid.build_jid(user_id2, userver2) if user_id2 else None,
             ),
         ),
     )
