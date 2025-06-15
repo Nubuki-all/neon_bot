@@ -583,6 +583,7 @@ async def on_message(client: NewAClient, message: MessageEv):
             )
             func = function_dict.get(command)
             if func:
+                print("Got to event runner!")
                 await func(client, event)
                 # future = asyncio.run_coroutine_threadsafe(func(client, event), bot.loop)
                 # future.result()
@@ -591,6 +592,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         func_list = [func(client, event) for func in function_dict[None]]
         future = asyncio.run_coroutine_threadsafe(handler_helper(func_list), bot.loop)
         future.result()
+        print("Left event runner!")
     except Exception:
         await logger(e="Unhandled Exception:")
         await logger(Exception)

@@ -259,6 +259,7 @@ try:
             bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
         )
     else:
+        print("Got to connector")
         bot.loop.run_until_complete(bot.client.connect())
 except Exception:
     LOGS.critical(traceback.format_exc())
