@@ -15,10 +15,10 @@ async def auto_rank():
     """
     Sends the msg ranks of each chat daily
     """
-    try:
-        groups = bot.group_dict
-        write = False
-        for group in list(groups):
+    groups = bot.group_dict
+    write = False
+    for group in list(groups):
+        try:
             if group in ("last_rank_clear"):
                 continue
             group_info = groups[group]
@@ -43,6 +43,9 @@ async def auto_rank():
                 jid.build_jid(group, "g.us"), "*Message ranking has been reset.*"
             )
             await asyncio.sleep(3)
+        except Exception:
+            await logger(Exception)
+    try:
         if write:
             groups.update(
                 last_rank_clear=(datetime.datetime.today() + datetime.timedelta(days=2))

@@ -1,3 +1,8 @@
+### RELIC ###
+
+# Here for historical purposes
+# Successor @ /bot/utils/msg_store.py
+
 import asyncio
 import pickle
 from copy import deepcopy
@@ -126,7 +131,7 @@ async def auto_save_msg():
                     while len(messages) < 15 and not bot.force_save_messages:
                         await asyncio.sleep(1)
                     await sync_to_async(msg_store._save, *messages)
-                    if bot.msg_leaderboard_counter > 10:
+                    if bot.msg_leaderboard_counter > 30:
                         await save2db2(bot.group_dict, "groups")
                         bot.msg_leaderboard_counter = 0
                 except Exception:
