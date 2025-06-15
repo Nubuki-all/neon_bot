@@ -250,7 +250,7 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 
 try:
     bot.loop = asyncio.new_event_loop()
-    #bot.loop = bot.client.loop
+    # bot.loop = bot.client.loop
     if len(sys.argv) != 3:
         bot.loop.run_until_complete(restore_wa_db())
     bot.loop.create_task(on_startup())
