@@ -512,7 +512,6 @@ class Event:
         # msg = self.gen_new_msg(
         # self.quoted.stanzaID, (self.quoted.participant.split("@"))[0], self.chat.id, self.text, self.chat.jid.Server
         # )
-        log(e=self.quoted.participant)
         if self.quoted.remoteJID:
             chat_id, server = self.quoted.remoteJID.split("@", maxsplit=1)
         else:
