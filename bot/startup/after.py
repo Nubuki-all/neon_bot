@@ -12,7 +12,6 @@ from bot.utils.msg_rank import scheduler2
 from bot.utils.msg_store import Base as sql_base
 from bot.utils.msg_store import auto_save_msg, engine
 from bot.utils.msg_utils import send_presence
-from bot.utils.os_utils import force_exit
 from bot.utils.rss_utils import scheduler
 
 
