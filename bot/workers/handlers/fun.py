@@ -156,7 +156,7 @@ async def coub(event, args, client):
         await event.react("❌")
 
 
-async def coub_helper(event, args, client)
+async def coub_helper(event, args, client):
     if not args:
         args = "Genshin impact"
     random_ = ""
