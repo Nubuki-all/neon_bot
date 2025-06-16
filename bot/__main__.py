@@ -1,5 +1,6 @@
 from bot.utils.os_utils import re_x, s_remove
 
+from . import asyncio  # noqa  # pylint: disable=unused-import
 from . import (
     LOGS,
     ConnectedEv,
@@ -9,7 +10,6 @@ from . import (
     LoggedOutEv,
     MessageEv,
     NewAClient,
-    asyncio, # noqa  # pylint: disable=unused-import
     bot,
     con_ind,
     conf,
