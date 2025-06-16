@@ -58,8 +58,8 @@ async def on_termination():
         pass
     # More cleanup code?
     await shutdown_services()
-    force_exit()
-    # exit()
+    await bot.client.stop()
+    # force_exit()
 
 
 async def update_presence():
@@ -110,9 +110,10 @@ async def wait_on_client():
 
 async def on_startup():
     try:
-        bot.requests = aiohttp.ClientSession(loop=bot.loop)
+        loop = asyncio.get_running_loop()
+        bot.requests = aiohttp.ClientSession(loop=loop)
         for signame in {"SIGINT", "SIGTERM", "SIGABRT"}:
-            bot.loop.add_signal_handler(
+            loop.add_signal_handler(
                 getattr(signal, signame),
                 lambda: asyncio.create_task(on_termination()),
             )
