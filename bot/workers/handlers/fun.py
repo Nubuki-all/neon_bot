@@ -150,7 +150,7 @@ async def coub(event, args, client):
             return await event.react("⛔")
     try:
         async with event.react("🎦"):
-        await coub_helper(event, args, client)
+            await coub_helper(event, args, client)
     except Exception:
         await logger(Exception)
         await event.react("❌")
