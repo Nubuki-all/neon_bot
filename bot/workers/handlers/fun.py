@@ -120,7 +120,7 @@ async def cat(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        async with event.react(random.choice("🐈‍⬛", "🐈")):
+        async with event.react(random.choice(("🐈‍⬛", "🐈"))):
             result = await get_json("https://api.thecatapi.com/v1/images/search")
             if not result:
                 return await event.reply("*Request Failed!*")
