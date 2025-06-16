@@ -265,5 +265,3 @@ except Exception:
     LOGS.critical(traceback.format_exc())
     LOGS.critical("Cannot recover from error, exiting…")
     exit()
-
-
