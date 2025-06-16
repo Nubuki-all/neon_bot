@@ -13,7 +13,13 @@
 # License can be found in <
 # https://github.com/Nubuki-all/neon_bot/blob/WA/License> .
 
-# isort: off
+# isort: off #  noqa
+import faulthandler  # noqa  # pylint: disable=unused-import
+
+faulthandler.enable() # noqa
+# isort: on  # noqa
+
+
 from .config import bot, conf
 from neonize.utils import jid, log
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
@@ -61,10 +67,7 @@ import re
 import os
 import logging
 import asyncio
-import faulthandler
 
-faulthandler.enable()
-# isort: on
 
 
 heavy_proc_lock = asyncio.Lock()
