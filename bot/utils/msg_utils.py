@@ -51,11 +51,15 @@ def find_role_mentions(text, roles):
         return []
     role_map = {role.lower(): role for role in roles}
     sorted_roles = sorted(roles, key=len, reverse=True)
-    pattern = r'(?<!\w)@(' + '|'.join(re.escape(role) for role in sorted_roles) + r')(s)?(?!\w)'
+    pattern = (
+        r"(?<!\w)@("
+        + "|".join(re.escape(role) for role in sorted_roles)
+        + r")(s)?(?!\w)"
+    )
     regex = re.compile(pattern, re.IGNORECASE)
     results = []
     for match in regex.finditer(text):
-        base_role = match.group(1)      # The base role without @ or s
+        base_role = match.group(1)  # The base role without @ or s
         plural_suffix = match.group(2)  # 's' if present, None otherwise
         role_key = base_role.lower()
         if role_key in role_map:

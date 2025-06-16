@@ -85,7 +85,9 @@ async def getmeme(event, args, client):
         async with event.react("🌐"):
             if args:
                 link += f"/{args}" if not args.isdigit() else ""
-            caption, url, filename, nsfw = await gen_meme(link, not (event.chat.is_group))
+            caption, url, filename, nsfw = await gen_meme(
+                link, not (event.chat.is_group)
+            )
             if not url:
                 if nsfw:
                     return await event.reply("*NSFW is blocked!*")
@@ -187,9 +189,7 @@ async def coub_helper(event, args, client):
     else:
         ytdl = bot.group_dict.get(event.chat.id, {}).get("ytdl")
         dl_msg = "\n\n*Attempting to upload…*" if ytdl and dl_link else ""
-        text = (
-            f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}{dl_msg}"
-        )
+        text = f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}{dl_msg}"
         rep = await event.reply(text)
         if dl_msg:
             event_ = construct_msg_and_evt(
@@ -243,12 +243,11 @@ async def gif(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def gif_helper(event, args, client):
     """Prevents indentation hell"""
     if not conf.TENOR_API_KEY:
-        return await event.reply(
-            "TENOR_API_KEY is needed for this function to work."
-        )
+        return await event.reply("TENOR_API_KEY is needed for this function to work.")
     if not args:
         args = "genshin"
     url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqi"
@@ -261,7 +260,6 @@ async def gif_helper(event, args, client):
 
     gif_link = random.choice(result["results"])["media_formats"]["gif"]["url"]
     await clean_reply(event, event.reply_to_message, "reply_gif", gif_link)
-    
 
 
 async def sticker(event, args, client):
@@ -283,12 +281,11 @@ async def sticker(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def sticker_helper(event, args, client):
     """Prevents indentation hell"""
     if not conf.TENOR_API_KEY:
-        return await event.reply(
-            "TENOR_API_KEY is needed for this function to work."
-        )
+        return await event.reply("TENOR_API_KEY is needed for this function to work.")
     if not args:
         args = "genshin"
     url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqinator&searchfilter=sticker"
@@ -320,7 +317,6 @@ async def sticker_helper(event, args, client):
         enforce_not_broken=True,
         animated_gif=animated,
     )
-    
 
 
 bot.add_handler(fun, "fun")

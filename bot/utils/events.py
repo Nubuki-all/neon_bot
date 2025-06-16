@@ -309,7 +309,7 @@ class Event:
                     "ReactionContext was created but never used. "
                     "Did you forget 'await' or 'async with'?",
                     RuntimeWarning,
-                    stacklevel=3  # Points to the original react() call site
+                    stacklevel=3,  # Points to the original react() call site
                 )
 
     async def reply(
@@ -344,10 +344,16 @@ class Event:
         # msg_id = self.id if quote else None
         if not quote:
             return await self._send_message(
-                self.chat.jid, text, link_preview, ghost_mentions=ghost_mentions, mentions_are_lids=mentions_are_lids, mentions_are_jids=mentions_are_jids, add_msg_secret=add_msg_secret,
+                self.chat.jid,
+                text,
+                link_preview,
+                ghost_mentions=ghost_mentions,
+                mentions_are_lids=mentions_are_lids,
+                mentions_are_jids=mentions_are_jids,
+                add_msg_secret=add_msg_secret,
             )
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
-        
+
         await self.send_typing_status()
         try:
             response = await self.client.reply_message(
