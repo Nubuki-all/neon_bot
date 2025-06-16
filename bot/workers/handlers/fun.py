@@ -82,7 +82,7 @@ async def getmeme(event, args, client):
             return await event.react("⛔")
     link = "https://meme-api.com/gimme"
     try:
-        async with event.react("🌐")
+        async with event.react("🌐"):
             if args:
                 link += f"/{args}" if not args.isdigit() else ""
             caption, url, filename, nsfw = await gen_meme(link, not (event.chat.is_group))
