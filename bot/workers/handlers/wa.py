@@ -37,6 +37,7 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
     construct_msg_and_evt,
+    find_role_mentions,
     function_dict,
     get_args,
     get_mentioned,
@@ -221,19 +222,20 @@ async def stickerize_image(event, args, client):
             return await event.reply("*Replied message is not a gif/image/video.*")
 
         # forced = False if event.quoted_image else forced
-        file = await event.reply_to_message.download()
-        bot.me = me = await bot.client.get_me()
-        await event.send_typing_status()
-        return await event.reply_sticker(
-            file,
-            quote=True,
-            name=(args or random.choice((enquip(), enquip4()))),
-            packname=me.PushName,
-            crop=crop,
-            enforce_not_broken=limit,
-            animated_gif=forced,
-        )
-        await event.send_typing_status(False)
+        async with event.react("👩‍🏭"):
+            file = await event.reply_to_message.download()
+            bot.me = me = await bot.client.get_me()
+            await event.send_typing_status()
+            return await event.reply_sticker(
+                file,
+                quote=True,
+                name=(args or random.choice((enquip(), enquip4()))),
+                packname=me.PushName,
+                crop=crop,
+                enforce_not_broken=limit,
+                animated_gif=forced,
+            )
+            await event.send_typing_status(False)
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -258,16 +260,17 @@ async def sticker_to_image(event, args, client):
         if not event.reply_to_message.sticker:
             return await event.reply("Kindly reply to a sticker!")
         status_msg = await event.reply("Downloading sticker…")
-        file = await event.reply_to_message.download()
-        if event.reply_to_message.sticker.isAnimated:
-            await status_msg.edit("*Converting sticker to gif…*")
-            with wand_image(blob=file, format="webp") as img:
-                with img.convert("gif") as img2:
-                    gif = img2.make_blob(format="gif")
-            await event.reply_gif(gif)
-        else:
-            await status_msg.edit("*Converting sticker to image…*")
-            await event.reply_photo((await png_to_jpg(file)))
+        async with event.react("👩‍🏭"):
+            file = await event.reply_to_message.download()
+            if event.reply_to_message.sticker.isAnimated:
+                await status_msg.edit("*Converting sticker to gif…*")
+                with wand_image(blob=file, format="webp") as img:
+                    with img.convert("gif") as img2:
+                        gif = img2.make_blob(format="gif")
+                await event.reply_gif(gif)
+            else:
+                await status_msg.edit("*Converting sticker to image…*")
+                await event.reply_photo((await png_to_jpg(file)))
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -752,13 +755,12 @@ async def tag_all_admins(event, args, client):
     Tags all admins in a group
     """
     try:
-        if not event.text:
-            return
-        acc_tup = ("@admin", "@mod")
-        if not event.text.startswith(acc_tup):
+        if not (text := (event.text or event.caption)):
             return
         if not event.chat.is_group:
-            return await event.react("🚫")
+            return
+        if not mentions := (find_role_mentions(text, ("admin", "mod"))):
+            return
         user = event.from_user.id
         if not user_is_privileged(user):
             if not chat_is_allowed(event):
@@ -766,14 +768,13 @@ async def tag_all_admins(event, args, client):
             if not user_is_allowed(user):
                 return await event.react("⛔")
         group_info = await client.get_group_info(event.chat.jid)
-        arg = event.text.split()[0]
         tags = tag_admins(group_info.Participants)
         await clean_reply(
             event,
             event.reply_to_message,
             "reply",
-            "_*Tagged all admins!*_" if arg.endswith("s") else tags.split()[0],
-            ghost_mentions=tags if arg.endswith("s") else tags.split()[0],
+            "_*Tagged all admins!*_" if mentions[0][1] else tags.split()[0],
+            ghost_mentions=tags if mentions[0][1] else tags.split()[0],
         )
     except Exception:
         await logger(Exception)
@@ -785,13 +786,12 @@ async def tag_all_sudoers(event, args, client):
     Tags all sudoers in a group
     """
     try:
-        if not event.text:
-            return
-        acc_tup = "@sudoer"
-        if not event.text.startswith(acc_tup):
+        if not (text := (event.text or event.caption)):
             return
         if not event.chat.is_group:
-            return await event.react("🚫")
+            return
+        if not mentions := (find_role_mentions(text, ("sudoer"))):
+            return
         user = event.from_user.id
         # group_info = await client.get_group_info(event.chat.jid)
         if not user_is_privileged(user):
@@ -799,14 +799,14 @@ async def tag_all_sudoers(event, args, client):
                 return
             if not user_is_allowed(user):
                 return await event.react("⛔")
-        arg = event.text.split()[0]
         tags = tag_sudoers()
         await clean_reply(
             event,
             event.reply_to_message,
             "reply",
-            "_*Tagged all Sudoers!*_" if arg.endswith("s") else tags.split()[0],
-            ghost_mentions=tags if arg.endswith("s") else tags.split()[0],
+            "_*Tagged all Sudoers!*_" if mentions[0][1] else tags.split()[0],
+            ghost_mentions=tags if mentions[0][1] else tags.split()[0],
+            mentions_are_jids=True,
         )
     except Exception:
         await logger(Exception)
@@ -818,13 +818,12 @@ async def tag_all_owners(event, args, client):
     Tags all owners in a group
     """
     try:
-        if not event.text:
-            return
-        acc_tup = "@owner"
-        if not event.text.startswith(acc_tup):
+        if not (text := (event.text or event.caption)):
             return
         if not event.chat.is_group:
-            return await event.react("🚫")
+            return
+        if not mentions := (find_role_mentions(text, ("owner"))):
+            return
         user = event.from_user.id
         # group_info = await client.get_group_info(event.chat.jid)
         if not user_is_privileged(user):
@@ -832,14 +831,14 @@ async def tag_all_owners(event, args, client):
                 return
             if not user_is_allowed(user):
                 return await event.react("⛔")
-        arg = event.text.split()[0]
         tags = tag_owners()
         await clean_reply(
             event,
             event.reply_to_message,
             "reply",
-            "_*Tagged all Owners!*_" if arg.endswith("s") else tags.split()[0],
-            ghost_mentions=tags if arg.endswith("s") else tags.split()[0],
+            "_*Tagged all Owners!*_" if mentions[0][1] else tags.split()[0],
+            ghost_mentions=tags if mentions[0][1] else tags.split()[0],
+            mentions_are_jids=True,
         )
     except Exception:
         await logger(Exception)
@@ -851,13 +850,12 @@ async def tag_everyone(event, args, client):
     Tags everyone in a group
     """
     try:
-        if not event.text:
-            return
-        acc_tup = ("@all", "@everyone")
-        if event.text not in (acc_tup):
+        if not (text := (event.text or event.caption)):
             return
         if not event.chat.is_group:
-            return await event.react("🚫")
+            return
+        if not mentions := (find_role_mentions(text, ("all", "everyone"))):
+            return
         user = event.from_user.id
         group_info = await client.get_group_info(event.chat.jid)
         if not user_is_privileged(user):

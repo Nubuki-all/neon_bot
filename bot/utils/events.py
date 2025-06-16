@@ -2,6 +2,7 @@ import asyncio
 import copy
 import inspect
 import os
+import warnings
 from collections import deque
 
 import httpx
@@ -210,6 +211,12 @@ class Event:
         self.constructed = True
         return self
 
+    async def _react(self, emoji: str):
+        reaction = await self.client.build_reaction(
+            self.chat.jid, self.from_user.jid, self.id, emoji
+        )
+        return await self.client.send_message(self.chat.jid, reaction)
+
     async def _send_message(
         self,
         chat,
@@ -217,15 +224,17 @@ class Event:
         link_preview: bool = True,
         ghost_mentions: str = None,
         mentions_are_lids: bool = False,
+        mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
+        mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         await self.send_typing_status()
         response = await self.client.send_message(
             to=chat,
             message=message,
             link_preview=link_preview,
             ghost_mentions=ghost_mentions,
-            mentions_are_lids=mentions_are_lids or self.lid_address,
+            mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
             add_msg_secret=add_msg_secret,
         )
         await self.send_typing_status(False)
@@ -253,11 +262,55 @@ class Event:
         msg = self.gen_new_msg(response)
         return construct_event(msg)
 
-    async def react(self, emoji: str):
+    async def _send_reaction(self, emoji: str):
+        """Internal method to send a reaction."""
         reaction = await self.client.build_reaction(
             self.chat.jid, self.from_user.jid, self.id, emoji
         )
         return await self.client.send_message(self.chat.jid, reaction)
+
+    def react(self, emoji: str):
+        """Returns a context manager for async with or can be awaited directly."""
+        return self.ReactionContext(self, emoji)
+
+    class ReactionContext:
+        def __init__(self, event, emoji):
+            self.event = event
+            self.emoji = emoji
+            self._used = False  # Track if context was properly used
+
+        async def _react(self):
+            """Send the reaction and mark it as active."""
+            await self.event._react(self.emoji)
+
+        async def _remove(self):
+            """Remove the reaction if it was sent."""
+            await self.event._react("")
+
+        async def __aenter__(self):
+            """Enter context: send reaction."""
+            self._used = True
+            await self._react()
+            return self
+
+        async def __aexit__(self, exc_type, exc_value, traceback):
+            """Exit context: remove reaction."""
+            await self._remove()
+
+        def __await__(self):
+            """Allow direct awaiting: send reaction without removal."""
+            self._used = True
+            return self._react().__await__()
+
+        def __del__(self):
+            """Warn if context was created but never used."""
+            if not self._used:
+                warnings.warn(
+                    "ReactionContext was created but never used. "
+                    "Did you forget 'await' or 'async with'?",
+                    RuntimeWarning,
+                    stacklevel=3  # Points to the original react() call site
+                )
 
     async def reply(
         self,
@@ -272,6 +325,7 @@ class Event:
         ghost_mentions: str = None,
         message: MessageWithContextInfo = None,
         mentions_are_lids: bool = False,
+        mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
         if not self.constructed:
@@ -290,10 +344,11 @@ class Event:
         # msg_id = self.id if quote else None
         if not quote:
             return await self._send_message(
-                self.chat.jid, text, link_preview, ghost_mentions=ghost_mentions
+                self.chat.jid, text, link_preview, ghost_mentions=ghost_mentions, mentions_are_lids=mentions_are_lids, mentions_are_jids=mentions_are_jids, add_msg_secret=add_msg_secret,
             )
+        mentions_are_not_jids = False if mentions_are_jids else self.lid_address
+        
         await self.send_typing_status()
-
         try:
             response = await self.client.reply_message(
                 text,
@@ -302,7 +357,7 @@ class Event:
                 link_preview=link_preview,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
-                mentions_are_lids=mentions_are_lids or self.lid_address,
+                mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
                 add_msg_secret=add_msg_secret,
             )
         except httpx.HTTPStatusError:
@@ -314,16 +369,9 @@ class Event:
                 link_preview=False,
                 reply_privately=reply_privately,
                 ghost_mentions=ghost_mentions,
-                mentions_are_lids=mentions_are_lids or self.lid_address,
+                mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
                 add_msg_secret=add_msg_secret,
             )
-        # self.id = response.ID
-        # self.text = text
-        # new_jid = jid.build_jid(conf.PHNUMBER)
-        # self.user.jid = new_jid
-        # self.user.id = new_jid.User
-
-        # self.user.name = None
         await self.send_typing_status(False)
         msg = self.gen_new_msg(response, private=reply_privately)
         return construct_event(msg)
@@ -351,6 +399,7 @@ class Event:
         quote: bool = True,
         ghost_mentions: str = None,
         mentions_are_lids: bool = False,
+        mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
         quoted = copy.deepcopy(self.message) if quote else None
@@ -359,6 +408,7 @@ class Event:
             if not file_name and isinstance(document, str)
             else (None, file_name)
         )
+        mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_document(
             self.chat.jid,
             document,
@@ -366,7 +416,7 @@ class Event:
             filename=file_name,
             quoted=quoted,
             ghost_mentions=ghost_mentions,
-            mentions_are_lids=mentions_are_lids or self.lid_address,
+            mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
             add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response)
@@ -381,9 +431,11 @@ class Event:
         as_gif: bool = True,
         ghost_mentions: str = None,
         mentions_are_lids: bool = False,
+        mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
         quoted = copy.deepcopy(self.message) if quote else None
+        mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_video(
             self.chat.jid,
             gif,
@@ -393,7 +445,7 @@ class Event:
             gifplayback=as_gif,
             is_gif=True,
             ghost_mentions=ghost_mentions,
-            mentions_are_lids=mentions_are_lids or self.lid_address,
+            mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
             add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response)
@@ -407,9 +459,11 @@ class Event:
         viewonce: bool = False,
         ghost_mentions: str = None,
         mentions_are_lids: bool = False,
+        mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
         quoted = copy.deepcopy(self.message) if quote else None
+        mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_image(
             self.chat.jid,
             photo,
@@ -417,7 +471,7 @@ class Event:
             quoted=quoted,
             viewonce=viewonce,
             ghost_mentions=ghost_mentions,
-            mentions_are_lids=mentions_are_lids or self.lid_address,
+            mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
             add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response)
@@ -458,9 +512,11 @@ class Event:
         as_gif: bool = False,
         ghost_mentions: str = None,
         mentions_are_lids: bool = False,
+        mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
         quoted = copy.deepcopy(self.message) if quote else None
+        mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_video(
             self.chat.jid,
             video,
@@ -469,7 +525,7 @@ class Event:
             viewonce=viewonce,
             gifplayback=as_gif,
             ghost_mentions=ghost_mentions,
-            mentions_are_lids=mentions_are_lids or self.lid_address,
+            mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
             add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response)

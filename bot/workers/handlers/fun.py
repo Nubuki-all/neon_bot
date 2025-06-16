@@ -82,27 +82,28 @@ async def getmeme(event, args, client):
             return await event.react("⛔")
     link = "https://meme-api.com/gimme"
     try:
-        if args:
-            link += f"/{args}" if not args.isdigit() else ""
-        caption, url, filename, nsfw = await gen_meme(link, not (event.chat.is_group))
-        if not url:
-            if nsfw:
-                return await event.reply("*NSFW is blocked!*")
-            return await event.reply("*Request Failed!*")
-        if url.endswith(".gif"):
-            return await event.reply_gif(
+        async with event.react("🌐")
+            if args:
+                link += f"/{args}" if not args.isdigit() else ""
+            caption, url, filename, nsfw = await gen_meme(link, not (event.chat.is_group))
+            if not url:
+                if nsfw:
+                    return await event.reply("*NSFW is blocked!*")
+                return await event.reply("*Request Failed!*")
+            if url.endswith(".gif"):
+                return await event.reply_gif(
+                    caption=caption,
+                    gif=url,
+                    viewonce=nsfw,
+                    as_gif=True,
+                )
+            if url.endswith(".png"):
+                url = await png_to_jpg(url)
+            await event.reply_photo(
                 caption=caption,
-                gif=url,
+                photo=url,
                 viewonce=nsfw,
-                as_gif=True,
             )
-        if url.endswith(".png"):
-            url = await png_to_jpg(url)
-        await event.reply_photo(
-            caption=caption,
-            photo=url,
-            viewonce=nsfw,
-        )
     except Exception as e:
         await logger(Exception)
         return await event.reply(f"*Error:*\n{e}")
@@ -117,19 +118,19 @@ async def cat(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        result = await get_json("https://api.thecatapi.com/v1/images/search")
-
-        if not result:
-            return await event.reply("*Request Failed!*")
-        url = result[0]["url"]
-        if url.endswith(".gif"):
-            await event.reply_gif(
-                url,
-                caption="*Meow!*",
-                as_gif=True,
-            )
-        else:
-            await event.reply_photo(url, caption="*Meow!*")
+        async with event.react(random.choice("🐈‍⬛", "🐈")):
+            result = await get_json("https://api.thecatapi.com/v1/images/search")
+            if not result:
+                return await event.reply("*Request Failed!*")
+            url = result[0]["url"]
+            if url.endswith(".gif"):
+                await event.reply_gif(
+                    url,
+                    caption="*Meow!*",
+                    as_gif=True,
+                )
+            else:
+                await event.reply_photo(url, caption="*Meow!*")
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -148,48 +149,53 @@ async def coub(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not args:
-            args = "Genshin impact"
-        random_ = ""
-        page = 0
-        while True:
-            if page:
-                random_ = f"&page={page}"
-            result = await get_json(
-                f"https://coub.com/api/v2/search/coubs?q={args}{random_}"
-            )
-            if not result:
-                return await event.reply("*Request Failed!*")
-            if page:
-                break
-            total_pages = result["total_pages"]
-            page = random.choice(range(1, total_pages))
-
-        try:
-            content = random.choice(result["coubs"])
-            dl_link = None
-            external_dl = content["external_download"]
-            permalink = content["permalink"]
-            if external_dl:
-                dl_link = external_dl["url"]
-            title = content["title"]
-        except IndexError:
-            await event.reply("Couldn't fetch video…")
-        else:
-            ytdl = bot.group_dict.get(event.chat.id, {}).get("ytdl")
-            dl_msg = "\n\n*Attempting to upload…*" if ytdl and dl_link else ""
-            text = (
-                f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}{dl_msg}"
-            )
-            rep = await event.reply(text)
-            if dl_msg:
-                event_ = construct_msg_and_evt(
-                    event.chat.id, bot.me.JID.User, rep.id, text, event.chat.server
-                )
-                await youtube_reply(event_, dl_link, client)
+        async with event.react("🎦"):
+        await coub_helper(event, args, client)
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+
+async def coub_helper(event, args, client)
+    if not args:
+        args = "Genshin impact"
+    random_ = ""
+    page = 0
+    while True:
+        if page:
+            random_ = f"&page={page}"
+        result = await get_json(
+            f"https://coub.com/api/v2/search/coubs?q={args}{random_}"
+        )
+        if not result:
+            return await event.reply("*Request Failed!*")
+        if page:
+            break
+        total_pages = result["total_pages"]
+        page = random.choice(range(1, total_pages))
+
+    try:
+        content = random.choice(result["coubs"])
+        dl_link = None
+        external_dl = content["external_download"]
+        permalink = content["permalink"]
+        if external_dl:
+            dl_link = external_dl["url"]
+        title = content["title"]
+    except IndexError:
+        await event.reply("Couldn't fetch video…")
+    else:
+        ytdl = bot.group_dict.get(event.chat.id, {}).get("ytdl")
+        dl_msg = "\n\n*Attempting to upload…*" if ytdl and dl_link else ""
+        text = (
+            f"*Title:* {title}\n*Link:* https://coub.com/view/{permalink}{dl_msg}"
+        )
+        rep = await event.reply(text)
+        if dl_msg:
+            event_ = construct_msg_and_evt(
+                event.chat.id, bot.me.JID.User, rep.id, text, event.chat.server
+            )
+            await youtube_reply(event_, dl_link, client)
 
 
 async def dog(event, args, client):
@@ -201,17 +207,18 @@ async def dog(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        result = await get_json("https://random.dog/woof.json")
-        if not result:
-            return await event.reply("*Request Failed!*")
-        url = result["url"]
-        await logger(e=url)
-        if url.casefold().endswith(".mp4"):
-            return await event.reply_video(
-                url,
-                caption="*Woof!*",
-            )
-        await event.reply_photo(url, caption="*Woof!*")
+        async with event.react("🐾"):
+            result = await get_json("https://random.dog/woof.json")
+            if not result:
+                return await event.reply("*Request Failed!*")
+            url = result["url"]
+            await logger(e=url)
+            if url.casefold().endswith(".mp4"):
+                return await event.reply_video(
+                    url,
+                    caption="*Woof!*",
+                )
+            await event.reply_photo(url, caption="*Woof!*")
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -230,25 +237,31 @@ async def gif(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not conf.TENOR_API_KEY:
-            return await event.reply(
-                "TENOR_API_KEY is needed for this function to work."
-            )
-        if not args:
-            args = "genshin"
-        url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqi"
-        result = await get_json(url)
-        if not result:
-            return await event.reply("*Request Failed!*")
-        if not result["results"]:
-            await event.reply("*No results!*")
-            return
-
-        gif_link = random.choice(result["results"])["media_formats"]["gif"]["url"]
-        await clean_reply(event, event.reply_to_message, "reply_gif", gif_link)
+        async with event.react("🔎"):
+            await gif_helper(event, args, client)
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+async def gif_helper(event, args, client):
+    """Prevents indentation hell"""
+    if not conf.TENOR_API_KEY:
+        return await event.reply(
+            "TENOR_API_KEY is needed for this function to work."
+        )
+    if not args:
+        args = "genshin"
+    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqi"
+    result = await get_json(url)
+    if not result:
+        return await event.reply("*Request Failed!*")
+    if not result["results"]:
+        await event.reply("*No results!*")
+        return
+
+    gif_link = random.choice(result["results"])["media_formats"]["gif"]["url"]
+    await clean_reply(event, event.reply_to_message, "reply_gif", gif_link)
+    
 
 
 async def sticker(event, args, client):
@@ -264,44 +277,50 @@ async def sticker(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not conf.TENOR_API_KEY:
-            return await event.reply(
-                "TENOR_API_KEY is needed for this function to work."
-            )
-        if not args:
-            args = "genshin"
-        url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqinator&searchfilter=sticker"
-        result = await get_json(url)
-        if not result:
-            return await event.reply("*Request Failed!*")
-        if not result["results"]:
-            await event.reply("*No results!*")
-            return
-
-        sticker = random.choice(result["results"])
-        duration = sticker["media_formats"]["gif"]["duration"]
-        animated = True if duration else False
-        link = (
-            sticker["media_formats"].get("gif_transparent")
-            or sticker["media_formats"]["gif"]
-        )
-        link = link["url"]
-        # link = sticker["media_formats"]["mp4"]["url"]
-
-        me = await bot.client.get_me()
-        await clean_reply(
-            event,
-            event.reply_to_message,
-            "reply_sticker",
-            link,
-            name=args,
-            packname=me.PushName,
-            enforce_not_broken=True,
-            animated_gif=animated,
-        )
+        async with event.react("🔍"):
+            await sticker_helper(event, args, client)
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+async def sticker_helper(event, args, client):
+    """Prevents indentation hell"""
+    if not conf.TENOR_API_KEY:
+        return await event.reply(
+            "TENOR_API_KEY is needed for this function to work."
+        )
+    if not args:
+        args = "genshin"
+    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqinator&searchfilter=sticker"
+    result = await get_json(url)
+    if not result:
+        return await event.reply("*Request Failed!*")
+    if not result["results"]:
+        await event.reply("*No results!*")
+        return
+
+    sticker = random.choice(result["results"])
+    duration = sticker["media_formats"]["gif"]["duration"]
+    animated = True if duration else False
+    link = (
+        sticker["media_formats"].get("gif_transparent")
+        or sticker["media_formats"]["gif"]
+    )
+    link = link["url"]
+    # link = sticker["media_formats"]["mp4"]["url"]
+
+    me = await bot.client.get_me()
+    await clean_reply(
+        event,
+        event.reply_to_message,
+        "reply_sticker",
+        link,
+        name=args,
+        packname=me.PushName,
+        enforce_not_broken=True,
+        animated_gif=animated,
+    )
+    
 
 
 bot.add_handler(fun, "fun")

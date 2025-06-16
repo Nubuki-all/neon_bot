@@ -38,6 +38,33 @@ def chat_is_allowed(event: Event):
         return not bot.group_dict.get(event.chat.id, {}).get("disabled", False)
 
 
+def find_role_mentions(text, roles):
+    """
+    Finds specified role mentions in text and checks if they're plural (end with 's')
+    Args:
+        text: Input string to search
+        roles: List of role base names (e.g., ['mod', 'admin', 'all', 'everyone'])
+    Returns:
+        List of tuples: (matched_role, is_plural)
+    """
+    if not roles:
+        return []
+    role_map = {role.lower(): role for role in roles}
+    sorted_roles = sorted(roles, key=len, reverse=True)
+    pattern = r'(?<!\w)@(' + '|'.join(re.escape(role) for role in sorted_roles) + r')(s)?(?!\w)'
+    regex = re.compile(pattern, re.IGNORECASE)
+    results = []
+    for match in regex.finditer(text):
+        base_role = match.group(1)      # The base role without @ or s
+        plural_suffix = match.group(2)  # 's' if present, None otherwise
+        role_key = base_role.lower()
+        if role_key in role_map:
+            original_role = role_map[role_key]
+            is_plural = plural_suffix is not None
+            results.append((original_role, is_plural))
+    return results
+
+
 def get_afk_status(user: str):
     return bot.user_dict.get(user, {}).get("afk", False)
 
