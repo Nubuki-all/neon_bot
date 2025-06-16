@@ -71,7 +71,6 @@ class Config:
 
 class Runtime_Config:
     def __init__(self):
-        self.initialized_client = False
         self.author = None
         self.author_url = None
         self.auto_save_msg_is_running = False

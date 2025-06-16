@@ -58,7 +58,6 @@ async def on_termination():
     # More cleanup code?
     await shutdown_services()
     await bot.client.stop()
-    # force_exit()
 
 
 async def update_presence():
@@ -90,23 +89,6 @@ async def backup_database():
         await asyncio.sleep(conf.WA_DB_BACKUP_INTERVAL)
 
 
-async def wait_for_client():
-    while True:
-        if await bot.client.is_logged_in:
-            break
-        await asyncio.sleep(0.5)
-
-
-async def wait_on_client():
-    while True:
-        try:
-            await onstart()
-            break
-        except Exception:
-            pass
-        await asyncio.sleep(1)
-
-
 async def on_startup():
     try:
         loop = asyncio.get_running_loop()
@@ -128,11 +110,9 @@ async def on_startup():
         else:
             await asyncio.sleep(3)
             await onstart(f"*I'm {enquip()} {enmoji()}*")
-            # await logger(e="Please Restart bot.")
-            # return
         asyncio.create_task(update_presence())
         asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())
-        await logger("Bot has started.")
+        await logger(e="Bot has started.")
     except Exception:
         await logger(Exception)

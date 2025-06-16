@@ -30,9 +30,6 @@ if not os.path.isdir("ytdl/"):
 LOGS.info("=" * 30)
 
 
-if file_exists(con_ind):
-    bot.initialized_client = True
-
 
 def load_db(_db, _key, var, var_type=None):
     queries = _db.find({"_id": conf.PH_NUMBER})
