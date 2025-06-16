@@ -253,12 +253,9 @@ try:
     if len(sys.argv) != 3:
         bot.loop.run_until_complete(restore_wa_db())
     bot.loop.create_task(on_startup())
-    if not bot.initialized_client:
-        bot.loop.run_until_complete(
-            bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
-        )
-    else:
-        bot.loop.run_until_complete(bot.client.connect())
+    bot.loop.run_until_complete(
+        bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
+    )
     print("Here!")
     bot.client.idle()
 except Exception:
