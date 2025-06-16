@@ -790,7 +790,7 @@ async def tag_all_sudoers(event, args, client):
             return
         if not event.chat.is_group:
             return
-        if not (mentions := find_role_mentions(text, ["sudoer"]):
+        if not (mentions := find_role_mentions(text, ["sudoer"])):
             return
         user = event.from_user.id
         # group_info = await client.get_group_info(event.chat.jid)
