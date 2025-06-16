@@ -22,7 +22,7 @@ from bot import (
 )
 from bot.config import bot, conf
 
-from .log_utils import log, logger
+from .log_utils import logger
 
 
 class Event:
