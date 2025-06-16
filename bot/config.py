@@ -85,6 +85,7 @@ class Runtime_Config:
         self.group_dict = {}
         self.games_dict = {}
         self.ignore_pm = False
+        self.is_connected = False
         self.max_message_length = 4096
         self.me = None
         self.msg_leaderboard_counter = 0

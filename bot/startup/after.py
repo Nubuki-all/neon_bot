@@ -118,17 +118,10 @@ async def on_startup():
             )
         async with engine.begin() as conn:
             await conn.run_sync(sql_base.metadata.create_all)
-        if not file_exists(con_ind):
-            await wait_on_client()
-            touch(con_ind)
-            await logger(e="Please Restart bot.")
-            # re_x()
-            bot.me = await bot.client.get_me()
-            return
-        else:
-            await wait_for_client()
-            scheduler.start()
-            scheduler2.start()
+        while not bot.is_connected:
+            await asyncio.sleep(1)
+        scheduler.start()
+        scheduler2.start()
         bot.me = await bot.client.get_me()
         if len(sys.argv) == 3:
             await onrestart()
@@ -140,5 +133,6 @@ async def on_startup():
         asyncio.create_task(update_presence())
         asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())
+        await logger("Bot has started.")
     except Exception:
         await logger(Exception)

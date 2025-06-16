@@ -52,7 +52,7 @@ from .workers.handlers.yt import youtube_reply
 
 @bot.client.event(ConnectedEv)
 async def on_connected(_: NewAClient, __: ConnectedEv):
-    LOGS.info("Bot has started.")
+    bot.is_connected = True
 
 
 @bot.client.event(PairStatusEv)
@@ -254,16 +254,16 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 
 ########### Start ############
 
-try:
-    # bot.loop = asyncio.new_event_loop()
-    bot.loop = bot.client.loop
-    if len(sys.argv) != 3:
-        bot.loop.run_until_complete(restore_wa_db())
-    bot.loop.create_task(on_startup())
-    bot.loop.run_until_complete(
-        bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
-    )
-except Exception:
-    LOGS.critical(traceback.format_exc())
-    LOGS.critical("Cannot recover from error, exiting…")
-    exit()
+async def start_bot():
+    try:
+        if len(sys.argv) != 3:
+           await restore_wa_db()
+        asyncio.create_task(on_startup())
+        await bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
+    except Exception:
+        LOGS.critical(traceback.format_exc())
+        LOGS.critical("Cannot recover from error, exiting…")
+        exit()
+
+
+bot.client.loop.run_until_complete(start_bot())
