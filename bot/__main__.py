@@ -12,7 +12,6 @@ from . import (
     NewAClient,
     PairStatusEv,
     bot,
-    con_ind,
     conf,
     sys,
     time,
@@ -62,7 +61,6 @@ async def on_paired(_: NewAClient, __: PairStatusEv):
 
 @bot.client.event(LoggedOutEv)
 async def on_logout(_: NewAClient, __: LoggedOutEv):
-    s_remove(con_ind)
     LOGS.info("Bot has been logged out.")
     LOGS.info("Restarting…")
     time.sleep(10)
@@ -71,7 +69,7 @@ async def on_logout(_: NewAClient, __: LoggedOutEv):
 
 @bot.client.event(DisconnectedEv)
 async def _(_: NewAClient, __: DisconnectedEv):
-    if not file_exists(con_ind):
+    if not bot.is_connected:
         LOGS.info("Restarting…")
         time.sleep(1)
         re_x()
