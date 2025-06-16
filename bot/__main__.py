@@ -254,10 +254,11 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 
 ########### Start ############
 
+
 async def start_bot():
     try:
         if len(sys.argv) != 3:
-           await restore_wa_db()
+            await restore_wa_db()
         asyncio.create_task(on_startup())
         await bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
     except Exception:

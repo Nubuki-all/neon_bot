@@ -2,7 +2,7 @@ import signal
 
 import aiohttp
 
-from bot import Message, asyncio, bot, con_ind, conf, jid, sys, version_file
+from bot import Message, asyncio, bot, conf, jid, sys, version_file
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
 from bot.utils.bot_utils import shutdown_services
@@ -12,7 +12,7 @@ from bot.utils.msg_rank import scheduler2
 from bot.utils.msg_store import Base as sql_base
 from bot.utils.msg_store import auto_save_msg, engine
 from bot.utils.msg_utils import send_presence
-from bot.utils.os_utils import file_exists, force_exit, touch
+from bot.utils.os_utils import force_exit
 from bot.utils.rss_utils import scheduler
 
 
