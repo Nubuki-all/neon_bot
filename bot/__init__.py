@@ -16,29 +16,27 @@
 # isort: off #  noqa
 import faulthandler  # noqa  # pylint: disable=unused-import
 
-faulthandler.enable() # noqa
+faulthandler.enable()  # noqa
 # isort: on  # noqa
 
 
-from .config import bot, conf
-from neonize.utils import jid, log
-from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
-    AudioMessage,
-    ContactMessage,
-    ContextInfo,
-    DocumentMessage,
-    ExtendedTextMessage,
-    GroupMention,
-    ImageMessage,
-    Message,
-    StickerMessage,
-    VideoMessage,
-)
-from neonize.proto.Neonize_pb2 import SendResponse
-from neonize.proto.Neonize_pb2 import MessageSource as base_msg_source
-from neonize.proto.Neonize_pb2 import MessageInfo as base_msg_info
-from neonize.proto.Neonize_pb2 import Message as base_msg
-from neonize.proto.Neonize_pb2 import JID
+import asyncio
+import logging
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+import traceback
+from logging import DEBUG, INFO, basicConfig, getLogger, warning
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+from urllib.parse import urlparse
+
+from html_telegraph_poster import TelegraphPoster
+from html_telegraph_poster import errors as telegraph_errors
+from neonize.aioze.client import NewAClient
 from neonize.events import (
     CallOfferEv,
     ConnectedEv,
@@ -51,24 +49,26 @@ from neonize.events import (
     ReceiptEv,
     event,
 )
-from neonize.aioze.client import NewAClient
-from html_telegraph_poster import errors as telegraph_errors
-from html_telegraph_poster import TelegraphPoster
-from urllib.parse import urlparse
-from pathlib import Path
-from logging.handlers import RotatingFileHandler
-from logging import DEBUG, INFO, basicConfig, getLogger, warning
-import traceback
-import time
-import sys
-import subprocess
-import shlex
-import re
-import os
-import logging
-import asyncio
+from neonize.proto.Neonize_pb2 import JID
+from neonize.proto.Neonize_pb2 import Message as base_msg
+from neonize.proto.Neonize_pb2 import MessageInfo as base_msg_info
+from neonize.proto.Neonize_pb2 import MessageSource as base_msg_source
+from neonize.proto.Neonize_pb2 import SendResponse
+from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
+    AudioMessage,
+    ContactMessage,
+    ContextInfo,
+    DocumentMessage,
+    ExtendedTextMessage,
+    GroupMention,
+    ImageMessage,
+    Message,
+    StickerMessage,
+    VideoMessage,
+)
+from neonize.utils import jid, log
 
-
+from .config import bot, conf
 
 heavy_proc_lock = asyncio.Lock()
 local_fdb = ".local_filterdb.pkl"
