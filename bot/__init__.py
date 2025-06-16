@@ -14,44 +14,8 @@
 # https://github.com/Nubuki-all/neon_bot/blob/WA/License> .
 
 # isort: off
-import faulthandler
-faulthandler.enable()
-# isort: on
-
-import asyncio
-import logging
-import os
-import re
-import shlex
-import subprocess
-import sys
-import time
-import traceback
-from logging import DEBUG, INFO, basicConfig, getLogger, warning
-from logging.handlers import RotatingFileHandler
-from pathlib import Path
-from urllib.parse import urlparse
-
-from html_telegraph_poster import TelegraphPoster
-from html_telegraph_poster import errors as telegraph_errors
-from neonize.aioze.client import NewAClient
-from neonize.events import (
-    CallOfferEv,
-    ConnectedEv,
-    DisconnectedEv,
-    GroupInfoEv,
-    JoinedGroupEv,
-    LoggedOutEv,
-    MessageEv,
-    PairStatusEv,
-    ReceiptEv,
-    event,
-)
-from neonize.proto.Neonize_pb2 import JID
-from neonize.proto.Neonize_pb2 import Message as base_msg
-from neonize.proto.Neonize_pb2 import MessageInfo as base_msg_info
-from neonize.proto.Neonize_pb2 import MessageSource as base_msg_source
-from neonize.proto.Neonize_pb2 import SendResponse
+from .config import bot, conf
+from neonize.utils import jid, log
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
     AudioMessage,
     ContactMessage,
@@ -64,9 +28,44 @@ from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
     StickerMessage,
     VideoMessage,
 )
-from neonize.utils import jid, log
+from neonize.proto.Neonize_pb2 import SendResponse
+from neonize.proto.Neonize_pb2 import MessageSource as base_msg_source
+from neonize.proto.Neonize_pb2 import MessageInfo as base_msg_info
+from neonize.proto.Neonize_pb2 import Message as base_msg
+from neonize.proto.Neonize_pb2 import JID
+from neonize.events import (
+    CallOfferEv,
+    ConnectedEv,
+    DisconnectedEv,
+    GroupInfoEv,
+    JoinedGroupEv,
+    LoggedOutEv,
+    MessageEv,
+    PairStatusEv,
+    ReceiptEv,
+    event,
+)
+from neonize.aioze.client import NewAClient
+from html_telegraph_poster import errors as telegraph_errors
+from html_telegraph_poster import TelegraphPoster
+from urllib.parse import urlparse
+from pathlib import Path
+from logging.handlers import RotatingFileHandler
+from logging import DEBUG, INFO, basicConfig, getLogger, warning
+import traceback
+import time
+import sys
+import subprocess
+import shlex
+import re
+import os
+import logging
+import asyncio
+import faulthandler
 
-from .config import bot, conf
+faulthandler.enable()
+# isort: on
+
 
 heavy_proc_lock = asyncio.Lock()
 local_fdb = ".local_filterdb.pkl"
