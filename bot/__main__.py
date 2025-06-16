@@ -10,6 +10,7 @@ from . import (
     LoggedOutEv,
     MessageEv,
     NewAClient,
+    PairStatusEv,
     bot,
     con_ind,
     conf,
@@ -52,6 +53,11 @@ from .workers.handlers.yt import youtube_reply
 @bot.client.event(ConnectedEv)
 async def on_connected(_: NewAClient, __: ConnectedEv):
     LOGS.info("Bot has started.")
+
+
+@bot.client.event(PairStatusEv)
+async def on_paired(_: NewAClient, __: PairStatusEv):
+    LOGS.info(PairStatusEv)
 
 
 @bot.client.event(LoggedOutEv)
@@ -257,8 +263,6 @@ try:
     bot.loop.run_until_complete(
         bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
     )
-    print("Here!")
-    bot.client.idle()
 except Exception:
     LOGS.critical(traceback.format_exc())
     LOGS.critical("Cannot recover from error, exiting…")
