@@ -1,4 +1,4 @@
-from bot.utils.os_utils import re_x, s_remove
+from bot.utils.os_utils import re_x
 
 from . import asyncio  # noqa  # pylint: disable=unused-import
 from . import (
@@ -20,7 +20,7 @@ from . import (
 from .startup.after import on_startup
 from .utils.db_utils import restore_wa_db
 from .utils.events import POLL, Event, event_handler, on_message
-from .utils.os_utils import file_exists, re_x, s_remove
+from .utils.os_utils import re_x
 from .utils.sudo_button_utils import poll_as_button_handler
 from .workers.handlers.afk import activate_afk, afk_helper
 from .workers.handlers.ani import airing, anime
