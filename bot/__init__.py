@@ -13,6 +13,10 @@
 # License can be found in <
 # https://github.com/Nubuki-all/neon_bot/blob/WA/License> .
 
+# isort: off
+import faulthandler
+faulthandler.enable()
+# isort: on
 
 import asyncio
 import logging
