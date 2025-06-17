@@ -12,12 +12,15 @@ qr = False
 if len(sys.argv) > 1:
     qr = True
 
+
 @client.event(ConnectedEv)
 async def on_connected(client: NewAClient, __: ConnectedEv):
     await client.stop()
 
+
 async def on_exit():
     await client.stop()
+
 
 async def gen():
     log.setLevel(logging.DEBUG)
