@@ -14,7 +14,7 @@ from .os_utils import cpu_count, enshell, s_remove
 # wanna fix this?
 # PRs are welcome
 
-_filter = {"_id": conf.PH_NUMBER}
+_filter = {"_id": conf.PH_NUMBER or conf.DB_ID}
 
 database = conf.DATABASE_URL
 db_cluster = {

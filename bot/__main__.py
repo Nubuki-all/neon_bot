@@ -258,7 +258,7 @@ async def start_bot():
         if len(sys.argv) != 3:
             await restore_wa_db()
         asyncio.create_task(on_startup())
-        await bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
+        await bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True) if conf.PH_NUMBER else await bot.client.connect()
     except Exception:
         LOGS.critical(traceback.format_exc())
         LOGS.critical("Cannot recover from error, exiting…")

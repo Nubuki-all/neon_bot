@@ -237,7 +237,7 @@ async def send_rss(caption, chat, pics, server):
                 caption,
             )
             message = construct_message(
-                chat, conf.PH_NUMBER, rep.ID, "image", server=server
+                chat, bot.me.JID.User, rep.ID, "image", server=server
             )
             msg = construct_event(message)
             for img in pics[1:]:

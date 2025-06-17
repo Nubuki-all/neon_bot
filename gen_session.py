@@ -1,32 +1,40 @@
 import logging
 import signal
+import sys
 import traceback
 from decouple import config
 from neonize.aioze.client import NewAClient
-from neonize.events import event
+from neonize.events import ConnectedEv
 from neonize.utils import log
 
+client = NewAClient(wa_db)
+qr = False
+if len(sys.argv) > 1:
+    qr = True
+
+@client.event(ConnectedEv)
+async def on_connected(client: NewAClient, __: ConnectedEv):
+    await client.stop()
+
+async def on_exit():
+    await client.stop()
 
 async def gen():
-
-    def interrupted(*_):
-        event.set()
-
-    signal.signal(signal.SIGINT, interrupted)
-
     log.setLevel(logging.DEBUG)
-
-    PH_NUMBER = config("PH_NUMBER")
-
-    client = NewAClient(wa_db)
+    pn = config("PH_NUMBER")
+    for signame in {"SIGINT", "SIGTERM", "SIGABRT"}:
+        client.loop.add_signal_handler(
+            getattr(signal, signame),
+            lambda: asyncio.create_task(on_exit()),
+        )
     await client.PairPhone(
-        PH_NUMBER,
+        pn,
         show_push_notification=True,
-    )
+    ) if not qr and pn else await client.connect()
 
 
 try:
     if __name__ == "__main__":
-        asyncio.run(gen())
+        client.loop.run_until_complete(gen())
 except Exception:
     traceback.print_exc()
