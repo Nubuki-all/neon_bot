@@ -199,14 +199,14 @@ class Event:
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
         if self.outgoing:
             if self.lid_address:
-                patch_msg_sender(self.message, self.user.jid, bot.me.JID)
-                self.from_user.jid = bot.me.JID
-                self.from_user.id = bot.me.JID.User
+                patch_msg_sender(self.message, self.user.jid, bot.client.me.JID)
+                self.from_user.jid = bot.client.me.JID
+                self.from_user.id = bot.client.me.JID.User
                 self.from_user.hid = self.user.id
             else:
-                patch_msg_sender(self.message, self.user.jid, bot.me.LID)
-                self.from_user.jid = bot.me.LID
-                self.from_user.id = bot.me.LID.User
+                patch_msg_sender(self.message, self.user.jid, bot.client.me.LID)
+                self.from_user.jid = bot.client.me.LID
+                self.from_user.id = bot.client.me.LID.User
                 self.from_user.hid = self.user.id
         self.constructed = True
         return self
@@ -556,16 +556,16 @@ class Event:
     def gen_new_msg(self, response: SendResponse, private=False):
         msg = copy.deepcopy(self.message)
         msg.Info.ID = response.ID
-        msg.Info.Pushname = bot.me.PushName
+        msg.Info.Pushname = bot.client.me.PushName
         msg.Info.Timestamp = response.Timestamp
         patch_msg(msg, response.Message)
         if private:
             msg.Info.MessageSource.Chat.User = self.from_user.id
             msg.Info.MessageSource.Chat.Server = self.from_user.server
         if self.lid_address:
-            patch_msg_sender(msg, bot.me.LID, bot.me.JID)
+            patch_msg_sender(msg, bot.client.me.LID, bot.client.me.JID)
         else:
-            patch_msg_sender(msg, bot.me.JID, bot.me.LID)
+            patch_msg_sender(msg, bot.client.me.JID, bot.client.me.LID)
         return msg
 
     def get_quoted_msg(self):

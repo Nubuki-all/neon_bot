@@ -63,7 +63,7 @@ async def afk_helper(event, args, client):
             )
             reply = construct_msg_and_evt(
                 afk_dict.get("ph"),
-                bot.me.JID.User,
+                bot.client.me.JID.User,
                 reply.id,
                 event.text,
                 Msg=event._message,
@@ -98,7 +98,7 @@ async def afk_helper(event, args, client):
                 )
                 reply = construct_msg_and_evt(
                     alt_user,
-                    bot.me.JID.User,
+                    bot.client.me.JID.User,
                     rep.ID,
                     replied.text,
                     Msg=replied._message,
@@ -114,7 +114,7 @@ async def afk_helper(event, args, client):
                 )
                 rep_id = rep.ID
             reply = construct_msg_and_evt(
-                alt_user, bot.me.JID.User, rep_id, event.text, Msg=event._message
+                alt_user, bot.client.me.JID.User, rep_id, event.text, Msg=event._message
             )
             reped.append(user)
             await asyncio.sleep(1)

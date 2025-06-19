@@ -61,7 +61,7 @@ async def sticker_reply(event, args, client, overide=False):
     try:
         if not (event.text or event.caption):
             return
-        bot.me = me = await bot.client.get_me()
+        bot.client.me = me = await bot.client.get_me()
         if not overide:
             # if not event.text.startswith("@"):
             # return
@@ -224,7 +224,7 @@ async def stickerize_image(event, args, client):
         # forced = False if event.quoted_image else forced
         async with event.react("👩‍🏭"):
             file = await event.reply_to_message.download()
-            bot.me = me = await bot.client.get_me()
+            bot.client.me = me = await bot.client.get_me()
             await event.send_typing_status()
             return await event.reply_sticker(
                 file,
@@ -1088,7 +1088,7 @@ async def save_filter(event, args, client):
         elif new_filter := quoted.stickerPack:
             filter_type = Message
             if not new_filter.publisher:
-                new_filter.publisher = bot.me.PushName
+                new_filter.publisher = bot.client.me.PushName
         if filter_type == Message and arg.c and hasattr(new_filter, "caption"):
             new_filter.caption = ""
         data = {
@@ -1220,7 +1220,7 @@ async def detect_filters(event, args, client):
         return
     if not chat_is_allowed(event):
         return
-    if bot.me and bot.me.JID.User == user:
+    if bot.client.me and bot.client.me.JID.User == user:
         return
     if not (event.caption or event.text):
         return
@@ -1306,11 +1306,11 @@ async def test_button(event, args, client):
         )
         poll_msg = construct_msg_and_evt(
             event.chat.id,
-            bot.me.JID.User,
+            bot.client.me.JID.User,
             msg_id,
             None,
             event.chat.server,
-            bot.me.JID.Server,
+            bot.client.me.JID.Server,
             poll_msg_,
         )
         if not (results := await wait_for_button_response(msg_id)):

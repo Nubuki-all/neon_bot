@@ -193,7 +193,7 @@ async def coub_helper(event, args, client):
         rep = await event.reply(text)
         if dl_msg:
             event_ = construct_msg_and_evt(
-                event.chat.id, bot.me.JID.User, rep.id, text, event.chat.server
+                event.chat.id, bot.client.me.JID.User, rep.id, text, event.chat.server
             )
             await youtube_reply(event_, dl_link, client)
 

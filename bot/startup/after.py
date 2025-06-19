@@ -108,7 +108,6 @@ async def on_startup():
             await onrestart()
         else:
             await onstart(f"*I'm {enquip()} {enmoji()}*")
-        bot.me = await bot.client.get_me()
         asyncio.create_task(update_presence())
         asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())

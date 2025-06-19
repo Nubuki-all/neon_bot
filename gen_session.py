@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import signal
 import sys
@@ -7,7 +8,10 @@ from neonize.aioze.client import NewAClient
 from neonize.events import ConnectedEv
 from neonize.utils import log
 
-client = NewAClient(wa_db)
+client = NewAClient(config("WA_DB"))
+log.setLevel(logging.DEBUG)
+pn = config("PH_NUMBER")
+
 qr = False
 if len(sys.argv) > 1:
     qr = True
@@ -23,8 +27,6 @@ async def on_exit():
 
 
 async def gen():
-    log.setLevel(logging.DEBUG)
-    pn = config("PH_NUMBER")
     for signame in {"SIGINT", "SIGTERM", "SIGABRT"}:
         client.loop.add_signal_handler(
             getattr(signal, signame),

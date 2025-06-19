@@ -55,8 +55,8 @@ async def on_connected(_: NewAClient, __: ConnectedEv):
 
 
 @bot.client.event(PairStatusEv)
-async def on_paired(_: NewAClient, __: PairStatusEv):
-    LOGS.info(PairStatusEv)
+async def on_paired(_: NewAClient, message: PairStatusEv):
+    LOGS.info(message)
 
 
 @bot.client.event(LoggedOutEv)
@@ -257,12 +257,13 @@ async def start_bot():
     try:
         if len(sys.argv) != 3:
             await restore_wa_db()
-        asyncio.create_task(on_startup())
         (
             await bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
             if conf.PH_NUMBER
             else await bot.client.connect()
         )
+        await on_startup()
+        await bot.client.idle()
     except Exception:
         LOGS.critical(traceback.format_exc())
         LOGS.critical("Cannot recover from error, exiting…")
