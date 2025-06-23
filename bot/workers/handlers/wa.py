@@ -125,7 +125,7 @@ async def to_mp3(event, args, client):
             file = await replied.download()
 
         async with event.react("💿"):
-            async with AFFmpeg as ffmpeg:
+            async with AFFmpeg(file) as ffmpeg:
                 duration = int((await ffmpeg.extract_info()).format.duration)
                 audio = await ffmpeg.to_mp3()
             if arg.s or arg.t:
@@ -175,7 +175,7 @@ async def compress(event, args, client):
             return await event.reply("*Kindly reply to video.*")
         if not replied.video:
             return await event.reply("*Replied message is not a video.*")
-        args = args.casefold()
+        args = args.casefold() if args else ""
 
         async with event.react("📥"):
             file = await replied.download()
