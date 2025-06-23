@@ -49,6 +49,8 @@ from .workers.handlers.wa import gc_handler, sticker_reply
 from .workers.handlers.yt import youtube_reply
 
 
+## Client Event Handlers ##
+
 @bot.client.event(ConnectedEv)
 async def on_connected(_: NewAClient, __: ConnectedEv):
     bot.is_connected = True
@@ -74,6 +76,26 @@ async def _(_: NewAClient, __: DisconnectedEv):
         time.sleep(1)
         re_x()
 
+
+@bot.client.event(MessageEv)
+async def _(client: NewAClient, message: MessageEv):
+    await on_message(client, message)
+
+
+@bot.client.event(GroupInfoEv)
+async def _(client: NewAClient, message: GroupInfoEv):
+    await gc_handler(message)
+
+
+@bot.client.event(JoinedGroupEv)
+async def _(client: NewAClient, message: JoinedGroupEv):
+    LOGS.info("JoinedGroupEv:")
+    LOGS.info(message)
+    bot.temp1 = message
+
+
+## Bot Event Handlers ##
+## FILTERED ##
 
 @bot.register("start")
 async def _(client: NewAClient, message: Event):
@@ -210,8 +232,8 @@ async def _(client: NewAClient, message: Event):
     await event_handler(message, restart_handler)
 
 
-## AUTO ##
 
+## ALL ##
 
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
@@ -232,22 +254,6 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await poll_as_button_handler(message)
 
-
-@bot.client.event(MessageEv)
-async def _(client: NewAClient, message: MessageEv):
-    await on_message(client, message)
-
-
-@bot.client.event(GroupInfoEv)
-async def _(client: NewAClient, message: GroupInfoEv):
-    await gc_handler(message)
-
-
-@bot.client.event(JoinedGroupEv)
-async def _(client: NewAClient, message: JoinedGroupEv):
-    LOGS.info("JoinedGroupEv:")
-    LOGS.info(message)
-    # await on_message(client, message)
 
 
 ########### Start ############

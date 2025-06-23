@@ -4,11 +4,13 @@ import datetime
 import io
 import random
 import uuid
+from datetime import datetime as dt
 
 import torch
 from clean_links.clean import clean_url
 from neonize.exc import DownloadError
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import Message
+from neonize.utils.ffmpeg import AFFmpeg
 from PIL import Image
 from RealESRGAN import RealESRGAN
 from urlextract import URLExtract
@@ -20,6 +22,7 @@ from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
     human_format_num,
+    is_valid_video_timestamp,
     list_to_str,
     png_to_jpg,
     same_week,
@@ -27,6 +30,7 @@ from bot.utils.bot_utils import (
     split_text,
     sync_to_async,
     turn,
+    video_timestamp_to_seconds,
     wait_for_turn,
     waiting_for_turn,
 )
@@ -51,7 +55,160 @@ from bot.utils.msg_utils import (
     user_is_owner,
     user_is_privileged,
 )
+from bot.utils.os_utils import enshell, s_remove
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
+from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
+
+
+async def tools(event, args, client):
+    """Help Function for the wa module"""
+    try:
+        pre = conf.CMD_PREFIX
+        s = "\n"
+        msg = (
+            f"{pre}compress - *Compress a replied video*{s}"
+            f"{s}"
+            f"*Filters:*{s}"
+            f"{pre}del_filter - *Delete filters*{s}"
+            f"{pre}filter - *Filter given word with replied message*{s}"
+            f"{pre}filters - *List filters*{s}"
+            f"{s}"
+            f"*Notes:*{s}"
+            f"{pre}del_note - *Delete a saved item*{s}"
+            f"{pre}get - *Get previously saved item*{s}"
+            f"{pre}save - *Save a replied text/media*{s}"
+            f"{s}"
+            f"{pre}mp3 - *Convert Video to audio*{s}"
+            f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
+            f"{pre}random - *Get a random choice*{s}"
+            f"{pre}sanitize - *Sanitize link or message*{s}"
+            f"{pre}screenshot - *Generate a screenshot from a url*{s}"
+            f"{s}"
+            f"*Stickers:*{s}"
+            f"{pre}sticker - *Turns images/vids/gifs to stickers*{s}"
+            f"{pre}stick2img - *Turns stickers to images/gifs*{s}"
+            f"{s}"
+            f"{pre}undel - *Undelete a user messages*{s}"
+            f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}{s}"
+
+        )
+        await event.reply(msg)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def to_mp3(event, args, client):
+    """
+    Convert replied video to mp3
+    Arguments:
+        -s Start Time
+        -t End Time
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Kindly reply to video.*")
+        if not replied.video:
+            return await event.reply("*Replied message is not a video.*")
+        arg, args = get_args(
+            "-s",
+            "-t",
+            to_parse=(args or ""),
+            get_unknown=True,
+        )
+        trim_args = None
+        async with event.react("📥"):
+            file = await replied.download()
+        
+        async with event.react("💿"):
+            async with AFFmpeg as ffmpeg:
+                duration = int((await ffmpeg.extract_info()).format.duration)
+                audio = await ffmpeg.to_mp3()
+            if arg.s or arg.t:
+                if not arg.t and arg.s:
+                    arg.s = arg.s or "0"
+                    arg.t = arg.t or str(duration)
+                trim_args = arg.s + "-" + arg.t
+                if not is_valid_trim_args(trim_args, total_dur=duration):
+                    trim_args = None
+
+        if trim_args:
+            _id = f"{event.chat.id}:{event.id}"
+            st_, et_ = map(video_timestamp_to_seconds, trim_args)
+            in_ = f"trim/{_id}.mp3"
+            out_ = f"trim/{_id}-1.mp3"
+            async with event.react("✂️"):
+                with open(in_, "wb") as file:
+                    file.write(audio)
+                await trim_vid(st_, et_, in_, out_)
+                s_remove(in_)
+                with open(out_, "rb") as file:
+                    audio = file.read()
+                s_remove(out_)
+
+        async with event.react("📤"):
+            await event.reply_audio(audio)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def compress(event, args, client):
+    """
+    Compress a replied video.
+    Returns an Av1 Video in document format...
+    Argument:
+        480p (default), 720p, 1080p
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Kindly reply to video.*")
+        if not replied.video:
+            return await event.reply("*Replied message is not a video.*")
+        args = args.casefold()
+
+        async with event.react("📥"):
+            file = await replied.download()
+        
+        _id = f"{event.chat.id}:{event.id}"
+        in_ = f"comp/{_id}.mkv"
+        out_ = f"comp/{_id}-1.mkv"
+        quality = {
+            "480p": "640x480",
+            "720p": "1280x720",
+            "1080p": "1920x1080"
+        }
+        cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{replied.caption} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {quality.get(args, "640x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
+
+        with open(in_, "wb") as file:
+            file.write()
+        async with event.react("⏲️"):
+            process, stdout, stderr = await enshell(cmd_str)
+        if process.returncode != 0:
+            raise RuntimeError(
+                # type: ignore
+                f"stderr: {stderr} Return code: {process.returncode}"
+            )
+        s_remove(in_)
+        async with event.react("📤"):
+            file_name = "video_" + dt.now().isoformat("_", "seconds") + ".mkv"
+            await event.reply_document(out_, file_name, replied.caption or file_name)
+        s_remove(out_)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
 
 
 async def sticker_reply(event, args, client, overide=False):
@@ -1331,8 +1488,11 @@ bot.add_handler(tag_all_owners)
 bot.add_handler(tag_all_sudoers)
 bot.add_handler(rec_msg_ranking)
 
+bot.add_handler(to_mp3, "mp3")
+bot.add_handler(tools, "tools")
 bot.add_handler(get_notes, "get")
 bot.add_handler(undelete, "undel")
+bot.add_handler(compress, "compress")
 bot.add_handler(pick_random, "random")
 bot.add_handler(list_filters, "filters")
 bot.add_handler(sanitize_url, "sanitize")

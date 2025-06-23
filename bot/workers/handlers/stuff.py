@@ -28,24 +28,11 @@ async def getcmds(event, args, client):
     try:
         pre = conf.CMD_PREFIX
         msg = f"""{pre}start - *Hi!*
-{pre}fun - *Get fun commands*
-{pre}sanitize - *Sanitize link or message*
-{pre}screenshot - *Generate a screenshot from a url*
-{pre}sticker - *Turns images to stickers*
-{pre}stick2img - *Turns stickers to images/gifs*
-{pre}get - *Get previously saved item*
-{pre}save - *Save a replied text/media*
-{pre}del_note - *Delete a saved item*
-{pre}filter - *Filter given word with replied message*
-{pre}filters - *List filters*
-{pre}del_filter - *Delete filters*
 {pre}afk - *Enable AFK mode*
-{pre}random - *Get a random choice*
-{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}
 {pre}anime - *Fetch anime info from anilist*
 {pre}airing - *Fetch anime airing info from anilist*
-{pre}msg_ranking - *Get a group's msg ranking*
-{pre}undel - *Undelete a user messages*
+{pre}fun - *Get fun commands*
+{pre}tools - *Get tools commands*
 {pre}ping - *Check if bot is alive*
 {pre}bash - *[Dev.] Run bash commands*
 {pre}eval - *[Dev.] Evaluate python commands*
