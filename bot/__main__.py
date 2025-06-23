@@ -48,8 +48,8 @@ from .workers.handlers.stuff import gc_info, getcmds, hello, up
 from .workers.handlers.wa import gc_handler, sticker_reply
 from .workers.handlers.yt import youtube_reply
 
-
 ## Client Event Handlers ##
+
 
 @bot.client.event(ConnectedEv)
 async def on_connected(_: NewAClient, __: ConnectedEv):
@@ -96,6 +96,7 @@ async def _(client: NewAClient, message: JoinedGroupEv):
 
 ## Bot Event Handlers ##
 ## FILTERED ##
+
 
 @bot.register("start")
 async def _(client: NewAClient, message: Event):
@@ -232,8 +233,8 @@ async def _(client: NewAClient, message: Event):
     await event_handler(message, restart_handler)
 
 
-
 ## ALL ##
+
 
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
@@ -253,7 +254,6 @@ async def _(client: NewAClient, message: Event):
 @bot.register(POLL)
 async def _(client: NewAClient, message: Event):
     await poll_as_button_handler(message)
-
 
 
 ########### Start ############

@@ -22,7 +22,6 @@ from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
     human_format_num,
-    is_valid_video_timestamp,
     list_to_str,
     png_to_jpg,
     same_week,
@@ -90,7 +89,6 @@ async def tools(event, args, client):
             f"{s}"
             f"{pre}undel - *Undelete a user messages*{s}"
             f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}{s}"
-
         )
         await event.reply(msg)
     except Exception:
@@ -125,7 +123,7 @@ async def to_mp3(event, args, client):
         trim_args = None
         async with event.react("📥"):
             file = await replied.download()
-        
+
         async with event.react("💿"):
             async with AFFmpeg as ffmpeg:
                 duration = int((await ffmpeg.extract_info()).format.duration)
@@ -181,15 +179,11 @@ async def compress(event, args, client):
 
         async with event.react("📥"):
             file = await replied.download()
-        
+
         _id = f"{event.chat.id}:{event.id}"
         in_ = f"comp/{_id}.mkv"
         out_ = f"comp/{_id}-1.mkv"
-        quality = {
-            "480p": "640x480",
-            "720p": "1280x720",
-            "1080p": "1920x1080"
-        }
+        quality = {"480p": "640x480", "720p": "1280x720", "1080p": "1920x1080"}
         cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{replied.caption} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {quality.get(args, "640x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
 
         with open(in_, "wb") as file:

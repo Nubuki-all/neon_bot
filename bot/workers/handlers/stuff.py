@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 
-from bot.config import bot, conf
+from bot.config import conf
 from bot.utils.bot_utils import get_date_from_ts
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
