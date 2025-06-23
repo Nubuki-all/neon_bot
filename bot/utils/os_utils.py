@@ -12,8 +12,9 @@ from bot import version_file
 
 from .log_utils import log
 
-if not os.path.isdir("downloads/"):
-    os.mkdir("downloads/")
+for dir_ in ("comp/", "downloads/", "trim/"):
+    if not os.path.isdir(dir_):
+        os.mkdir(dir_)
 if not os.path.isdir("psql/"):
     os.mkdir("psql/")
 else:
