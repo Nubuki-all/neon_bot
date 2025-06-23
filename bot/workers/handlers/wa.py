@@ -129,7 +129,7 @@ async def to_mp3(event, args, client):
                 duration = int((await ffmpeg.extract_info()).format.duration)
                 audio = await ffmpeg.to_mp3()
             if arg.s or arg.t:
-                if not arg.t and arg.s:
+                if not (arg.t and arg.s):
                     arg.s = arg.s or "0"
                     arg.t = arg.t or str(duration)
                 trim_args = arg.s + "-" + arg.t
@@ -138,7 +138,7 @@ async def to_mp3(event, args, client):
 
         if trim_args:
             _id = f"{event.chat.id}:{event.id}"
-            st_, et_ = map(video_timestamp_to_seconds, trim_args)
+            st_, et_ = map(video_timestamp_to_seconds, trim_args.split("-"))
             in_ = f"trim/{_id}.mp3"
             out_ = f"trim/{_id}-1.mp3"
             async with event.react("✂️"):
@@ -186,8 +186,8 @@ async def compress(event, args, client):
         quality = {"480p": "640x480", "720p": "1280x720", "1080p": "1920x1080"}
         cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{replied.caption} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {quality.get(args, "640x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
 
-        with open(in_, "wb") as file:
-            file.write()
+        with open(in_, "wb") as f:
+            f.write(file)
         async with event.react("⏲️"):
             process, stdout, stderr = await enshell(cmd_str)
         if process.returncode != 0:
