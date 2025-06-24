@@ -198,7 +198,7 @@ async def compress(event, args, client):
         s_remove(in_)
         async with event.react("📤"):
             file_name = "video_" + dt.now().isoformat("_", "seconds") + ".mkv"
-            await event.reply_document(out_, file_name, replied.caption or file_name)
+            await event.reply_document(out_, file_name, file_name)
         s_remove(out_)
     except Exception:
         await logger(Exception)
