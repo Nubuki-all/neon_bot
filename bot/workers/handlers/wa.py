@@ -184,7 +184,7 @@ async def compress(event, args, client):
         in_ = f"comp/{_id}.mp4"
         out_ = f"comp/{_id}-1.mkv"
         quality = {"480p": "854x480", "720p": "1280x720", "1080p": "1920x1080"}
-        cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{replied.caption} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {quality.get(args, "640x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
+        cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{replied.caption} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {quality.get(args, "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
 
         with open(in_, "wb") as f:
             f.write(file)
