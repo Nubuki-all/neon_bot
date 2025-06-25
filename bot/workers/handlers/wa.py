@@ -1318,7 +1318,7 @@ async def delete_filters(event, args, client):
     Delete saved filters:
     Arguments:
         filter_name: name of filter to delete
-        all: (Owner) delete all filters for this chat
+        all: (Owner | Admin) delete all filters for this chat
     """
     user = event.from_user.id
     if not event.chat.is_group:

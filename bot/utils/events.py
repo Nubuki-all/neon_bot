@@ -101,14 +101,26 @@ class Event:
             setattr(self, a, None)
 
     def construct(self, message: MessageEv, add_replied: bool = True):
+        self.message = message
+        self.outgoing = message.Info.MessageSource.IsFromMe
+        self._populate()
+        if self.message.Info.MessageSource.AddressingMode == 2:
+            self.lid_address = True
+        
+
+        # Patch message if it was sent by current user on another device
+        if self.outgoing:
+            if self.message.Info.MessageSource.Sender.Server == "lid":
+                patch_msg_sender(self.message, self.message.Info.MessageSource.Sender, bot.client.me.JID)
+            else:
+                patch_msg_sender(self.message, self.message.Info.MessageSource.Sender, bot.client.me.LID)
         self.chat = self.Chat()
         self.chat.construct(message.Info.MessageSource)
         self.alt_user = self.User()
-        self.alt_user.construct(message, alt=True)
+        self.alt_user.construct(self.message, alt=True)
         self.user = self.User()
-        self.user.construct(message)
+        self.user.construct(self.message)
 
-        self.message = message
 
         # To do support other message types
         self.id = message.Info.ID
@@ -126,14 +138,11 @@ class Event:
         # if self.mentioned:
         #    self.text = (self.text.split(maxsplit=1)[1]).strip()
         self.text = self.text or self.short_text or None
-        self._populate()
         self._construct_media()
         self.is_revoke = False
         if self.protocol and self.protocol.type == 0:
             self.is_revoke = True
             self.revoked_id = self.protocol.key.ID
-        if self.message.Info.MessageSource.AddressingMode == 2:
-            self.lid_address = True
         self.from_user = copy.deepcopy(self.alt_user if self.lid_address else self.user)
         self.from_user.hid = self.user.id if self.lid_address else self.alt_user.id
         self.from_user.lid = self.user.jid if self.lid_address else self.alt_user.jid
@@ -195,19 +204,7 @@ class Event:
             or self.quoted_viewonce
         )
         self.reply_to_message = self.get_quoted_msg()
-        self.outgoing = message.Info.MessageSource.IsFromMe
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
-        if self.outgoing:
-            if self.lid_address:
-                patch_msg_sender(self.message, self.user.jid, bot.client.me.JID)
-                self.from_user.jid = bot.client.me.JID
-                self.from_user.id = bot.client.me.JID.User
-                self.from_user.hid = self.user.id
-            else:
-                patch_msg_sender(self.message, self.user.jid, bot.client.me.LID)
-                self.from_user.jid = bot.client.me.LID
-                self.from_user.id = bot.client.me.LID.User
-                self.from_user.hid = self.user.id
         self.constructed = True
         return self
 
