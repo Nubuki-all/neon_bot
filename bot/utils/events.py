@@ -106,21 +106,27 @@ class Event:
         self._populate()
         if self.message.Info.MessageSource.AddressingMode == 2:
             self.lid_address = True
-        
 
         # Patch message if it was sent by current user on another device
         if self.outgoing:
             if self.message.Info.MessageSource.Sender.Server == "lid":
-                patch_msg_sender(self.message, self.message.Info.MessageSource.Sender, bot.client.me.JID)
+                patch_msg_sender(
+                    self.message,
+                    self.message.Info.MessageSource.Sender,
+                    bot.client.me.JID,
+                )
             else:
-                patch_msg_sender(self.message, self.message.Info.MessageSource.Sender, bot.client.me.LID)
+                patch_msg_sender(
+                    self.message,
+                    self.message.Info.MessageSource.Sender,
+                    bot.client.me.LID,
+                )
         self.chat = self.Chat()
         self.chat.construct(message.Info.MessageSource)
         self.alt_user = self.User()
         self.alt_user.construct(self.message, alt=True)
         self.user = self.User()
         self.user.construct(self.message)
-
 
         # To do support other message types
         self.id = message.Info.ID
