@@ -495,6 +495,7 @@ class Event:
         crop: bool = False,
         enforce_not_broken: bool = False,
         animated_gif: bool = False,
+        passthrough: bool = False,
         add_msg_secret: bool = False,
     ):
         quoted = copy.deepcopy(self.message) if quote else None
@@ -507,6 +508,7 @@ class Event:
             crop=crop,
             enforce_not_broken=enforce_not_broken,
             animated_gif=animated_gif,
+            passthrough=passthrough,
             add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response)
