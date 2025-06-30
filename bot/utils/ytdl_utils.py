@@ -12,9 +12,9 @@ from secrets import token_urlsafe
 from yt_dlp import DownloadError, YoutubeDL, extractor
 from yt_dlp.utils import download_range_func
 
-from bot.config import bot
+from bot.config import bot, conf
 from bot.fun.emojis import enhearts
-from bot.utils.msg_utils import user_is_admin, user_is_privileged
+from .msg_utils import user_is_admin, user_is_privileged
 
 from .bot_utils import (
     hbs,
@@ -291,6 +291,7 @@ class YoutubeDLHelper:
         self.cancel_cmd = "cancel_" + self._gid
         self.start = time.time()
         bot.add_handler(self._cancel, self.cancel_cmd)
+        self.c_message = await self.message.reply(conf.CMD_PREFIX + self.cancel_cmd)
         asyncio.create_task(self.progress_monitor())
 
     async def progress_monitor(self):
@@ -335,9 +336,10 @@ class YoutubeDLHelper:
                 )
             )
             dsp = "{}\n{}".format(ud_type, tmp)
-            dsp += f"\n\n*{self.cancel_cmd}*"
+            dsp += "\n*To cancel use the below command;*"
             await self.message.edit(dsp)
             await asyncio.sleep(5)
+        await self.c_message.delete()
         bot.unregister(self.cancel_cmd)
 
     def _on_download_error(self, error):
