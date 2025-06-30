@@ -7,7 +7,12 @@ from urlextract import URLExtract
 from bot.config import bot, conf
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix, user_is_admin, user_is_privileged
+from bot.utils.msg_utils import (
+    chat_is_allowed,
+    extract_bracketed_prefix,
+    user_is_admin,
+    user_is_privileged,
+)
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
@@ -24,6 +29,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
         return
     cancel_cmd = "cancel_" + gid
     is_cancelled = False
+
     async def _cancel(event, __, client):
         "Cancel a ytdl upload."
         user = event.from_user.id
@@ -31,7 +37,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 return
-        is_cancelled = True
+
     bot.add_handler(_cancel, cancel_cmd)
     for path, subdirs, files in os.walk(folder):
         subdirs.sort()
@@ -186,7 +192,9 @@ async def youtube_reply(event, args, client):
                         reply = await event.reply_photo(photo, f"*{base_name}*")
                         await reply.reply_audio(file)
                 else:
-                    await folder_upload(ytdl.folder, event, status_msg, audio, ytdl._gid)
+                    await folder_upload(
+                        ytdl.folder, event, status_msg, audio, ytdl._gid
+                    )
                 s_remove(ytdl.folder, folders=True)
                 await status_msg.delete()
                 job.pop(0)
