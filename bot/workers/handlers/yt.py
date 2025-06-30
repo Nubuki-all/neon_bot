@@ -37,7 +37,6 @@ async def folder_upload(folder, event, status_msg, audio, gid):
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 return await event.react("🙅")
-        await logger(e="Here.")
         listener.is_cancelled = True
 
     bot.add_handler(_cancel, cancel_cmd)
@@ -51,7 +50,8 @@ async def folder_upload(folder, event, status_msg, audio, gid):
         i = len(files)
         t = 1
         for name in sorted(files):
-            base_name = get_video_name(os.path.splitext(name)[0])
+            name_, ext_ = os.path.splitext(name)
+            base_name = get_video_name(name_)
             file = os.path.join(path, name)
             await status_msg.edit(
                 f"[{t}/{i}]\nUploading *{name}*…"
@@ -66,16 +66,26 @@ async def folder_upload(folder, event, status_msg, audio, gid):
                 await asyncio.sleep(3)
                 continue
 
-            if file.endswith(("png", "jpg", "jpeg")):
-                event = await event.reply_photo(file, f"*{base_name}*")
+            if ext_ in ("png", "jpg", "jpeg") and name_ == path.split("/", maxsplit=2)[-1]:
+                event = await event.reply_photo(file, f"*{name_}*")
             elif audio and file.endswith("mp3"):
-                event = await event.reply_audio(file)
-                await event.reply(f"*{base_name}*")
+                photo = await get_audio_thumbnail(file)
+                reply = await event.reply_photo(photo, f"*{base_name}*")
+                event = await reply.reply_audio(file)
             elif file.endswith("mp4"):
                 event = await event.reply_video(file, f"*{base_name}*")
             await asyncio.sleep(3)
             t += 1
     bot.unregister(cancel_cmd)
+
+
+async def get_audio_thumbnail(file):
+    image = file[:-3] + "webp"
+    if not file_exists(image):
+        image = file[:-3] + "jpg"
+    with open(image, "rb") as pfile:
+        webp = pfile.read()
+    return await png_to_jpg(webp)
 
 
 async def youtube_reply(event, args, client):
@@ -186,12 +196,7 @@ async def youtube_reply(event, args, client):
                     if not audio:
                         await event.reply_video(file, f"*{base_name}*")
                     else:
-                        image = file[:-3] + "webp"
-                        if not file_exists(image):
-                            image = file[:-3] + "jpg"
-                        with open(image, "rb") as pfile:
-                            webp = pfile.read()
-                        photo = await png_to_jpg(webp)
+                        photo = await get_audio_thumbnail(file)
                         reply = await event.reply_photo(photo, f"*{base_name}*")
                         await reply.reply_audio(file)
                 else:
