@@ -118,16 +118,16 @@ def is_executable_installed(executable_name: str) -> bool:
         True if executable is found in PATH, False otherwise
     """
     # Handle Windows executable extensions
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith("win"):
         # Check both with and without .exe extension
-        for ext in ('.exe', '.bat', '.cmd', ''):
+        for ext in (".exe", ".bat", ".cmd", ""):
             if shutil.which(executable_name + ext) is not None:
                 return True
         return False
-    
+
     # Unix-based systems (Linux/macOS)
     return shutil.which(executable_name) is not None
-    
+
 
 def file_exists(file):
     return Path(file).is_file()

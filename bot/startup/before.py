@@ -71,19 +71,18 @@ else:
 
     load_local_db()
 
+
 def check_for_pg_tools():
     if not conf.BACKUP_WA_DB:
         return
     if not (
-        is_executable_installed("pg_dump")
-        and is_executable_installed("pg_restore")
+        is_executable_installed("pg_dump") and is_executable_installed("pg_restore")
     ):
         LOGS.info("Either pg_dump or pg_restore was not found in PATH!")
         LOGS.info("Disabling WA Database Backup!")
     else:
         bot.pg_tools_are_installed = True
 
+
 check_for_pg_tools()
 create_api_token()
-
-    
