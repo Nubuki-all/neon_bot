@@ -116,7 +116,7 @@ async def youtube_reply(event, args, client):
                 ytdl = YoutubeDLHelper(listener)
                 if "music" in listener.link:
                     audio = True
-                    _format = "ba/b-mp3{0}"
+                    _format = _alt_format = "ba/b-mp3{0}"
                     quality = "-"
                 elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
