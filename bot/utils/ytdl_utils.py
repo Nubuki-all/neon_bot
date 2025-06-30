@@ -284,7 +284,7 @@ class YoutubeDLHelper:
             if not user_is_admin(user, group_info.Participants):
                 return
         self._on_download_error(
-            f"Ytdl download with gid:- {self._gid} has been cancelled!"
+            f"*Download with gid: {self._gid} has been cancelled!*"
         )
 
     async def _on_download_start(self, from_queue=False):

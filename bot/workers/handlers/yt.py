@@ -4,10 +4,10 @@ import os
 from clean_links.clean import clean_url
 from urlextract import URLExtract
 
-from bot.config import bot
+from bot.config import bot, conf
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
+from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix, user_is_admin, user_is_privileged
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
@@ -19,9 +19,20 @@ from bot.utils.ytdl_utils import (
 )
 
 
-async def folder_upload(folder, event, status_msg, audio):
+async def folder_upload(folder, event, status_msg, audio, gid):
     if not dir_exists(folder):
         return
+    cancel_cmd = "cancel_" + gid
+    is_cancelled = False
+    async def _cancel(event, __, client):
+        "Cancel a ytdl upload."
+        user = event.from_user.id
+        if not user_is_privileged(user):
+            group_info = await client.get_group_info(event.chat.jid)
+            if not user_is_admin(user, group_info.Participants):
+                return
+        is_cancelled = True
+    bot.add_handler(_cancel, cancel_cmd)
     for path, subdirs, files in os.walk(folder):
         subdirs.sort()
         if not files:
@@ -34,7 +45,14 @@ async def folder_upload(folder, event, status_msg, audio):
         for name in sorted(files):
             base_name = get_video_name(os.path.splitext(name)[0])
             file = os.path.join(path, name)
-            await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
+            await status_msg.edit(
+                f"[{t}/{i}]\nUploading *{name}*…"
+                f"\n\n*Cancel:* {conf.CMD_PREFIX + cancel_cmd}"
+            )
+            if is_cancelled:
+                await status_msg.edit("*Upload has been cancelled!*")
+                return bot.unregister(cancel_cmd)
+
             if size_of(file) >= 100000000:
                 await event.reply(f"*{name} too large to upload.*")
                 await asyncio.sleep(3)
@@ -49,6 +67,7 @@ async def folder_upload(folder, event, status_msg, audio):
                 event = await event.reply_video(file, f"*{base_name}*")
             await asyncio.sleep(3)
             t += 1
+    bot.unregister(cancel_cmd)
 
 
 async def youtube_reply(event, args, client):
@@ -167,7 +186,7 @@ async def youtube_reply(event, args, client):
                         reply = await event.reply_photo(photo, f"*{base_name}*")
                         await reply.reply_audio(file)
                 else:
-                    await folder_upload(ytdl.folder, event, status_msg, audio)
+                    await folder_upload(ytdl.folder, event, status_msg, audio, ytdl._gid)
                 s_remove(ytdl.folder, folders=True)
                 await status_msg.delete()
                 job.pop(0)
