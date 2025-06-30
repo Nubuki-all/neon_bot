@@ -14,6 +14,7 @@ from yt_dlp.utils import download_range_func
 
 from bot.config import bot
 from bot.fun.emojis import enhearts
+from bot.utils.msg_utils import user_is_admin, user_is_privileged
 
 from .bot_utils import (
     hbs,
@@ -24,7 +25,6 @@ from .bot_utils import (
     video_timestamp_to_seconds,
 )
 from .log_utils import log
-from bot.utils.msg_utils import user_is_admin, user_is_privileged
 from .os_utils import enshell, s_remove
 
 # Ripped almost all the code from;
@@ -283,9 +283,10 @@ class YoutubeDLHelper:
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 return
-        self._on_download_error(f"Ytdl download with gid:- {self._gid} has been cancelled!")
+        self._on_download_error(
+            f"Ytdl download with gid:- {self._gid} has been cancelled!"
+        )
 
-        
     async def _on_download_start(self, from_queue=False):
         self.cancel_cmd = "cancel_" + self._gid
         self.start = time.time()
