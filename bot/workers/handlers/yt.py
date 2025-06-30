@@ -68,7 +68,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
 
             if (
                 ext_ in ("png", "jpg", "jpeg")
-                and name_ == path.split("/", maxsplit=2)[-1]
+                and name_.startswith(path.split("/", maxsplit=2)[-1])
             ):
                 event = await event.reply_photo(file, f"*{name_}*")
             elif audio and file.endswith("mp3"):
