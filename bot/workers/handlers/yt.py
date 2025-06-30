@@ -37,6 +37,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 return await event.react("🙅")
+        await logger(e="Here.")
         listener.is_cancelled = True
 
     bot.add_handler(_cancel, cancel_cmd)
