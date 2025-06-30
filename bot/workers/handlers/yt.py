@@ -162,6 +162,7 @@ async def youtube_reply(event, args, client):
                     trim_args=t_args,
                     twi=twi,
                 )
+                bot.unregister(ytdl.cancel_cmd)
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled and listener.error:
                         await status_msg.edit(listener.error)

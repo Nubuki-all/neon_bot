@@ -338,7 +338,6 @@ class YoutubeDLHelper:
             await self.message.edit(dsp)
             await asyncio.sleep(5)
         await self.c_message.delete()
-        bot.unregister(self.cancel_cmd)
 
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
