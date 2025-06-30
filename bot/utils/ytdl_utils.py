@@ -509,7 +509,7 @@ class YoutubeDLHelper:
         if self.is_playlist:
             if qual.startswith("ba/b"):
                 self.opts["outtmpl"] = {
-                "default": f"{path}/{self._listener.name}/%(title,fulltitle,alt_title)s • %(artist,uploader)s.%(ext)s"
+                    "default": f"{path}/{self._listener.name}/%(title,fulltitle,alt_title)s • %(artist,uploader)s.%(ext)s"
                 }
             else:
                 self.opts["outtmpl"] = {
