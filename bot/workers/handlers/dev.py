@@ -1,5 +1,4 @@
 import asyncio
-import html
 import io
 import sys
 import traceback
