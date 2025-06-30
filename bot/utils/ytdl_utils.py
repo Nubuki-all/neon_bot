@@ -12,6 +12,7 @@ from secrets import token_urlsafe
 from yt_dlp import DownloadError, YoutubeDL, extractor
 from yt_dlp.utils import download_range_func
 
+from bot.config import bot
 from bot.fun.emojis import enhearts
 
 from .bot_utils import (
@@ -23,6 +24,7 @@ from .bot_utils import (
     video_timestamp_to_seconds,
 )
 from .log_utils import log
+from bot.utils.msg_utils import user_is_admin, user_is_privileged
 from .os_utils import enshell, s_remove
 
 # Ripped almost all the code from;
@@ -274,8 +276,20 @@ class YoutubeDLHelper:
             except BaseException:
                 pass
 
+    async def _cancel(self, event, __, client):
+        "Cancel a ytdl download."
+        user = event.from_user.id
+        if not user_is_privileged(user):
+            group_info = await client.get_group_info(event.chat.jid)
+            if not user_is_admin(user, group_info.Participants):
+                return
+        self._on_download_error(f"Ytdl download with gid:- {self._gid} has been cancelled!")
+
+        
     async def _on_download_start(self, from_queue=False):
+        self.cancel_cmd = "cancel_" + self._gid
         self.start = time.time()
+        bot.add_handler(self._cancel, self.cancel_cmd)
         asyncio.create_task(self.progress_monitor())
 
     async def progress_monitor(self):
@@ -320,8 +334,10 @@ class YoutubeDLHelper:
                 )
             )
             dsp = "{}\n{}".format(ud_type, tmp)
+            dsp += f"\n\n*{self.cancel_cmd}*"
             await self.message.edit(dsp)
             await asyncio.sleep(5)
+        bot.unregister(self.cancel_cmd)
 
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
@@ -615,7 +631,7 @@ class YoutubeDLHelper:
     async def cancel_task(self):
         self._listener.is_cancelled = True
         log(e=f"Cancelling ytdlp Download: {self._listener.name}")
-        await self._on_download_error("Stopped by User!")
+        self._on_download_error("Stopped by User!")
 
     def _set_options(self, options):
         options = options.split("|")

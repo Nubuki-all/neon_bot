@@ -629,9 +629,14 @@ def add_handler(function, command: str | None = None, **kwargs):
     register(command)(_)
 
 
+def unregister(key: str):
+    key = conf.CMD_PREFIX + key
+    function_dict.pop(key)
+
+
 bot.add_handler = add_handler
 bot.register = register
-
+bot.unregister = unregister
 
 async def handler_helper(funcs):
     await asyncio.sleep(0.1)
@@ -755,6 +760,7 @@ async def event_handler(
     split_args: str = " ",
     default_args: str = False,
     use_default_args: str | None | bool = False,
+    replace_args=None,
 ):
     args = (
         event.text.split(split_args, maxsplit=1)[1].strip()
@@ -772,4 +778,5 @@ async def event_handler(
         if disable_help:
             return
         return await event.reply(f"{inspect.getdoc(function)}")
+    args = replace_args or args
     await function(event, args, client)
