@@ -28,7 +28,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
     if not dir_exists(folder):
         return
     cancel_cmd = "cancel_" + gid
-    is_cancelled = False
+    listener = DummyListener(folder)
 
     async def _cancel(event, __, client):
         "Cancel a ytdl upload."
@@ -37,6 +37,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 return
+        listener.is_cancelled = True
 
     bot.add_handler(_cancel, cancel_cmd)
     for path, subdirs, files in os.walk(folder):
@@ -55,7 +56,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
                 f"[{t}/{i}]\nUploading *{name}*…"
                 f"\n\n*Cancel:* {conf.CMD_PREFIX + cancel_cmd}"
             )
-            if is_cancelled:
+            if listener.is_cancelled:
                 await status_msg.edit("*Upload has been cancelled!*")
                 return bot.unregister(cancel_cmd)
 
