@@ -42,11 +42,6 @@ async def get_logs(event, args, client):
         await event.reply("`An error occurred.`")
 
 
-async def aexec(code, event):
-    exec(f"async def __aexec(event): " + "".join(f"\n {l}" for l in code.split("\n")))
-    return await locals()["__aexec"](event)
-
-
 async def bash(event, cmd, client):
     """
     Run bash/system commands in bot
@@ -81,20 +76,22 @@ async def bash(event, cmd, client):
             await asyncio.sleep(3)
             return
     else:
-        OUTPUT = f"```bash\n{cmd}```\n\n_PID:_\n{process.pid}\n\n```Stderr:\n{e}```\n\n```Output:\n{html.escape(o)}```\n"
+        OUTPUT = f"```bash\n{cmd}```\n\n_PID:_\n{process.pid}\n\n```Stderr:\n{e}```\n\n```Output:\n{o}```\n"
         await event.reply(OUTPUT, link_preview=False)
 
 
-async def aexec2(code, client, message):
-    event = message
+async def aexec(code, client, event):
+    res = {}
     exec(
-        f"async def __aexec2(client, message, event): "
-        + "".join(f"\n {l}" for l in code.split("\n"))
+        f"async def __aexec(client, message, event): "
+        + "".join(f"\n {l}" for l in code.split("\n")),
+        globals(),
+        res,
     )
-    return await locals()["__aexec2"](client, message, event)
+    return await res["__aexec"](client, event, event)
 
 
-async def eval_message(message, cmd, client):
+async def eval_message(event, cmd, client):
     """
     Evaluate and execute code within bot.
     Global namespace has been cleaned so you'll need to manually import modules
@@ -104,10 +101,10 @@ async def eval_message(message, cmd, client):
     For example /peval print("Hello World!")
     Kindly refrain from adding whitelines and newlines between command and argument.
     """
-    if not user_is_owner(message.from_user.id):
-        if not user_is_dev(message.from_user.id):
+    if not user_is_owner(event.from_user.id):
+        if not user_is_dev(event.from_user.id):
             return
-    status_message = await message.reply("Processing ...")
+    status_message = await event.reply("Processing ...")
 
     old_stderr = sys.stderr
     old_stdout = sys.stdout
@@ -116,7 +113,7 @@ async def eval_message(message, cmd, client):
     stdout, stderr, exc = None, None, None
 
     try:
-        await aexec2(cmd, client, message)
+        await aexec(cmd, client, event)
     except Exception:
         exc = traceback.format_exc()
 
@@ -143,7 +140,7 @@ async def eval_message(message, cmd, client):
         final_output = "Evaluated:\n{}\n\nOutput:\n{}".format(cmd, evaluation.strip())
         with open("eval.text", "w+", encoding="utf8") as out_file:
             out_file.write(str(final_output))
-        await message.reply_document(
+        await event.reply_document(
             document="eval.text",
             caption=cmd,
             quote=True,
