@@ -93,6 +93,7 @@ class Runtime_Config:
         self.paused = False
         self.p_queue = []
         self.pending_saved_messages = []
+        self.pg_tools_are_installed = False
         self.notes_dict = {}
         self.rss_dict = {}
         self.rss_ran_once = False

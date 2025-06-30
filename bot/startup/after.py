@@ -72,7 +72,9 @@ async def update_presence():
 
 
 async def backup_database():
-    if not conf.BACKUP_WA_DB and conf.WA_DB:
+    if not conf.BACKUP_WA_DB:
+        return
+    if not bot.pg_tools_are_installed:
         return
     prevent_spam = True
     while True:

@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from bot import LOGS, bot, conf, os, sys, version_file
 from bot.utils.bot_utils import create_api_token
 from bot.utils.local_db_utils import load_local_db
-from bot.utils.os_utils import file_exists
+from bot.utils.os_utils import file_exists, is_executable_installed
 
 LOGS.info("=" * 30)
 LOGS.info(f"Python version: {sys.version.split()[0]}")
@@ -71,4 +71,19 @@ else:
 
     load_local_db()
 
+def check_for_pg_tools():
+    if not conf.BACKUP_WA_DB:
+        return
+    if not (
+        is_executable_installed("pg_dump")
+        and is_executable_installed("pg_restore")
+    ):
+        LOGS.info("Either pg_dump or pg_restore was not found in PATH!")
+        LOGS.info("Disabling WA Database Backup!")
+    else:
+        bot.pg_tools_are_installed = True
+
+check_for_pg_tools()
 create_api_token()
+
+    

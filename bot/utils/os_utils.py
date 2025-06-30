@@ -12,7 +12,8 @@ from bot import version_file
 
 from .log_utils import log
 
-for dir_ in ("comp/", "downloads/", "trim/"):
+dirs = ("comp/", "downloads/", "trim/")
+for dir_ in dirs:
     if not os.path.isdir(dir_):
         os.mkdir(dir_)
 if not os.path.isdir("psql/"):
@@ -107,6 +108,26 @@ def read_n_to_last_line(filename, n=1):
         last_line = f.readline().decode()
     return last_line
 
+
+def is_executable_installed(executable_name: str) -> bool:
+    """
+    Checks if an executable is available in the system's PATH.
+    Args:
+        executable_name: Name of the executable to find
+    Returns:
+        True if executable is found in PATH, False otherwise
+    """
+    # Handle Windows executable extensions
+    if sys.platform.startswith('win'):
+        # Check both with and without .exe extension
+        for ext in ('.exe', '.bat', '.cmd', ''):
+            if shutil.which(executable_name + ext) is not None:
+                return True
+        return False
+    
+    # Unix-based systems (Linux/macOS)
+    return shutil.which(executable_name) is not None
+    
 
 def file_exists(file):
     return Path(file).is_file()

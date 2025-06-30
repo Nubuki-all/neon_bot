@@ -108,8 +108,10 @@ async def youtube_reply(event, args, client):
                     await asyncio.sleep(1)
                     job.pop(0)
                     continue
+                if result.get('is_live') or result.get('live_status') == 'live':
+                    return await event.reply("*It's a Live video XD*")
                 playlist = "entries" in result
-                if not (trimmed or audio or playlist) and (
+                if not (trimmed or playlist) and (
                     t_args := extract_bracketed_prefix(text)
                 ):
                     trimmed = True

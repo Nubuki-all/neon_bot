@@ -47,7 +47,9 @@ async def save2db2(data: dict | str, db: str):
 
 
 async def backup_wa_db():
-    if not conf.BACKUP_WA_DB and conf.WA_DB:
+    if not conf.BACKUP_WA_DB:
+        return
+    if not bot.pg_tools_are_installed:
         return
     back_up_file = "psql/backup.dump"
     cmd = [
@@ -95,7 +97,9 @@ async def backup_wa_db():
 
 
 async def restore_wa_db():
-    if not conf.BACKUP_WA_DB and conf.WA_DB:
+    if not conf.BACKUP_WA_DB:
+        return
+    if not bot.pg_tools_are_installed:
         return
     restore_file = "psql/restore.dump"
     cmd = [
