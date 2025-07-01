@@ -164,7 +164,11 @@ async def get_user_info(user_id: str, server: str = "s.whatsapp.net"):
     jid = jid.build_jid(user_id, server)
     info = await bot.client.contact.get_contact(jid)
     if not info.Found:
-        jid = await bot.client.get_pn_from_lid(jid) if jid.Server == "lid" else await bot.client.get_lid_from_pn(jid)
+        jid = (
+            await bot.client.get_pn_from_lid(jid)
+            if jid.Server == "lid"
+            else await bot.client.get_lid_from_pn(jid)
+        )
         info = await bot.client.contact.get_contact(jid)
     return info
 
