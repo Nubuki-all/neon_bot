@@ -161,7 +161,12 @@ def user_is_sudoer(user: str | int):
 
 
 async def get_user_info(user_id: str, server: str = "s.whatsapp.net"):
-    return await bot.client.contact.get_contact(jid.build_jid(user_id, server))
+    jid = jid.build_jid(user_id, server)
+    info = await bot.client.contact.get_contact(jid)
+    if not info.Found:
+        jid = await bot.client.get_pn_from_lid(jid) if jid.Server == "lid" else await bot.client.get_lid_from_pn(jid)
+        info = await bot.client.contact.get_contact(jid)
+    return info
 
 
 async def send_presence(online=True):
