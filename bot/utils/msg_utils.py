@@ -161,15 +161,15 @@ def user_is_sudoer(user: str | int):
 
 
 async def get_user_info(user_id: str, server: str = "s.whatsapp.net"):
-    jid = jid.build_jid(user_id, server)
-    info = await bot.client.contact.get_contact(jid)
+    jid_ = jid.build_jid(user_id, server)
+    info = await bot.client.contact.get_contact(jid_)
     if not info.Found:
-        jid = (
-            await bot.client.get_pn_from_lid(jid)
-            if jid.Server == "lid"
-            else await bot.client.get_lid_from_pn(jid)
+        jid_ = (
+            await bot.client.get_pn_from_lid(jid_)
+            if jid_.Server == "lid"
+            else await bot.client.get_lid_from_pn(jid_)
         )
-        info = await bot.client.contact.get_contact(jid)
+        info = await bot.client.contact.get_contact(jid_)
     return info
 
 
