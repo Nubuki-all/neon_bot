@@ -1467,9 +1467,9 @@ async def repeat(event, args, client):
             ["-vo", "store_true"],
             to_parse=args,
             get_unknown=True,
-                )
+        )
         if arg.uv or arg.vo:
-            if (replied.audio or replied.image or replied.video):
+            if replied.audio or replied.image or replied.video:
                 replied.media.viewOnce = True if arg.vo else False
         await event.reply(message=(replied.text or replied.media), quote=arg.nq)
     except Exception:
