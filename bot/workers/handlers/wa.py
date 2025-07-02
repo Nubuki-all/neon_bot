@@ -80,6 +80,7 @@ async def tools(event, args, client):
             f"{pre}mp3 - *Convert Video to audio*{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}random - *Get a random choice*{s}"
+            f"{pre}repeat - *Repeat a replied message*{s}"
             f"{pre}sanitize - *Sanitize link or message*{s}"
             f"{pre}screenshot - *Generate a screenshot from a url*{s}"
             f"{s}"
@@ -1440,6 +1441,41 @@ async def get_filters(event, args, client):
         return await event.reply(message=filter_data)
 
 
+async def repeat(event, args, client):
+    """
+    Repeat a replied message
+    Arguments:
+        -nq (don't quote)
+        -uv (undo view once)
+        -vo (view once)
+    """
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Kindly reply to a message.*")
+        args = args or ""
+        arg, args = get_args(
+            ["-nq", "store_false"],
+            ["-uv", "store_true"],
+            ["-vo", "store_true"],
+            to_parse=args,
+            get_unknown=True,
+                )
+        if arg.uv or arg.vo:
+            if (replied.audio or replied.image or replied.video):
+                replied.media.viewOnce = True if arg.vo else False
+        await event.reply(message=(replied.text or replied.media), quote=arg.nq)
+    except Exception:
+        await logger(Exception)
+
+
 async def test_button(event, args, client):
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -1486,6 +1522,7 @@ bot.add_handler(rec_msg_ranking)
 bot.add_handler(to_mp3, "mp3")
 bot.add_handler(tools, "tools")
 bot.add_handler(get_notes, "get")
+bot.add_handler(repeat, "repeat")
 bot.add_handler(undelete, "undel")
 bot.add_handler(compress, "compress")
 bot.add_handler(pick_random, "random")

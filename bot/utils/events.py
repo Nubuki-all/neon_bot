@@ -74,11 +74,13 @@ class Event:
     def _construct_media(self, message=None):
         for msg, v in (message or self._message).ListFields():
             if not msg.name.endswith("ContextInfo"):
-                self.name = self.short_name = msg.name
+                if not message:
+                    self.name = self.short_name = msg.name
             if msg.name.startswith("viewOnce"):
+                self._construct_media(self.view_once.message)
                 self.short_name = "viewOnce"
                 self.view_once = v
-                return self._construct_media(self.view_once.message)
+                return
             if not msg.name.endswith("Message"):
                 continue
             self.short_name = s_name = msg.name.split("M")[0]
@@ -98,6 +100,7 @@ class Event:
             "ptv",
             "reaction",
             "video",
+            "view_once",
             "sticker",
             "stickerPack",
         ]
@@ -260,6 +263,11 @@ class Event:
         add_msg_secret: bool = False,
     ):
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
+        if not isinstance(message, str):
+            field_name = (
+                message.__class__.__name__[0].lower() + message.__class__.__name__[1:]
+            )
+            message = Message(**{field_name: message})
         await self.send_typing_status()
         response = await self.client.send_message(
             to=chat,
