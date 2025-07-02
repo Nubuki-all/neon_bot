@@ -256,17 +256,17 @@ async def sanitize_url(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        quoted = event.reply_to_message
-        if not (quoted or args):
+        replied = event.reply_to_message
+        if not (replied or args):
             return await event.reply(f"{sanitize_url.__doc__}")
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
-        if quoted:
-            msg = quoted.caption or quoted.text or ""
+        if replied and not args:
+            msg = replied.caption or replied.text or ""
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
-                    f"*No link found in @{quoted.from_user.id}'s message to sanitize*"
+                    f"*No link found in @{replied.from_user.id}'s message to sanitize*"
                 )
             new_msg = msg
             sanitized_links = []
@@ -274,14 +274,14 @@ async def sanitize_url(event, args, client):
                 sanitized_links.append(clean_url(url))
             for a, b in zip(urls, sanitized_links):
                 new_msg = new_msg.replace(a, b)
-            return await clean_reply(event, event.reply_to_message, "reply", new_msg)
+            return await clean_reply(event, replied, "reply", new_msg)
         urls = extractor.find_urls(args)
         if not urls:
             return await event.reply(f"*No link found in your message to sanitize*")
         msg = "*Sanitized link(s):*"
         for url in urls:
             msg += f"\n\n{url}"
-        return await clean_reply(event, event.reply_to_message, "reply", msg)
+        return await clean_reply(event, replied, "reply", msg)
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -304,17 +304,17 @@ async def screenshot(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        quoted = event.reply_to_message
-        if not (quoted or args):
+        replied = event.reply_to_message
+        if not (replied or args):
             return await event.reply(f"{screenshot.__doc__}")
         status_msg = await event.reply("Please wait…")
         extractor = URLExtract()
-        if quoted:
-            msg = quoted.caption or quoted.text or ""
+        if replied:
+            msg = replied.caption or replied.text or ""
             urls = extractor.find_urls(msg)
             if not urls:
                 return await event.reply(
-                    f"*No link found in @{quoted.from_user.id}'s message*"
+                    f"*No link found in @{replied.from_user.id}'s message*"
                 )
 
         else:
@@ -367,14 +367,14 @@ async def stickerize_image(event, args, client):
             crop = False
             forced = False
             limit = True
-        if not event.reply_to_message:
+        if not (replied := event.reply_to_message):
             return await event.reply("*Reply to a gif/image/video.*")
-        if not (event.quoted_image or event.quoted_video):
+        if not (replied.image or replied.video):
             return await event.reply("*Replied message is not a gif/image/video.*")
 
         # forced = False if event.quoted_image else forced
         async with event.react("👩‍🏭"):
-            file = await event.reply_to_message.download()
+            file = await replied.download()
             bot.client.me = me = await bot.client.get_me()
             await event.send_typing_status()
             return await event.reply_sticker(
@@ -539,20 +539,20 @@ async def upscale_image(event, args, client):
             )
         if bot.disable_cic:
             return await event.reply("*CPU heavy commands are currently disabled.*")
-        quoted_msg = event.quoted.quotedMessage
-        if not quoted_msg.imageMessage.URL:
+        replied = event.reply_to_message
+        if not replied.image:
             return await event.reply(
                 "*Command can only be used when replying to an image.*"
             )
-        if quoted_msg.imageMessage.fileLength > 17939583:
+        if replied.image.fileLength > 17939583:
             return await sticker_reply(event, args, client, True)
         turn().append(turn_id)
         status_msg = await event.reply("*…*")
-        if event.quoted_image.caption.startswith("Upscaled image:"):
+        if replied.caption and replied.caption.startswith("Upscaled image:"):
             return await event.reply(
                 "What?, initial upscale not good enough for you? 😒"
             )
-        file = await event.reply_to_message.download()
+        file = await replied.download()
 
         if waiting_for_turn():
             await event.react("⏰")
@@ -607,7 +607,8 @@ async def pick_random(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not event.quoted_text:
+        replied = event.reply_to_message
+        if not replied.text:
             return await event.reply(
                 "*Reply to a message with list of items to choose from.*"
             )
@@ -618,7 +619,7 @@ async def pick_random(event, args, client):
             to_parse=(args or ""),
             get_unknown=True,
         )
-        items = event.quoted_text.split((arg.s or "\n"))
+        items = replied.text.split((arg.s or "\n"))
         if len(items) < 2:
             return await event.reply("I need more options to choose from.")
         if arg.a:
@@ -714,7 +715,7 @@ async def save_notes(event, args, client):
         )
         if not args:
             return await event.reply(f"{save_notes.__doc__}")
-        if not event.quoted_msg:
+        if not (replied := event.reply_to_message):
             return await event.reply("Can only save replied text or media.")
         if args.casefold() in ("all", "notes", "my notes", "me"):
             return await event.reply(f"Given note_name *{args}* is blocked.")
@@ -728,18 +729,18 @@ async def save_notes(event, args, client):
         status_msg = await event.reply("…")
         # note gen:
         note_type = str
-        if event.quoted_text:
-            note = event.quoted_text
-        elif event.quoted_image:
-            if event.quoted_image.fileLength < 5000000:
-                note = await event.reply_to_message.download()
-                note = [note, (event.quoted_image.caption if not arg.c else "")]
+        if replied.text:
+            note = replied.text
+        elif replied.image:
+            if replied.image.fileLength < 5000000:
+                note = await replied.download()
+                note = [note, (replied.image.caption if not arg.c else "")]
                 note_type = bytes
             else:
-                note = event.quoted_image
+                note = replied.image
                 note_type = Message
-        elif event.quoted_msg:
-            note = event.quoted_msg
+        elif replied.media:
+            note = replied.media
             note_type = Message
         if note_type == Message and arg.c:
             note.caption = ""
@@ -1204,8 +1205,8 @@ async def save_filter(event, args, client):
         if not (args and event.reply_to_message):
             return await event.reply(f"{save_filter.__doc__}")
         args = args.casefold()
-        quoted = event.reply_to_message
-        if not (event.quoted_msg or quoted.sticker or quoted.stickerPack):
+        replied = event.reply_to_message
+        if not (replied.media or replied.sticker or replied.stickerPack):
             return await event.reply(
                 "Can only save replied text or media as filter reply."
             )
@@ -1221,25 +1222,25 @@ async def save_filter(event, args, client):
         status_msg = await event.reply("…")
         # filter gen:
         filter_type = str
-        if event.quoted_text:
-            new_filter = event.quoted_text
-        elif event.quoted_image:
-            if event.quoted_image.fileLength < 5000000:
-                new_filter = await event.reply_to_message.download()
+        if replied.text:
+            new_filter = replied.text
+        elif replied.image:
+            if replied.image.fileLength < 5000000:
+                new_filter = await replied.download()
                 new_filter = [
                     new_filter,
-                    (event.quoted_image.caption if not arg.c else ""),
+                    (replied.image.caption if not arg.c else ""),
                 ]
                 filter_type = bytes
             else:
-                new_filter = event.quoted_image
+                new_filter = replied.image
                 filter_type = Message
-        elif new_filter := event.quoted_msg or quoted.sticker:
-            filter_type = Message
-        elif new_filter := quoted.stickerPack:
+        elif new_filter := replied.stickerPack:
             filter_type = Message
             if not new_filter.publisher:
                 new_filter.publisher = bot.client.me.PushName
+        elif new_filter := replied.media:
+            filter_type = Message
         if filter_type == Message and arg.c and hasattr(new_filter, "caption"):
             new_filter.caption = ""
         data = {

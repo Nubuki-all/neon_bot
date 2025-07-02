@@ -71,17 +71,23 @@ class Event:
             self.is_group = msg_source.IsGroup
             self.server = self.jid.Server
 
-    def _construct_media(self):
-        for msg, v in self._message.ListFields():
+    def _construct_media(self, message=None):
+        for msg, v in (message or self._message).ListFields():
             if not msg.name.endswith("ContextInfo"):
-                self.name = msg.name
+                self.name = self.short_name = msg.name
+            if msg.name.startswith("viewOnce"):
+                self.short_name = "viewOnce"
+                self.view_once = v
+                return self._construct_media(self.view_once.message)
             if not msg.name.endswith("Message"):
                 continue
-            setattr(self, msg.name.split("M")[0], v)
+            self.short_name = s_name = msg.name.split("M")[0]
+            setattr(self, s_name, v)
             if not hasattr(v, "contextInfo"):
                 continue
             self.media = v
             break
+    
 
     def _populate(self):
         attrs = [
@@ -90,12 +96,13 @@ class Event:
             "image",
             "media",
             "protocol",
+            "ptv",
             "reaction",
             "video",
             "sticker",
             "stickerPack",
         ]
-        attrs.extend(["lid_address", "revoked_id"])
+        attrs.extend(["caption", "edited_id", "lid_address", "revoked_id"])
         attrs.extend(["pollUpdate", "senderKeyDistribution"])
         for a in attrs:
             setattr(self, a, None)
@@ -145,16 +152,29 @@ class Event:
         #    self.text = (self.text.split(maxsplit=1)[1]).strip()
         self.text = self.text or self.short_text or None
         self._construct_media()
+        self.is_edit = False
         self.is_revoke = False
-        if self.protocol and self.protocol.type == 0:
-            self.is_revoke = True
-            self.revoked_id = self.protocol.key.ID
+        if self.protocol:
+            if self.protocol.type == 0:
+                self.is_revoke = True
+                self.revoked_id = self.protocol.key.ID
+            if self.protocol.type == 14:
+                self.is_edit = True
+                self.edited_id = self.protocol.key.ID
+                if self.protocol.editedMessage.conversation:
+                    self.text = self.protocol.editedMessage.conversation
+                else:
+                    self.text = self.protocol.editedMessage.extendedTextMessage.text or None
+                    self.media = self.protocol.editedMessage.ListFields()[0][1]
+                    self.caption = extract_text(self.protocol.editedMessage) if not self.text else None
+                    
         self.from_user = copy.deepcopy(self.alt_user if self.lid_address else self.user)
         self.from_user.hid = self.user.id if self.lid_address else self.alt_user.id
         self.from_user.lid = self.user.jid if self.lid_address else self.alt_user.jid
-        self.caption = (extract_text(self._message) or None) if not self.text else None
+        self.caption = (extract_text(self._message) or None) if not (self.text or self.is_edit) else self.caption
 
-        self.quoted = (
+        # Depreciating event.quoted, would be removed soon
+        self.quoted = self.context_info = (
             self.media.contextInfo
             if add_replied and self.media and self.media.contextInfo.ByteSize()
             else None
@@ -209,7 +229,7 @@ class Event:
             or self.quoted_video
             or self.quoted_viewonce
         )
-        self.reply_to_message = self.get_quoted_msg()
+        self.reply_to_message = self.get_replied_msg()
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
         self.constructed = True
         return self
@@ -259,8 +279,8 @@ class Event:
         with open(path, "wb") as file:
             file.write(bytes_)
 
-    async def edit(self, text: str):
-        msg = Message(conversation=text)
+    async def edit(self, text: str = None, message=None):
+        msg = Message(conversation=text) if text else message
         response = await self.client.edit_message(self.chat.jid, self.id, msg)
         msg = self.gen_new_msg(response)
         return construct_event(msg)
@@ -573,25 +593,22 @@ class Event:
             patch_msg_sender(msg, bot.client.me.JID, bot.client.me.LID)
         return msg
 
-    def get_quoted_msg(self):
-        if not (self.quoted and self.quoted.stanzaID):
+    def get_replied_msg(self):
+        if not (self.context_info and self.context_info.stanzaID):
             return
-        # msg = self.gen_new_msg(
-        # self.quoted.stanzaID, (self.quoted.participant.split("@"))[0], self.chat.id, self.text, self.chat.jid.Server
-        # )
-        if self.quoted.remoteJID:
-            chat_id, server = self.quoted.remoteJID.split("@", maxsplit=1)
+        if self.context_info.remoteJID:
+            chat_id, server = self.context_info.remoteJID.split("@", maxsplit=1)
         else:
             chat_id = self.chat.id
             server = self.chat.server
         msg = construct_message(
             chat_id,
-            (self.quoted.participant.split("@"))[0],
-            self.quoted.stanzaID,
+            (self.context_info.participant.split("@"))[0],
+            self.context_info.stanzaID,
             None,
             server,
-            (self.quoted.participant.split("@"))[1],
-            self.quoted.quotedMessage,
+            (self.context_info.participant.split("@"))[1],
+            self.context_info.quotedMessage,
         )
         return construct_event(msg, False)
 
