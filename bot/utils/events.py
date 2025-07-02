@@ -87,7 +87,6 @@ class Event:
                 continue
             self.media = v
             break
-    
 
     def _populate(self):
         attrs = [
@@ -164,14 +163,24 @@ class Event:
                 if self.protocol.editedMessage.conversation:
                     self.text = self.protocol.editedMessage.conversation
                 else:
-                    self.text = self.protocol.editedMessage.extendedTextMessage.text or None
+                    self.text = (
+                        self.protocol.editedMessage.extendedTextMessage.text or None
+                    )
                     self.media = self.protocol.editedMessage.ListFields()[0][1]
-                    self.caption = extract_text(self.protocol.editedMessage) if not self.text else None
-                    
+                    self.caption = (
+                        extract_text(self.protocol.editedMessage)
+                        if not self.text
+                        else None
+                    )
+
         self.from_user = copy.deepcopy(self.alt_user if self.lid_address else self.user)
         self.from_user.hid = self.user.id if self.lid_address else self.alt_user.id
         self.from_user.lid = self.user.jid if self.lid_address else self.alt_user.jid
-        self.caption = (extract_text(self._message) or None) if not (self.text or self.is_edit) else self.caption
+        self.caption = (
+            (extract_text(self._message) or None)
+            if not (self.text or self.is_edit)
+            else self.caption
+        )
 
         # Depreciating event.quoted, would be removed soon
         self.quoted = self.context_info = (
