@@ -1483,6 +1483,7 @@ async def repeat(event, args, client):
         no = 5 if no > 5 else no
         for _ in range(no):
             await event.reply(message=(replied.text or replied.media), quote=arg.nq)
+            arg.nq = False
             await asyncio.sleep(1)
     except Exception:
         await logger(Exception)
