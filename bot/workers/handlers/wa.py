@@ -1473,13 +1473,13 @@ async def repeat(event, args, client):
         if arg.uv or arg.vo:
             if replied.is_actual_media:
                 replied.media.viewOnce = True if arg.vo else False
-        if arg.n and not arg.n.isdigit():
-            arg.n = ""
-        if arg.n and not user_is_privileged(user):
+        if arg.x and not arg.x.isdigit():
+            arg.x = ""
+        if arg.x and not user_is_privileged(user):
             group_info = await bot.client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
-                arg.n = ""
-        no = arg.n if arg.n else 1
+                arg.x = ""
+        no = arg.x if arg.x else 1
         no = 5 if no > 5 else no
         for _ in range(no):
             await event.reply(message=(replied.text or replied.media), quote=arg.nq)
