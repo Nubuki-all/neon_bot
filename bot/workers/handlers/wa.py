@@ -1479,7 +1479,7 @@ async def repeat(event, args, client):
             group_info = await bot.client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 arg.x = ""
-        no = int(arg.x) if arg.x else 1
+        no = int(arg.x) if arg.x and not arg.x == "0" else 1
         no = 5 if no > 5 else no
         for _ in range(no):
             await event.reply(message=(replied.text or replied.media), quote=arg.nq)
