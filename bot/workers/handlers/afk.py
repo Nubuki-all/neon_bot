@@ -53,12 +53,14 @@ async def afk_helper(event, args, client):
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
-            if (afk_media := afk_dict.get("msg")):
+            if afk_media := afk_dict.get("msg"):
                 reply_ = None
                 if afk_dict.get("msg_wc"):
                     afk_media.caption = afk_message.format(user_name, reason, since)
                 else:
-                    reply_ = await event.reply(afk_message.format(user_name, reason, since))
+                    reply_ = await event.reply(
+                        afk_message.format(user_name, reason, since)
+                    )
                 await (reply_ or event).reply(message=afk_media)
 
             else:
@@ -104,12 +106,14 @@ async def afk_helper(event, args, client):
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
-            if (afk_media := afk_dict.get("msg")):
+            if afk_media := afk_dict.get("msg"):
                 reply_ = None
                 if afk_dict.get("msg_wc"):
                     afk_media.caption = afk_message.format(user_name, reason, since)
                 else:
-                    reply_ = await event.reply(afk_message.format(user_name, reason, since))
+                    reply_ = await event.reply(
+                        afk_message.format(user_name, reason, since)
+                    )
                 await (reply_ or event).reply(message=afk_media)
 
             else:
@@ -179,7 +183,9 @@ async def activate_afk(event, args, client):
             "user_name": user_info.PushName,
             "ph": event.from_user.id,
             "msg": replied.media if replied.is_actual_media else None,
-            "msg_wc": hasattr(replied.media, "caption") if replied.is_actual_media else False
+            "msg_wc": (
+                hasattr(replied.media, "caption") if replied.is_actual_media else False
+            ),
         }
         afk_dict2 = {"is_link": True, "lid": event.from_user.hid}
         bot.user_dict.setdefault(event.from_user.hid, {}).update(afk=afk_dict)
