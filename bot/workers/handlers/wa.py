@@ -1207,7 +1207,9 @@ async def save_filter(event, args, client):
             return await event.reply(f"{save_filter.__doc__}")
         args = args.casefold()
         replied = event.reply_to_message
-        if not (replied.text or replied.media or replied.sticker or replied.stickerPack):
+        if not (
+            replied.text or replied.media or replied.sticker or replied.stickerPack
+        ):
             return await event.reply(
                 "Can only save replied text or media as filter reply."
             )
