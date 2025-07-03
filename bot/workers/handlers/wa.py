@@ -1446,8 +1446,9 @@ async def repeat(event, args, client):
     Repeat a replied message
     Arguments:
         -nq (don't quote)
+        -x (repeat a number of times, max 5)
         -uv (undo view once)
-        -vo (view once)
+        -vo (force view once)
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -1465,13 +1466,24 @@ async def repeat(event, args, client):
             ["-nq", "store_false"],
             ["-uv", "store_true"],
             ["-vo", "store_true"],
+            "-x",
             to_parse=args,
             get_unknown=True,
         )
         if arg.uv or arg.vo:
-            if replied.audio or replied.image or replied.video:
+            if replied.is_actual_media:
                 replied.media.viewOnce = True if arg.vo else False
-        await event.reply(message=(replied.text or replied.media), quote=arg.nq)
+        if arg.n and not arg.n.isdigit():
+            arg.n = ""
+        if arg.n and not user_is_privileged(user):
+            group_info = await bot.client.get_group_info(event.chat.jid)
+            if not user_is_admin(user, group_info.Participants):
+                arg.n = ""
+        no = arg.n if arg.n else 1
+        no = 5 if no > 5 else no
+        for _ in range(no):
+            await event.reply(message=(replied.text or replied.media), quote=arg.nq)
+            await asyncio.sleep(1)
     except Exception:
         await logger(Exception)
 

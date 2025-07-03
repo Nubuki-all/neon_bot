@@ -77,14 +77,15 @@ class Event:
                 if not message:
                     self.name = self.short_name = msg.name
             if msg.name.startswith("viewOnce"):
-                self._construct_media(self.view_once.message)
                 self.short_name = "viewOnce"
                 self.view_once = v
-                return
+                return self._construct_media(self.view_once.message)
             if not msg.name.endswith("Message"):
                 continue
-            self.short_name = s_name = msg.name.split("M")[0]
+            s_name = msg.name.split("M")[0]
             setattr(self, s_name, v)
+            if not message:
+                self.short_name = s_name
             if not hasattr(v, "contextInfo"):
                 continue
             self.media = v
@@ -169,7 +170,7 @@ class Event:
                     self.text = (
                         self.protocol.editedMessage.extendedTextMessage.text or None
                     )
-                    self.media = self.protocol.editedMessage.ListFields()[0][1]
+                    self._construct_media(self.protocol.editedMessage)
                     self.caption = (
                         extract_text(self.protocol.editedMessage)
                         if not self.text
@@ -184,6 +185,10 @@ class Event:
             if not (self.text or self.is_edit)
             else self.caption
         )
+        self.is_actual_media = self.is_view_once = False
+        if (media := (self.audio or self.image or self.ptv or self.video)):
+            self.is_actual_media = True
+            self.is_view_once = media.viewOnce
 
         # Depreciating event.quoted, would be removed soon
         self.quoted = self.context_info = (
