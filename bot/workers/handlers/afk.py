@@ -55,7 +55,7 @@ async def afk_helper(event, args, client):
             since = time_formatter(time.time() - afk_dict.get("time"))
             if (afk_media := afk_dict.get("msg")):
                 reply_ = None
-                if afk_dict.get("msg_wc")):
+                if afk_dict.get("msg_wc"):
                     afk_media.caption = afk_message.format(user_name, reason, since)
                 else:
                     reply_ = await event.reply(afk_message.format(user_name, reason, since))
