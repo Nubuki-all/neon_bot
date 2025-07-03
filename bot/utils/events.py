@@ -383,7 +383,7 @@ class Event:
             return await self.reply_photo(
                 image, text, quote, ghost_mentions=ghost_mentions
             )
-        text = text or message
+        text = text or copy.deepcopy(message)
         if not text:
             raise Exception("Specify a text to reply with.")
         # msg_id = self.id if quote else None
