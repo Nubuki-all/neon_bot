@@ -186,7 +186,7 @@ class Event:
             else self.caption
         )
         self.is_actual_media = self.is_view_once = False
-        if (media := (self.audio or self.image or self.ptv or self.video)):
+        if media := (self.audio or self.image or self.ptv or self.video):
             self.is_actual_media = True
             self.is_view_once = media.viewOnce
 
