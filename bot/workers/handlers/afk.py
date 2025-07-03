@@ -48,10 +48,21 @@ async def afk_helper(event, args, client):
             afk_dict := get_afk_status(replied.from_user.id)
         ):
             user = replied.from_user.id
+            if afk_dict.get("is_link"):
+                afk_dict = get_afk_status(afk_dict.get("lid"))
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
-            await event.reply(afk_message.format(user_name, reason, since))
+            if (afk_media := afk_dict.get("msg")):
+                reply_ = None
+                if afk_dict.get("msg_wc")):
+                    afk_media.caption = afk_message.format(user_name, reason, since)
+                else:
+                    reply_ = await event.reply(afk_message.format(user_name, reason, since))
+                await (reply_ or event).reply(message=afk_media)
+
+            else:
+                await event.reply(afk_message.format(user_name, reason, since))
             patch_msg_sender(
                 replied.message, replied.user.jid, jid.build_jid(afk_dict.get("ph"))
             )
@@ -81,6 +92,8 @@ async def afk_helper(event, args, client):
             if not (afk_dict := get_afk_status(user)):
                 mentioned_users.pop(0)
                 continue
+            if afk_dict.get("is_link"):
+                afk_dict = get_afk_status(afk_dict.get("lid"))
             alt_user = afk_dict.get("ph") or user
             if replied and (
                 replied.from_user.id == user or replied.from_user.id == alt_user
@@ -91,7 +104,16 @@ async def afk_helper(event, args, client):
             user_name = afk_dict.get("user_name")
             reason = afk_dict.get("reason")
             since = time_formatter(time.time() - afk_dict.get("time"))
-            await event.reply(afk_message.format(user_name, reason, since))
+            if (afk_media := afk_dict.get("msg")):
+                reply_ = None
+                if afk_dict.get("msg_wc"):
+                    afk_media.caption = afk_message.format(user_name, reason, since)
+                else:
+                    reply_ = await event.reply(afk_message.format(user_name, reason, since))
+                await (reply_ or event).reply(message=afk_media)
+
+            else:
+                await event.reply(afk_message.format(user_name, reason, since))
             if replied:
                 rep = await bot.client.send_message(
                     user_jid, (replied.text or replied._message)
@@ -149,15 +171,19 @@ async def activate_afk(event, args, client):
                 "*Kindly send me 'Hi' in Dm/Pm in order for you to be able to use this command!*"
             )
         user_info = await get_user_info(user)
+        replied = event.reply_to_message
         afk_dict = {
             "grace": event.chat.is_group,
             "reason": args,
             "time": time.time(),
             "user_name": user_info.PushName,
             "ph": event.from_user.id,
+            "msg": replied.media if replied.is_actual_media else None,
+            "msg_wc": hasattr(replied.media, "caption") if replied.is_actual_media else False
         }
+        afk_dict2 = {"is_link": True, "lid": event.from_user.hid}
         bot.user_dict.setdefault(event.from_user.hid, {}).update(afk=afk_dict)
-        bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict)
+        bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict2)
         await save2db2(bot.user_dict, "users")
         await event.reply(f"{user_info.PushName} is now AFK!", quote=False)
     except Exception:
