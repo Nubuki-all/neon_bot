@@ -176,16 +176,16 @@ async def activate_afk(event, args, client):
             )
         user_info = await get_user_info(user)
         replied = event.reply_to_message
+        replied_media = replied.media if replied and replied.is_actual_media else None
+        media_sup_cap = hasattr(replied_media, "caption") if replied_media else False
         afk_dict = {
             "grace": event.chat.is_group,
             "reason": args,
             "time": time.time(),
             "user_name": user_info.PushName,
             "ph": event.from_user.id,
-            "msg": replied.media if replied.is_actual_media else None,
-            "msg_wc": (
-                hasattr(replied.media, "caption") if replied.is_actual_media else False
-            ),
+            "msg": replied_media,
+            "msg_wc": media_sup_cap,
         }
         afk_dict2 = {"is_link": True, "lid": event.from_user.hid}
         bot.user_dict.setdefault(event.from_user.hid, {}).update(afk=afk_dict)
