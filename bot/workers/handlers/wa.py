@@ -1213,7 +1213,7 @@ async def save_filter(event, args, client):
             return await event.reply(
                 "Can only save replied text or media as filter reply."
             )
-        if args.casefold() in ("all", "notes", "my notes", "me") or len(args) < 3:
+        if args.casefold() in ("all", "notes", "my notes", "me") or (len(args) < 3 and not (arg.a or arg.m)):
             return await event.reply(f"Given filter_name *{args}* is blocked.")
         if not user_is_owner(user) and args in function_dict:
             return await event.reply(f"Given filter_name *{args}* is blocked.")

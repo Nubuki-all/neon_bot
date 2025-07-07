@@ -4,6 +4,7 @@ import inspect
 import os
 import warnings
 from collections import deque
+from collections.abc import Callable
 
 import httpx
 from neonize.types import MessageWithContextInfo
@@ -668,9 +669,12 @@ def add_handler(function, command: str | None = None, **kwargs):
     register(command)(_)
 
 
-def unregister(key: str):
-    key = conf.CMD_PREFIX + key
-    function_dict.pop(key)
+def unregister(key: str | Callable):
+    if isinstance(key, str):
+        key = conf.CMD_PREFIX + key
+        function_dict.pop(key)
+    else:
+        function[None].remove(key)
 
 
 bot.add_handler = add_handler
