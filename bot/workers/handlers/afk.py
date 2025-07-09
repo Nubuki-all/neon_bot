@@ -84,7 +84,7 @@ async def afk_helper(event, args, client):
             )
             await asyncio.sleep(1)
             await event.reply(
-                f"*@{event.from_user.id} replied to your message while you were AFK!*"
+                f"*@{event.from_user.id} replied to your message while you were AFK!*",
             to=replied_jid, reply_privately=True)
         mentioned_users = get_mentioned(event.text or event.caption or "")
         while mentioned_users:
