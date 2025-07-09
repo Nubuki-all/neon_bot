@@ -34,7 +34,7 @@ def load_local_db():
 
 def save2db_lcl2(db):
     if db == "groups":
-        with open(local_rdb, "wb") as file:
+        with open(local_gcdb, "wb") as file:
             pickle.dump(bot.group_dict, file)
     elif db == "note":
         with open(local_ndb, "wb") as file:

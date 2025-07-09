@@ -674,7 +674,7 @@ def unregister(key: str | Callable):
         key = conf.CMD_PREFIX + key
         function_dict.pop(key)
     else:
-        function[None].remove(key)
+        function_dict[None].remove(key)
 
 
 bot.add_handler = add_handler
