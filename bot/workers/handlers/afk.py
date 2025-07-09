@@ -65,9 +65,9 @@ async def afk_helper(event, args, client):
 
             else:
                 await event.reply(afk_message.format(user_name, reason, since))
-            replied_jid = jid.build_jid(afk_dict.get("ph")
+            replied_jid = jid.build_jid(afk_dict.get("ph"))
             patch_msg_sender(
-                replied.message, replied.user.jid, replied_jid)
+                replied.message, replied.user.jid, replied_jid
             )
             reply = await replied.reply(
                 text=event.text,
