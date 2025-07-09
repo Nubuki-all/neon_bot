@@ -73,18 +73,19 @@ async def afk_helper(event, args, client):
                 message=event.media,
                 mentions_are_lids=event.lid_address,
             )
-            reply = construct_msg_and_evt(
-                afk_dict.get("ph"),
-                bot.client.me.JID.User,
-                reply.id,
-                event.text,
-                Msg=event._message,
-            )
+            #reply = construct_msg_and_evt(
+            #    afk_dict.get("ph"),
+            #    bot.client.me.JID.User,
+            #    reply.id,
+            #    event.text,
+            #    Msg=event._message,
+            # )
             await asyncio.sleep(1)
             await event.reply(
-                f"*@{event.from_user.id} replied to your message while you were AFK!*",
+                f"*@{event.from_user.hid} replied to your message while you were AFK!*",
                 to=replied_jid,
                 reply_privately=True,
+                mentions_are_lids=True
             )
         mentioned_users = get_mentioned(event.text or event.caption or "")
         while mentioned_users:
@@ -140,13 +141,15 @@ async def afk_helper(event, args, client):
                     mentions_are_lids=event.lid_address,
                 )
                 rep_id = rep.ID
-            reply = construct_msg_and_evt(
-                alt_user, bot.client.me.JID.User, rep_id, event.text, Msg=event._message
-            )
+            # reply = construct_msg_and_evt(
+            #    alt_user, bot.client.me.JID.User, rep_id, event.text, Msg=event._message
+            # )
             reped.append(user)
             await asyncio.sleep(1)
-            await reply.reply(
+            await event.reply(
                 f"*@{event.from_user.hid} tagged you in @{jid.Jid2String(event.chat.jid)} while you were AFK!*",
+                to=user_jid,
+                reply_privately=True
                 mentions_are_lids=True,
             )
             mentioned_users.pop(0)
