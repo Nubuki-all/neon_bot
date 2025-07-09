@@ -149,7 +149,7 @@ async def afk_helper(event, args, client):
             await event.reply(
                 f"*@{event.from_user.hid} tagged you in @{jid.Jid2String(event.chat.jid)} while you were AFK!*",
                 to=user_jid,
-                reply_privately=True
+                reply_privately=True,
                 mentions_are_lids=True,
             )
             mentioned_users.pop(0)
