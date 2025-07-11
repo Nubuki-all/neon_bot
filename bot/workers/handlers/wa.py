@@ -1040,7 +1040,7 @@ async def rec_msg_ranking(event, args, client):
             return
         chat_id = event.chat.id
         msg_rank = bot.group_dict.setdefault(chat_id, {}).setdefault("msg_ranking", {})
-        user = event.from_user.id
+        user = event.user.id
         if event.is_revoke:
             value = 0
             msgs = await get_messages(chat_id, event.revoked_id)
@@ -1055,7 +1055,7 @@ async def rec_msg_ranking(event, args, client):
         else:
             value = 1
         msg_rank[user] = msg_rank.setdefault(user, 0) + value
-        msg_rank["server"] = 0 if event.from_user.server == "lid" else 1
+        msg_rank["server"] = 0 if event.lid_address else 1
         msg_rank["total"] = msg_rank.setdefault("total", 0) + value
         bot.msg_leaderboard_counter += 1
     except Exception:
@@ -1081,7 +1081,7 @@ async def msg_ranking(event, args, client):
         msg = await get_ranking_msg(chat_id, full=full)
         if not msg:
             return await event.reply("Can't fetch ranking right now!")
-        return await event.reply(msg, mentions_are_lids=True)
+        return await event.reply(msg)
     except Exception:
         await logger(Exception)
 

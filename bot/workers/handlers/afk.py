@@ -82,10 +82,10 @@ async def afk_helper(event, args, client):
             # )
             await asyncio.sleep(1)
             await event.reply(
-                f"*@{event.from_user.hid} replied to your message while you were AFK!*",
+                f"*@{event.user.id} replied to your message while you were AFK!*",
                 to=replied_jid,
                 reply_privately=True,
-                mentions_are_lids=True,
+                # mentions_are_lids=event.lid_address,
             )
         mentioned_users = get_mentioned(event.text or event.caption or "")
         while mentioned_users:
@@ -147,10 +147,10 @@ async def afk_helper(event, args, client):
             reped.append(user)
             await asyncio.sleep(1)
             await event.reply(
-                f"*@{event.from_user.hid} tagged you in @{jid.Jid2String(event.chat.jid)} while you were AFK!*",
+                f"*@{event.user.id} tagged you in @{jid.Jid2String(event.chat.jid)} while you were AFK!*",
                 to=user_jid,
                 reply_privately=True,
-                mentions_are_lids=True,
+                # mentions_are_lids=True,
             )
             mentioned_users.pop(0)
     except Exception:

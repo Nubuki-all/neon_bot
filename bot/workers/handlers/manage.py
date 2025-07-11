@@ -477,21 +477,24 @@ async def ban(event, args, client):
             return await event.reply(
                 "*Reply to a message or supply an id to ban the user from using the bot.*"
             )
-        ban_id = args or event.reply_to_message.from_user.id
+        _id = ban_id = args or event.reply_to_message.from_user.id
+        if event.lid_address:
+            ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
+            ban_id = ph.User
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
-            return await event.reply(f"@{ban_id} *is a Sudoer.*")
+            return await event.reply(f"@{_id} *is a Sudoer.*")
         if not user_is_allowed(ban_id):
             return await event.reply(
-                f"@{ban_id} *has already been banned from using the bot.*"
+                f"@{_id} *has already been banned from using the bot.*"
             )
         if user_is_owner(user):
             bot.user_dict.setdefault(ban_id, {}).update(fbanned=True)
         else:
             bot.user_dict.setdefault(ban_id, {}).update(banned=True)
         await save2db2(bot.user_dict, "users")
-        return await event.reply(f"@{ban_id} *has been banned from using the bot.*")
+        return await event.reply(f"@{_id} *has been banned from using the bot.*")
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -516,16 +519,19 @@ async def unban(event, args, client):
             return await event.reply(
                 "*Reply to a message or supply an id to unban the user from using the bot.*"
             )
-        ban_id = args or event.reply_to_message.from_user.id
+        _id = ban_id = args or event.reply_to_message.from_user.id
+        if event.lid_address:
+            ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
+            ban_id = ph.User
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
-            return await event.reply(f"@{ban_id} *is a Sudoer.*")
+            return await event.reply(f"@{_id} *is a Sudoer.*")
         if user_is_allowed(ban_id):
             return await event.reply(
-                f"@{ban_id} *was never banned from using the bot.*"
+                f"@{_id} *was never banned from using the bot.*"
             )
-        if user_is_banned_by_ownr(ban_id) and not user_is_owner(user):
+        if user_is_banned_by_ownr(_id) and not user_is_owner(user):
             return await event.reply(
                 f"*You're currently not allowed to unban users banned by owner.*"
             )
@@ -534,7 +540,7 @@ async def unban(event, args, client):
         else:
             bot.user_dict.setdefault(ban_id, {}).update(banned=False)
         await save2db2(bot.user_dict, "users")
-        return await event.reply(f"@{ban_id} *ban has been lifted.*")
+        return await event.reply(f"@{_id} *ban has been lifted.*")
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -650,17 +656,20 @@ async def sudoers(event, args, client):
             return await event.reply(msg1)
         elif not (args or event.reply_to_message):
             return await event.reply(msg2)
-        _id = args or event.reply_to_message.from_user.id
-        if user_is_owner(_id):
+        _id = su_id = args or event.reply_to_message.from_user.id
+        if event.lid_address:
+            ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
+            su_id = ph.User
+        if user_is_owner(su_id):
             return await event.reply("*Why?*")
         if arg.a:
-            if user_is_sudoer(_id):
+            if user_is_sudoer(su_id):
                 return await event.reply(f"@{_id} *is already a Sudoer.*")
-            bot.user_dict.setdefault(_id, {}).update(sudoer=True)
+            bot.user_dict.setdefault(su_id, {}).update(sudoer=True)
         if arg.rm:
-            if not user_is_sudoer(_id):
+            if not user_is_sudoer(su_id):
                 return await event.reply(f"@{_id} *is not a Sudoer.*")
-            bot.user_dict.setdefault(_id, {}).update(sudoer=False)
+            bot.user_dict.setdefault(su_id, {}).update(sudoer=False)
         await save2db2(bot.user_dict, "users")
         await event.reply(
             f"@{_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*"
