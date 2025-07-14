@@ -33,13 +33,17 @@ async def folder_upload(folder, event, status_msg, audio, listener):
         i = len(files)
         t = 1
         for name in sorted(files):
-            name_, ext_ = os.path.splitext(name)
-            base_name = get_video_name(name_)
-            file = os.path.join(path, name)
-            await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
+
             if listener.is_cancelled:
                 await status_msg.edit("*Upload has been cancelled!*")
                 return
+
+            name_, ext_ = os.path.splitext(name)
+            base_name = get_video_name(name_)
+            file = os.path.join(path, name)
+            await status_msg.edit(
+                f"[{t}/{i}]\nUploading *{name}*…"
+            )
 
             if size_of(file) >= 100000000:
                 await event.reply(f"*{name} too large to upload.*")
@@ -187,7 +191,7 @@ async def youtube_reply(event, args, client):
                     )
                 await ytdl.clean_up()
                 s_remove(ytdl.folder, folders=True)
-                await status_msg.delete()
+                await status_msg.delete() if not ytdl._listener.is_cancelled else None
                 job.pop(0)
             except Exception:
                 await logger(Exception)
