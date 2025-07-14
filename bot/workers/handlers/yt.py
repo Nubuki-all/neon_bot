@@ -4,7 +4,7 @@ import os
 from clean_links.clean import clean_url
 from urlextract import URLExtract
 
-from bot.config import bot, conf
+from bot.config import bot
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
@@ -36,9 +36,7 @@ async def folder_upload(folder, event, status_msg, audio, listener):
             name_, ext_ = os.path.splitext(name)
             base_name = get_video_name(name_)
             file = os.path.join(path, name)
-            await status_msg.edit(
-                f"[{t}/{i}]\nUploading *{name}*…"
-            )
+            await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
             if listener.is_cancelled:
                 await status_msg.edit("*Upload has been cancelled!*")
                 return
