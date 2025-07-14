@@ -197,6 +197,9 @@ class YoutubeDLHelper:
         self._listener = listener
         self._gid = ""
         self._ext = ""
+        self.cancel_cmd = None
+        self.c_message = None
+        self.cleaned = False
         self.is_playlist = False
         self.file_name = None
         self.start = None
@@ -284,6 +287,16 @@ class YoutubeDLHelper:
             if not user_is_admin(user, group_info.Participants):
                 return await event.react("🙅")
         self._on_download_error(f"*Download with gid: {self._gid} has been cancelled!*")
+        await self.clean_up()
+
+    async def clean_up(self):
+        if self.cleaned:
+            return
+        if self.c_message:
+            await self.c_message.delete()
+        if self.cancel_cmd:
+            bot.unregister(self.cancel_cmd)
+        self.cleaned = True
 
     async def _on_download_start(self, from_queue=False):
         self.cancel_cmd = "cancel_" + self._gid
@@ -337,7 +350,6 @@ class YoutubeDLHelper:
             dsp += "\n*To cancel use the below command;*"
             await self.message.edit(dsp)
             await asyncio.sleep(5)
-        await self.c_message.delete()
 
     def _on_download_error(self, error):
         self._listener.is_cancelled = True

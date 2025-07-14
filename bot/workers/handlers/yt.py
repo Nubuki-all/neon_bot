@@ -24,22 +24,10 @@ from bot.utils.ytdl_utils import (
 )
 
 
-async def folder_upload(folder, event, status_msg, audio, gid):
+async def folder_upload(folder, event, status_msg, audio, listener):
     if not dir_exists(folder):
         return
-    cancel_cmd = "cancel_" + gid
-    listener = DummyListener(folder)
 
-    async def _cancel(event, __, client):
-        "Cancel a ytdl upload."
-        user = event.from_user.id
-        if not user_is_privileged(user):
-            group_info = await client.get_group_info(event.chat.jid)
-            if not user_is_admin(user, group_info.Participants):
-                return await event.react("🙅")
-        listener.is_cancelled = True
-
-    bot.add_handler(_cancel, cancel_cmd)
     for path, subdirs, files in os.walk(folder):
         subdirs.sort()
         if not files:
@@ -59,7 +47,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
             )
             if listener.is_cancelled:
                 await status_msg.edit("*Upload has been cancelled!*")
-                return bot.unregister(cancel_cmd)
+                return
 
             if size_of(file) >= 100000000:
                 await event.reply(f"*{name} too large to upload.*")
@@ -78,7 +66,7 @@ async def folder_upload(folder, event, status_msg, audio, gid):
                 event = await event.reply_video(file, f"*{base_name}*")
             await asyncio.sleep(3)
             t += 1
-    bot.unregister(cancel_cmd)
+
 
 
 async def get_audio_thumbnail(file):
@@ -174,11 +162,11 @@ async def youtube_reply(event, args, client):
                     trim_args=t_args,
                     twi=twi,
                 )
-                bot.unregister(ytdl.cancel_cmd)
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled and listener.error:
                         await status_msg.edit(listener.error)
                     job.pop(0)
+                    await ytdl.clean_up()
                     s_remove(ytdl.folder, folders=True)
                     continue
                 await status_msg.edit("Download completed, Now uploading…")
@@ -190,6 +178,7 @@ async def youtube_reply(event, args, client):
                         await status_msg.edit(
                             "*Upload failed, Video is too large!*\nTry with lower quality."
                         )
+                        await ytdl.clean_up()
                         s_remove(ytdl.folder, folders=True)
                         job.pop(0)
                         continue
@@ -203,8 +192,9 @@ async def youtube_reply(event, args, client):
                         await reply.reply_audio(file)
                 else:
                     await folder_upload(
-                        ytdl.folder, event, status_msg, audio, ytdl._gid
+                        ytdl.folder, event, status_msg, audio, ytdl._listener
                     )
+                await ytdl.clean_up()
                 s_remove(ytdl.folder, folders=True)
                 await status_msg.delete()
                 job.pop(0)
