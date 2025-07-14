@@ -41,9 +41,7 @@ async def folder_upload(folder, event, status_msg, audio, listener):
             name_, ext_ = os.path.splitext(name)
             base_name = get_video_name(name_)
             file = os.path.join(path, name)
-            await status_msg.edit(
-                f"[{t}/{i}]\nUploading *{name}*…"
-            )
+            await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
 
             if size_of(file) >= 100000000:
                 await event.reply(f"*{name} too large to upload.*")
