@@ -7,12 +7,7 @@ from urlextract import URLExtract
 from bot.config import bot, conf
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import logger
-from bot.utils.msg_utils import (
-    chat_is_allowed,
-    extract_bracketed_prefix,
-    user_is_admin,
-    user_is_privileged,
-)
+from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
@@ -66,7 +61,6 @@ async def folder_upload(folder, event, status_msg, audio, listener):
                 event = await event.reply_video(file, f"*{base_name}*")
             await asyncio.sleep(3)
             t += 1
-
 
 
 async def get_audio_thumbnail(file):
