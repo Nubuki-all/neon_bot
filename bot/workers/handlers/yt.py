@@ -6,7 +6,7 @@ from urlextract import URLExtract
 
 from bot.config import bot
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
-from bot.utils.log_utils import logger
+from bot.utils.log_utils import log, logger
 from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
@@ -175,7 +175,7 @@ async def youtube_reply(event, args, client):
                         s_remove(ytdl.folder, folders=True)
                         job.pop(0)
                         continue
-                    await logger(e=f"Uploading {file}…")
+                    log(e=f"Uploading {file}…")
                     base_name = get_video_name(ytdl.base_name)
                     if not audio:
                         await event.reply_video(file, f"*{base_name}*")
