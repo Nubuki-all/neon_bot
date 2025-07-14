@@ -26,7 +26,6 @@ if os.path.isdir("/neon"):
     LOGS.info("Docker: Yes")
 
 
-
 LOGS.info("=" * 30)
 
 
