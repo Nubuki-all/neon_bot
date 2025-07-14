@@ -38,7 +38,6 @@ async def folder_upload(folder, event, status_msg, audio, listener):
             file = os.path.join(path, name)
             await status_msg.edit(
                 f"[{t}/{i}]\nUploading *{name}*…"
-                f"\n\n*Cancel:* {conf.CMD_PREFIX + cancel_cmd}"
             )
             if listener.is_cancelled:
                 await status_msg.edit("*Upload has been cancelled!*")
