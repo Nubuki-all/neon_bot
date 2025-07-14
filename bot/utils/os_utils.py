@@ -12,7 +12,7 @@ from bot import version_file
 
 from .log_utils import log
 
-dirs = ("comp/", "downloads/", "trim/")
+dirs = ("comp/", "downloads/", "trim/", "ytdl/")
 for dir_ in dirs:
     if not os.path.isdir(dir_):
         os.mkdir(dir_)

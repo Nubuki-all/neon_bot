@@ -1,4 +1,5 @@
 import pickle
+from importlib.metadata import version
 
 from pymongo import MongoClient
 
@@ -9,6 +10,7 @@ from bot.utils.os_utils import file_exists, is_executable_installed
 
 LOGS.info("=" * 30)
 LOGS.info(f"Python version: {sys.version.split()[0]}")
+LOGS.info(f"Neonize version: {version('neonize')}")
 
 vmsg = f"Warning: {version_file} is missing!"
 if file_exists(version_file):
@@ -23,8 +25,6 @@ if os.path.isdir("/neon"):
     bot.docker_deployed = True
     LOGS.info("Docker: Yes")
 
-if not os.path.isdir("ytdl/"):
-    os.mkdir("ytdl/")
 
 
 LOGS.info("=" * 30)
