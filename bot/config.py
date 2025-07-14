@@ -41,7 +41,7 @@ class Config:
             self.DEV = config("DEV", default="")
             self.DYNO = config("DYNO", default=None)
             self.IGNORE_PM = config("IGNORE_PM", default=True, cast=bool)
-            self.LOG_GROUP = config("LOG_GROUP", default=0, cast=int)
+            self.LOG_GROUP = config("LOG_GROUP", default="")
             self.MSG_STORE = config(
                 "MSG_STORE", default="sqlite+aiosqlite:///msg_store.db"
             )
