@@ -713,7 +713,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         funcs = [func(client, event) for func in function_dict[None]]
         await asyncio.gather(*funcs)
     except Exception:
-        await logger(e="Unhandled Exception:")
+        await logger(e="Unhandled Exception(s):", error=True)
         await logger(Exception)
 
 

@@ -2,7 +2,7 @@ import signal
 
 import aiohttp
 
-from bot import Message, asyncio, bot, conf, jid, sys, version_file
+from bot import LOGS, Message, asyncio, bot, conf, jid, sys, version_file
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
 from bot.utils.bot_utils import shutdown_services
@@ -113,6 +113,6 @@ async def on_startup():
         asyncio.create_task(update_presence())
         asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())
-        await logger(e="Bot has started.")
+        LOGS.info("Bot has started.")
     except Exception:
         await logger(Exception)

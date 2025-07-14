@@ -179,12 +179,12 @@ class MyLogger:
 
     @staticmethod
     def warning(msg):
-        log(e=msg)
+        log(e=msg, warning=True)
 
     @staticmethod
     def error(msg):
         if msg != "ERROR: Cancelling...":
-            log(e=msg)
+            log(e=msg, error=True)
 
 
 class YoutubeDLHelper:
