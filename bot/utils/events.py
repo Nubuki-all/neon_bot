@@ -191,61 +191,10 @@ class Event:
             self.is_actual_media = True
             self.is_view_once = media.viewOnce
 
-        # Depreciating event.quoted, would be removed soon
-        self.quoted = self.context_info = (
+        self.context_info = (
             self.media.contextInfo
             if add_replied and self.media and self.media.contextInfo.ByteSize()
             else None
-        )
-        self.quoted_audio = self.quoted_document = self.quoted_image = (
-            self.quoted_video
-        ) = self.quoted_viewonce = None
-        if self.quoted:
-            if self.quoted.quotedMessage.audioMessage.ByteSize():
-                self.quoted_audio = self.quoted.quotedMessage.audioMessage
-
-            elif (
-                self.quoted.quotedMessage.documentWithCaptionMessage.message.documentMessage.ByteSize()
-            ):
-                self.quoted_document = (
-                    self.quoted.quotedMessage.documentWithCaptionMessage.message.documentMessage
-                )
-            elif self.quoted.quotedMessage.documentMessage.ByteSize():
-                self.quoted_document = self.quoted.quotedMessage.documentMessage
-            elif self.quoted.quotedMessage.imageMessage.ByteSize():
-                self.quoted_image = self.quoted.quotedMessage.imageMessage
-            elif self.quoted.quotedMessage.videoMessage.ByteSize():
-                self.quoted_video = self.quoted.quotedMessage.videoMessage
-            elif self.quoted.quotedMessage.viewOnceMessageV2.message.ByteSize():
-                self.quoted_viewonce_ = (
-                    self.quoted.quotedMessage.viewOnceMessageV2.message
-                )
-                for x in ("imageMessage", "videoMessage"):
-                    self.quoted_viewonce = getattr(self.quoted_viewonce_, x)
-                    if self.quoted_viewonce.ByteSize():
-                        break
-            elif (
-                self.quoted.quotedMessage.viewOnceMessageV2Extension.message.ByteSize()
-            ):
-                self.quoted_viewonce = (
-                    self.quoted.quotedMessage.viewOnceMessageV2Extension.message.audioMessage
-                )
-
-        self.quoted_text = (
-            (
-                self.quoted.quotedMessage.conversation
-                or self.quoted.quotedMessage.extendedTextMessage.text
-            )
-            if self.quoted
-            else None
-        )
-        self.quoted_msg = (
-            self.quoted_text
-            or self.quoted_audio
-            or self.quoted_document
-            or self.quoted_image
-            or self.quoted_video
-            or self.quoted_viewonce
         )
         self.reply_to_message = self.get_replied_msg()
         self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
@@ -257,6 +206,14 @@ class Event:
             self.chat.jid, self.from_user.jid, self.id, emoji
         )
         return await self.client.send_message(self.chat.jid, reaction)
+
+    def _get_quoted(self):
+        if not (self.media or self.text):
+            return
+        quoted = copy.deepcopy(self.message)
+        if self.is_edit:
+            quoted.Info.ID = self.edited_id
+        return quoted
 
     async def _send_message(
         self,
@@ -387,8 +344,8 @@ class Event:
         text = text or copy.deepcopy(message)
         if not text:
             raise Exception("Specify a text to reply with.")
-        # msg_id = self.id if quote else None
-        if not quote:
+        quoted = self._get_quoted() if quote else None
+        if not quoted:
             return await self._send_message(
                 self.chat.jid,
                 text,
@@ -404,7 +361,7 @@ class Event:
         try:
             response = await self.client.reply_message(
                 text,
-                copy.deepcopy(self.message),
+                quoted,
                 to=to,
                 link_preview=link_preview,
                 reply_privately=reply_privately,
@@ -416,7 +373,7 @@ class Event:
             await logger(Exception)
             response = await self.client.reply_message(
                 text,
-                copy.deepcopy(self.message),
+                quoted,
                 to=to,
                 link_preview=False,
                 reply_privately=reply_privately,
@@ -435,7 +392,7 @@ class Event:
         quote: bool = True,
         add_msg_secret: bool = False,
     ):
-        quoted = copy.deepcopy(self.message) if quote else None
+        quoted = self._get_quoted() if quote else None
 
         response = await self.client.send_audio(
             self.chat.jid, audio, ptt, quoted=quoted, add_msg_secret=add_msg_secret
@@ -454,7 +411,7 @@ class Event:
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = copy.deepcopy(self.message) if quote else None
+        quoted = self._get_quoted() if quote else None
         _, file_name = (
             os.path.split(document)
             if not file_name and isinstance(document, str)
@@ -486,7 +443,7 @@ class Event:
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = copy.deepcopy(self.message) if quote else None
+        quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_video(
             self.chat.jid,
@@ -514,7 +471,7 @@ class Event:
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = copy.deepcopy(self.message) if quote else None
+        quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_image(
             self.chat.jid,
@@ -541,7 +498,7 @@ class Event:
         passthrough: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = copy.deepcopy(self.message) if quote else None
+        quoted = self._get_quoted() if quote else None
         response = await self.client.send_sticker(
             self.chat.jid,
             file,
@@ -569,7 +526,7 @@ class Event:
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
     ):
-        quoted = copy.deepcopy(self.message) if quote else None
+        quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_video(
             self.chat.jid,
@@ -638,10 +595,12 @@ class Event:
 
 POLL = 1
 function_dict = {None: []}
-anti_duplicate = deque(maxlen=10)
+anti_duplicate = deque(maxlen=10000)
 
 
 def register(key: str | None = None):
+    """A decorator to register event handlers"""
+
     def dec(fn):
         nonlocal key
         if isinstance(key, int):
@@ -656,6 +615,7 @@ def register(key: str | None = None):
 
 
 def add_handler(function, command: str | None = None, **kwargs):
+    """Adds an handler using the register decorator"""
     if command:
 
         async def _(client: NewAClient, event: Event):
@@ -667,9 +627,11 @@ def add_handler(function, command: str | None = None, **kwargs):
             await function(event, None, client)
 
     register(command)(_)
+    return _
 
 
 def unregister(key: str | Callable):
+    """Unregisters an event handler"""
     if isinstance(key, str):
         key = conf.CMD_PREFIX + key
         function_dict.pop(key)
@@ -804,7 +766,6 @@ async def event_handler(
     split_args: str = " ",
     default_args: str = False,
     use_default_args: str | None | bool = False,
-    replace_args=None,
 ):
     args = (
         event.text.split(split_args, maxsplit=1)[1].strip()
@@ -822,5 +783,4 @@ async def event_handler(
         if disable_help:
             return
         return await event.reply(f"{inspect.getdoc(function)}")
-    args = replace_args or args
     await function(event, args, client)
