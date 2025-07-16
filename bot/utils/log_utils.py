@@ -8,6 +8,7 @@ from .bot_utils import sync_to_async
 
 _log_ = logging.getLogger(__name__)
 
+
 def get_logger_from_caller():
     """
     Walk up the call stack until you find a frame whose module name
