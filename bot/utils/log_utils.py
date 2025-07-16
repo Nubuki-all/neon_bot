@@ -14,7 +14,11 @@ def get_logger_from_caller():
     Walk up the call stack until you find a frame whose module name
     isn’t this one, and return a Logger for that module.
     """
-    current_module = __name__
+    blacklist = [
+        __name__,
+        "concurrent.futures.thread",
+        "bot.utils.bot_utils",
+    ]
     frame = inspect.currentframe()
     # skip our own get_logger_from_caller frame
     frame = frame.f_back
@@ -24,7 +28,7 @@ def get_logger_from_caller():
         module = inspect.getmodule(frame)
         name = module.__name__ if module else None
         # first frame not in this module → the caller
-        if name and name != current_module:
+        if name and name not in blacklist:
             return logging.getLogger(name)
         frame = frame.f_back
         max_look_backs -= 1
