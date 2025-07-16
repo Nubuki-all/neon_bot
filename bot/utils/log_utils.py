@@ -4,7 +4,6 @@ import traceback
 
 from bot import bot, conf, jid
 
-from .bot_utils import sync_to_async
 
 _log_ = logging.getLogger(__name__)
 
@@ -92,5 +91,5 @@ async def logger(
     warning: bool = False,
 ):
     logger = get_logger_from_caller()
-    await sync_to_async(log, Exception, e, error, critical, warning, logger)
+    log(Exception, e, error, critical, warning, logger)
     await group_logger(Exception, e, error, critical, warning)
