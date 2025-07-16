@@ -4,7 +4,6 @@ import traceback
 
 from bot import bot, conf, jid
 
-
 _log_ = logging.getLogger(__name__)
 
 
