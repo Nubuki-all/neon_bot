@@ -4,10 +4,9 @@ import traceback
 
 from bot import bot, conf, jid
 
-from .utils.bot_utils import sync_to_async
+from .bot_utils import sync_to_async
 
 _log_ = logging.getLogger(__name__)
-
 
 def get_logger_from_caller():
     """
