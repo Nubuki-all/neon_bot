@@ -1,6 +1,7 @@
+import inspect
 import logging
 import traceback
-import inspect
+
 from bridge_bot import bot, conf, jid
 
 
