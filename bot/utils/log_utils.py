@@ -2,7 +2,7 @@ import inspect
 import logging
 import traceback
 
-from bridge_bot import bot, conf, jid
+from bot import bot, conf, jid
 
 
 def get_logger_from_caller():
