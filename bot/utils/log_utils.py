@@ -10,31 +10,12 @@ _log_ = logging.getLogger(__name__)
 
 
 def get_logger_from_caller():
-    """
-    Walk up the call stack until you find a frame whose module name
-    isn’t this one, and return a Logger for that module.
-    """
-    blacklist = [
-        __name__,
-        "concurrent.futures.thread",
-        "bot.utils.bot_utils",
-    ]
-    frame = inspect.currentframe()
-    # skip our own get_logger_from_caller frame
-    frame = frame.f_back
-    max_look_backs = 4
+    # Get the frame of the caller
+    frame = inspect.stack()[2].frame
+    module = inspect.getmodule(frame)
+    name = module.__name__ if module else "__main__"
+    return logging.getLogger(name)
 
-    while frame and max_look_backs:
-        module = inspect.getmodule(frame)
-        name = module.__name__ if module else None
-        # first frame not in this module → the caller
-        if name and name not in blacklist:
-            return logging.getLogger(name)
-        frame = frame.f_back
-        max_look_backs -= 1
-
-    # fallback if all else fails
-    return logging.getLogger(current_module)
 
 
 async def group_logger(
@@ -73,9 +54,10 @@ def log(
     critical: bool = False,
     error: bool = False,
     warning: bool = False,
+    logger=None,
 ):
     trace = e or traceback.format_exc()
-    logger = get_logger_from_caller()
+    logger = logger or get_logger_from_caller()
 
     if critical:
         logger.critical(trace)
@@ -94,5 +76,6 @@ async def logger(
     error: bool = False,
     warning: bool = False,
 ):
-    await sync_to_async(log, Exception, e, error, critical, warning)
+    logger = get_logger_from_caller()
+    await sync_to_async(log, Exception, e, error, critical, warning, logger)
     await group_logger(Exception, e, error, critical, warning)
