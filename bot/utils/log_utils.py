@@ -10,11 +10,27 @@ _log_ = logging.getLogger(__name__)
 
 
 def get_logger_from_caller():
-    # Get the frame of the caller
-    frame = inspect.stack()[2].frame
-    module = inspect.getmodule(frame)
-    name = module.__name__ if module else "__main__"
-    return logging.getLogger(name)
+    """
+    Walk up the call stack until you find a frame whose module name
+    isn’t this one, and return a Logger for that module.
+    """
+    current_module = __name__
+    frame = inspect.currentframe()
+    # skip our own get_logger_from_caller frame
+    frame = frame.f_back
+    max_look_backs = 4
+
+    while frame and max_look_backs:
+        module = inspect.getmodule(frame)
+        name = module.__name__ if module else None
+        # first frame not in this module → the caller
+        if name and name != current_module:
+            return logging.getLogger(name)
+        frame = frame.f_back
+        max_look_backs -= 1
+
+    # fallback if all else fails
+    return logging.getLogger(current_module)
 
 
 async def group_logger(
