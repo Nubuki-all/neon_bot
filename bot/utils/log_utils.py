@@ -1,10 +1,23 @@
+import logging
 import traceback
+import inspect
+from bridge_bot import bot, conf, jid
 
-from bot import LOGS, bot, conf, jid
+
+def get_logger_from_caller():
+    # Get the frame of the caller
+    frame = inspect.stack()[2].frame
+    module = inspect.getmodule(frame)
+    name = module.__name__ if module else "__main__"
+    return logging.getLogger(name)
 
 
 async def group_logger(
-    Exception: Exception, e: str, error: bool, critical: bool, warning: bool
+    Exception: Exception = None,
+    e: str = None,
+    error: bool = False,
+    critical: bool = False,
+    warning: bool = False,
 ):
     if not conf.LOG_GROUP:
         return
@@ -22,38 +35,40 @@ async def group_logger(
             pre = "INFO"
         msg = await bot.client.send_message(
             jid.build_jid(chat, server),
-            f"*#{pre}*\n\n*Summary of what happened:*\n> {trace}\n\n*To restict error messages to logs unset the* `conf.LOG_GROUP` *env var*.",
+            f"*#{pre}*\n\n*Summary of what happened:*\n> {trace}\n\n*To restrict error messages to logs unset the* `conf.LOG_GROUP` *env var*.",
         )
         return msg
     except Exception:
-        LOGS.error(traceback.format_exc())
+        logger = get_logger_from_caller()
+        logger.error(traceback.format_exc())
 
 
 def log(
     Exception: Exception = None,
     e: str = None,
-    critical=False,
-    error=False,
-    warning=False,
+    critical: bool = False,
+    error: bool = False,
+    warning: bool = False,
 ):
     trace = e or traceback.format_exc()
+    logger = get_logger_from_caller()
+
     if critical:
-        _log = LOGS.critical
+        logger.critical(trace)
     elif warning:
-        _log = LOGS.warning
+        logger.warning(trace)
     elif error or not e:
-        _log = LOGS.error
+        logger.error(trace)
     else:
-        _log = LOGS.info
-    _log(trace)
+        logger.info(trace)
 
 
 async def logger(
     Exception: Exception = None,
     e: str = None,
-    critical=False,
-    error=False,
-    warning=False,
+    critical: bool = False,
+    error: bool = False,
+    warning: bool = False,
 ):
     log(Exception, e, error, critical, warning)
     await group_logger(Exception, e, error, critical, warning)
