@@ -8,6 +8,7 @@ from .utils.bot_utils import sync_to_async
 
 _log_ = logging.getLogger(__name__)
 
+
 def get_logger_from_caller():
     """
     Walk up the call stack until you find a frame whose module name
@@ -89,5 +90,5 @@ async def logger(
     error: bool = False,
     warning: bool = False,
 ):
-    await sync_to_async (log, Exception, e, error, critical, warning)
+    await sync_to_async(log, Exception, e, error, critical, warning)
     await group_logger(Exception, e, error, critical, warning)
