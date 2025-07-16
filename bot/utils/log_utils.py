@@ -17,7 +17,6 @@ def get_logger_from_caller():
     return logging.getLogger(name)
 
 
-
 async def group_logger(
     Exception: Exception = None,
     e: str = None,
