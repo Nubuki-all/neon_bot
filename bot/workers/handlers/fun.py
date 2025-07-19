@@ -160,7 +160,7 @@ async def coub(event, args, client):
 
 async def coub_helper(event, args, client):
     if not args:
-        args = "Genshin impact"
+        args = "Anime"
     random_ = ""
     page = 0
     while True:
@@ -249,8 +249,8 @@ async def gif_helper(event, args, client):
     if not conf.TENOR_API_KEY:
         return await event.reply("TENOR_API_KEY is needed for this function to work.")
     if not args:
-        args = "genshin"
-    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqi"
+        args = "anime"
+    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon"
     result = await get_json(url)
     if not result:
         return await event.reply("*Request Failed!*")
@@ -287,8 +287,8 @@ async def sticker_helper(event, args, client):
     if not conf.TENOR_API_KEY:
         return await event.reply("TENOR_API_KEY is needed for this function to work.")
     if not args:
-        args = "genshin"
-    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=qiqinator&searchfilter=sticker"
+        args = "anime"
+    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon&searchfilter=sticker"
     result = await get_json(url)
     if not result:
         return await event.reply("*Request Failed!*")

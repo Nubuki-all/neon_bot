@@ -557,7 +557,7 @@ async def disable(event, args, client):
                 return await event.reply_sticker(
                     no,
                     name="Seriously though, No.",
-                    packname="Qiqi.",
+                    packname="N.",
                 )
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
@@ -586,7 +586,7 @@ async def enable(event, args, client):
                 return await event.reply_sticker(
                     no,
                     name="Seriously though, No.",
-                    packname="Qiqi.",
+                    packname="N.",
                 )
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
@@ -723,7 +723,7 @@ async def ytdl_enable(event, args, client):
                     return await event.reply_sticker(
                         no,
                         name="Seriously though, No.",
-                        packname="Qiqi.",
+                        packname="N.",
                     )
 
             chat_name = group_info.GroupName.Name
@@ -758,7 +758,7 @@ async def ytdl_disable(event, args, client):
                     return await event.reply_sticker(
                         no,
                         name="Seriously though, No.",
-                        packname="Qiqi.",
+                        packname="N.",
                     )
 
             chat_name = group_info.GroupName.Name
@@ -787,7 +787,7 @@ async def disable_amr(event, args, client):
                 return await event.reply_sticker(
                     no,
                     name="Seriously though, No.",
-                    packname="Qiqi.",
+                    packname="N.",
                 )
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
@@ -819,7 +819,7 @@ async def enable_amr(event, args, client):
                 return await event.reply_sticker(
                     no,
                     name="Seriously though, No.",
-                    packname="Qiqi.",
+                    packname="N.",
                 )
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
@@ -856,7 +856,7 @@ async def grt_toggle(event, args, client):
                 return await event.reply_sticker(
                     no,
                     name="Seriously though, No.",
-                    packname="Qiqi.",
+                    packname="N.",
                 )
         disable = enable = False
         if args.casefold() in ("on", "enable"):

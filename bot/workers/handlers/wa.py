@@ -408,7 +408,7 @@ async def sticker_to_image(event, args, client):
             return await event.reply_sticker(
                 "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif",
                 name="Reply to a sticker!",
-                packname="Qiqi.",
+                packname="N.",
             )
         if not event.reply_to_message.sticker:
             return await event.reply("Kindly reply to a sticker!")
