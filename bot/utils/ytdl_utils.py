@@ -309,7 +309,12 @@ class YoutubeDLHelper:
         while not self._listener.is_cancelled:
             if self.download_is_complete:
                 break
-            log(e=str(self.size))
+            if self.size >  5000000000:
+                self._listener.is_cancelled = True
+                await self.message.edit(
+                    f"*{self.name or 'Media'} is bigger than the preset max size limit.*"
+                )
+                continue
             if self.size >= 100000000 and not self.is_playlist:
                 self._listener.is_cancelled = True
                 await self.message.edit(
