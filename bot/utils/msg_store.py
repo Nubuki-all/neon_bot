@@ -19,7 +19,7 @@ class Message(Base):
     __tablename__ = "Wa_Message"
     __table_args__ = (
         Index("idx_chat_id", "chat_id", "timestamp"),
-        Index("idx_chat_id_w_album_id", "chat_id", "timestamp", "album_id")
+        Index("idx_chat_id_w_album_id", "chat_id", "timestamp", "album_id"),
         Index("idx_chat_w_id", "chat_id", "id", "timestamp"),
         Index("idx_chat_w_type", "chat_id", "timestamp", "type"),
         Index("idx_chat_w_revoke", "chat_id", "is_revoke", "timestamp"),
