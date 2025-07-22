@@ -298,3 +298,19 @@ def is_valid_video_timestamp(s: str) -> bool:
         return False
 
     return True
+
+
+async def read_binary(file):
+    def stdlib_read(file):
+        with open(file, "rb") as f:
+            return f.read()
+
+    return await sync_to_async(stdlib_read, file)
+
+
+async def write_binary(file, bytes_):
+    def stdlib_write(file, bytes_):
+        with open(file, "wb") as f:
+            f.write(bytes_)
+
+    return await sync_to_async(stdlib_write, file, bytes_)

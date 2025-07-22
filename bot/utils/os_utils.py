@@ -141,6 +141,11 @@ def size_of(file):
     return int(Path(file).stat().st_size)
 
 
+def size_of_dir(dir_):
+    root_directory = Path(dir_)
+    return sum(f.stat().st_size for f in root_directory.glob("**/*") if f.is_file())
+
+
 def touch(file):
     return Path(file).touch()
 

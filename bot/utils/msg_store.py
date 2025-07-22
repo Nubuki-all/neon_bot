@@ -19,6 +19,7 @@ class Message(Base):
     __tablename__ = "Wa_Message"
     __table_args__ = (
         Index("idx_chat_id", "chat_id", "timestamp"),
+        Index("idx_chat_id_w_album_id", "chat_id", "timestamp", "album_id")
         Index("idx_chat_w_id", "chat_id", "id", "timestamp"),
         Index("idx_chat_w_type", "chat_id", "timestamp", "type"),
         Index("idx_chat_w_revoke", "chat_id", "is_revoke", "timestamp"),
@@ -31,6 +32,7 @@ class Message(Base):
     is_revoke: Mapped[bool]
     raw: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     revoked_id: Mapped[str | None] = mapped_column(String(30))
+    album_id: Mapped[str | None] = mapped_column(String(30))
     timestamp: Mapped[int] = mapped_column(Integer)
     type: Mapped[str] = mapped_column(String(30))
     user_id: Mapped[str] = mapped_column(String(30))
@@ -44,6 +46,7 @@ class Message(Base):
             f"is_revoke={self.is_revoke!r}, "
             f"raw={self.raw!r}, "
             f"revoked_id={self.revoked_id!r}, "
+            f"album_id={self.album_id!r}, "
             f"timestamp={self.timestamp!r}, "
             f"type={self.type!r}, "
             f"user_id={self.user_id!r}, "
@@ -76,6 +79,7 @@ async def save_messages(msgs):
                 is_revoke=event.is_revoke,
                 raw=event.message.SerializeToString(),
                 revoked_id=event.revoked_id,
+                album_id=event.album_id,
                 timestamp=event.timestamp,
                 type=event.name,
                 user_id=event.user.id,
@@ -171,6 +175,25 @@ async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
         raise e
 
 
+async def get_messages_by_album_id(
+    chat_id: str, album_id: str, limit: int = 100
+):
+    try:
+        chat_ids = [chat_id]
+        album_ids = [album_id]
+        async with async_session() as session:
+            stmt = (
+                select(Message)
+                .where(and_(Message.chat_id.in_(chat_ids), Message.album_id.in_(album_ids)))
+                .order_by(Message.timestamp.desc())
+                .limit(limit)
+            )
+            results = (await session.scalars(stmt)).all()
+        return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
+    except Exception as e:
+        raise e
+
+
 async def auto_save_msg():
     bot.auto_save_msg_is_running = True
     while True:
@@ -191,3 +214,4 @@ async def auto_save_msg():
                         bot.force_save_messages = False
             await asyncio.sleep(1)
         await asyncio.sleep(3)
+

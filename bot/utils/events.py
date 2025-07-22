@@ -106,8 +106,8 @@ class Event:
             "sticker",
             "stickerPack",
         ]
-        attrs.extend(["caption", "edited_id", "lid_address", "revoked_id"])
-        attrs.extend(["pollUpdate", "senderKeyDistribution"])
+        attrs.extend(["album_id", "caption", "edited_id", "lid_address", "revoked_id"])
+        attrs.extend(["message_association", "pollUpdate", "senderKeyDistribution"])
         for a in attrs:
             setattr(self, a, None)
 
@@ -186,10 +186,15 @@ class Event:
             if not (self.text or self.is_edit)
             else self.caption
         )
-        self.is_actual_media = self.is_view_once = False
+        self.is_actual_media = self.is_view_once = self.is_album = False
         if media := (self.audio or self.image or self.ptv or self.video):
             self.is_actual_media = True
             self.is_view_once = media.viewOnce
+        if self.media:
+            self.message_association = self._message.messageContextInfo.messageAssociation
+            if self.message_association.associationType == 1:
+                self.is_album = True
+                self.album_id = self.message_association.parentMessageKey.ID
 
         self.context_info = (
             self.media.contextInfo
@@ -513,6 +518,33 @@ class Event:
         )
         msg = self.gen_new_msg(response)
         return construct_event(msg)
+
+    async def reply_stickerpack(
+        self,
+        files: list,
+        quote: bool = True,
+        packname: str = "",
+        publisher: str = "",
+        crop: bool = False,
+        animated_gif: bool = False,
+        passthrough: bool = False,
+        add_msg_secret: bool = False,
+    ):
+        quoted = self._get_quoted() if quote else None
+        response = await self.client.send_stickerpack(
+            self.chat.jid,
+            files,
+            quoted=quoted,
+            packname=packname,
+            publisher=publisher,
+            crop=crop,
+            animated_gif=animated_gif,
+            passthrough=passthrough,
+            add_msg_secret=add_msg_secret,
+        )
+        msg = self.gen_new_msg(response[-1])
+        return construct_event(msg)
+
 
     async def reply_video(
         self,

@@ -35,7 +35,7 @@ from bot.utils.bot_utils import (
 )
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
-from bot.utils.msg_store import get_deleted_message_ids, get_messages
+from bot.utils.msg_store import get_messages_by_album_id, get_deleted_message_ids, get_messages
 from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
@@ -343,17 +343,18 @@ async def screenshot(event, args, client):
 
 async def stickerize_image(event, args, client):
     """
-    Turns replied image to sticker.
+    Turns replied album/image/gif/video/ to sticker.
     Args:
-        Name of sticker [Optional]
+        Name of sticker [Optional] [Recommended] 
     """
-    user = event.from_user.id
+    user = event.from_user.id   
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
+        args_ = args
         if args:
             arg, args = get_args(
                 ["-nl", "store_false"],
@@ -370,7 +371,9 @@ async def stickerize_image(event, args, client):
             forced = False
             limit = True
         if not (replied := event.reply_to_message):
-            return await event.reply("*Reply to a gif/image/video.*")
+            return await event.reply("*Reply to a gif/image/video/album.*")
+        if replied.short_name == "album":
+            return await stickerize_album(event, args_, client)
         if not (replied.image or replied.video):
             return await event.reply("*Replied message is not a gif/image/video.*")
 
@@ -389,6 +392,49 @@ async def stickerize_image(event, args, client):
                 animated_gif=forced,
             )
             await event.send_typing_status(False)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+async def stickerize_album(event, args, client):
+    """
+    Turns replied sticker to sticker-pack.
+    Args:
+        Name of stickerpack [Optional] [Recommended]
+    """
+    try:
+        args_ = args
+        if args:
+            arg, args = get_args(
+                ["-c", "store_true"],
+                ["-f", "store_true"],
+                to_parse=args,
+                get_unknown=True,
+            )
+            crop = arg.c
+            forced = arg.f
+        else:
+            crop = False
+            forced = False
+        replied := event.reply_to_message
+        
+        medias = await get_messages_by_album_id(event.chat.id, event.id)
+        if not medias:
+            return await event.reply("*Replied album media(s) could not be retrieved.*")
+        funcs = [media.download() for media in medias]
+        async with event.react("📥"):
+            files = await asyncio.gather(*funcs)
+        
+        async with event.react("👩🏻‍🏭"):
+            bot.client.me = me = await bot.client.get_me()
+            return await event.reply_stickerpack(
+                files,
+                quote=True,
+                packname=(args or random.choice((enquip(), enquip4()))),
+                publisher=me.PushName,
+                crop=crop,
+                animated_gif=forced,
+            )
     except Exception:
         await logger(Exception)
         await event.react("❌")
