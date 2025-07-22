@@ -381,11 +381,11 @@ async def stickerize_image(event, args, client):
         if not (replied.image or replied.video):
             return await event.reply("*Replied message is not a gif/image/video.*")
 
-        # forced = False if event.quoted_image else forced
-        async with event.react("👩‍🏭"):
+        async with event.react("📥"):
             file = await replied.download()
+
+        async with event.react("👩‍🏭"):
             bot.client.me = me = await bot.client.get_me()
-            await event.send_typing_status()
             return await event.reply_sticker(
                 file,
                 quote=True,
@@ -395,7 +395,6 @@ async def stickerize_image(event, args, client):
                 enforce_not_broken=limit,
                 animated_gif=forced,
             )
-            await event.send_typing_status(False)
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -446,7 +445,6 @@ async def stickerize_album(event, args, client):
 
 async def sticker_to_image(event, args, client):
     "Converts replied sticker back to media"
-    status_msg = None
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -462,24 +460,26 @@ async def sticker_to_image(event, args, client):
             )
         if not event.reply_to_message.sticker:
             return await event.reply("Kindly reply to a sticker!")
-        status_msg = await event.reply("Downloading sticker…")
-        async with event.react("👩‍🏭"):
+        is_animated = False
+        async with event.react("📥"):
             file = await event.reply_to_message.download()
+        async with event.react("👩‍🏭"):
             if event.reply_to_message.sticker.isAnimated:
-                await status_msg.edit("*Converting sticker to gif…*")
+                is_animated = True
                 with wand_image(blob=file, format="webp") as img:
                     with img.convert("gif") as img2:
+                        img2.coalesce()
                         gif = img2.make_blob(format="gif")
+            else:
+                pic = await png_to_jpg(file)
+        async with event.react("📤"):
+            if is_animated:
                 await event.reply_gif(gif)
             else:
-                await status_msg.edit("*Converting sticker to image…*")
-                await event.reply_photo((await png_to_jpg(file)))
+                await event.reply_photo(pic)
     except Exception:
         await logger(Exception)
         await event.react("❌")
-    finally:
-        if status_msg:
-            await status_msg.delete()
 
 
 async def undelete(event, args, client):
