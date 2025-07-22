@@ -420,9 +420,9 @@ async def stickerize_album(event, args, client):
         else:
             crop = False
             forced = False
-        event.reply_to_message
+        replied = event.reply_to_message
         async with event.react("🗂️"):
-            medias = await get_messages_by_album_id(event.chat.id, event.id)
+            medias = await get_messages_by_album_id(event.chat.id, replied.id)
         if not medias:
             return await event.reply("*Replied album media(s) could not be retrieved.*")
         funcs = [media.download() for media in medias]
