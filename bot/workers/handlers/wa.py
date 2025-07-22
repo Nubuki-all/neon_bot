@@ -35,7 +35,11 @@ from bot.utils.bot_utils import (
 )
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
-from bot.utils.msg_store import get_messages_by_album_id, get_deleted_message_ids, get_messages
+from bot.utils.msg_store import (
+    get_deleted_message_ids,
+    get_messages,
+    get_messages_by_album_id,
+)
 from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
@@ -345,9 +349,9 @@ async def stickerize_image(event, args, client):
     """
     Turns replied album/image/gif/video/ to sticker.
     Args:
-        Name of sticker [Optional] [Recommended] 
+        Name of sticker [Optional] [Recommended]
     """
-    user = event.from_user.id   
+    user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
@@ -396,6 +400,7 @@ async def stickerize_image(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def stickerize_album(event, args, client):
     """
     Turns replied sticker to sticker-pack.
@@ -403,7 +408,6 @@ async def stickerize_album(event, args, client):
         Name of stickerpack [Optional] [Recommended]
     """
     try:
-        args_ = args
         if args:
             arg, args = get_args(
                 ["-c", "store_true"],
@@ -416,7 +420,7 @@ async def stickerize_album(event, args, client):
         else:
             crop = False
             forced = False
-        replied = event.reply_to_message
+        event.reply_to_message
         async with event.react("🗂️"):
             medias = await get_messages_by_album_id(event.chat.id, event.id)
         if not medias:
@@ -424,7 +428,7 @@ async def stickerize_album(event, args, client):
         funcs = [media.download() for media in medias]
         async with event.react("📥"):
             files = await asyncio.gather(*funcs)
-        
+
         async with event.react("👩🏻‍🏭"):
             bot.client.me = me = await bot.client.get_me()
             return await event.reply_stickerpack(

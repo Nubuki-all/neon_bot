@@ -191,7 +191,9 @@ class Event:
             self.is_actual_media = True
             self.is_view_once = media.viewOnce
         if self.media:
-            self.message_association = self._message.messageContextInfo.messageAssociation
+            self.message_association = (
+                self._message.messageContextInfo.messageAssociation
+            )
             if self.message_association.associationType == 1:
                 self.is_album = True
                 self.album_id = self.message_association.parentMessageKey.ID
@@ -544,7 +546,6 @@ class Event:
         )
         msg = self.gen_new_msg(response[-1])
         return construct_event(msg)
-
 
     async def reply_video(
         self,

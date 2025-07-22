@@ -175,16 +175,16 @@ async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
         raise e
 
 
-async def get_messages_by_album_id(
-    chat_id: str, album_id: str, limit: int = 100
-):
+async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100):
     try:
         chat_ids = [chat_id]
         album_ids = [album_id]
         async with async_session() as session:
             stmt = (
                 select(Message)
-                .where(and_(Message.chat_id.in_(chat_ids), Message.album_id.in_(album_ids)))
+                .where(
+                    and_(Message.chat_id.in_(chat_ids), Message.album_id.in_(album_ids))
+                )
                 .order_by(Message.timestamp.desc())
                 .limit(limit)
             )
@@ -214,4 +214,3 @@ async def auto_save_msg():
                         bot.force_save_messages = False
             await asyncio.sleep(1)
         await asyncio.sleep(3)
-
