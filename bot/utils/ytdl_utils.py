@@ -76,7 +76,15 @@ class ExtractLogger:
     def error(msg):
         log(e=msg, error=True)
 
-def extract_info(link, options={"cookiefile": ".cookies.txt", "ignoreerrors": True, "logger": ExtractLogger()}):
+
+def extract_info(
+    link,
+    options={
+        "cookiefile": ".cookies.txt",
+        "ignoreerrors": True,
+        "logger": ExtractLogger(),
+    },
+):
     with YoutubeDL(options) as ydl:
         result = ydl.extract_info(link, download=False)
         if result is None:
