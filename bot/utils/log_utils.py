@@ -34,8 +34,9 @@ def get_logger_from_caller():
 async def group_logger(
     Exception: Exception = None,
     e: str = None,
-    error: bool = False,
     critical: bool = False,
+    debug: bool = False,
+    error: bool = False,
     warning: bool = False,
 ):
     if not conf.LOG_GROUP:
@@ -46,6 +47,8 @@ async def group_logger(
         chat, server = map(str, gc) if len(gc) > 1 else (str(gc[0]), "g.us")
         if critical:
             pre = "CRITICAL ERROR"
+        elif debug:
+            pre = "DEBUG"
         elif warning:
             pre = "WARNING"
         elif error or not e:
@@ -65,6 +68,7 @@ def log(
     Exception: Exception = None,
     e: str = None,
     critical: bool = False,
+    debug: bool = False,
     error: bool = False,
     warning: bool = False,
     logger=None,
@@ -74,6 +78,8 @@ def log(
 
     if critical:
         logger.critical(trace)
+    elif debug:
+        logger.debug(trace)
     elif warning:
         logger.warning(trace)
     elif error or not e:
@@ -86,9 +92,10 @@ async def logger(
     Exception: Exception = None,
     e: str = None,
     critical: bool = False,
+    debug: bool = False,
     error: bool = False,
     warning: bool = False,
 ):
     logger = get_logger_from_caller()
-    log(Exception, e, error, critical, warning, logger)
-    await group_logger(Exception, e, error, critical, warning)
+    log(Exception, e, critical, debug, error, warning, logger)
+    await group_logger(Exception, e, critical, debug, error, warning)

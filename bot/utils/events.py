@@ -220,6 +220,7 @@ class Event:
         quoted = copy.deepcopy(self.message)
         if self.is_edit:
             quoted.Info.ID = self.edited_id
+            patch_msg(quoted, quoted.protocol.editedMessage)
         return quoted
 
     async def _send_message(
@@ -750,7 +751,7 @@ def construct_msg_and_evt(*args, **kwargs):
     return construct_event(construct_message(*args, **kwargs))
 
 
-def patch_msg(msg: Message, new_msg: Message):
+def patch_msg(msg: MessageEv, new_msg: Message):
     temp_msg = msg.__class__(
         Message=new_msg,
         Raw=new_msg,

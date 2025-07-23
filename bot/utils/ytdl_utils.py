@@ -60,7 +60,23 @@ def get_video_name(base_name, with_quality=False):
         return base_name.strip()
 
 
-def extract_info(link, options={"cookiefile": ".cookies.txt", "ignoreerrors": True}):
+class ExtractLogger:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def debug(msg):
+        log(e=msg, debug=True)
+
+    @staticmethod
+    def warning(msg):
+        log(e=msg, warning=True)
+
+    @staticmethod
+    def error(msg):
+        log(e=msg, error=True)
+
+def extract_info(link, options={"cookiefile": ".cookies.txt", "ignoreerrors": True, "logger": ExtractLogger()}):
     with YoutubeDL(options) as ydl:
         result = ydl.extract_info(link, download=False)
         if result is None:
