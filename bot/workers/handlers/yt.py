@@ -6,7 +6,7 @@ from urlextract import URLExtract
 
 from bot.config import bot
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
-from bot.utils.log_utils import log, logger
+from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
@@ -124,7 +124,7 @@ async def youtube_reply(event, args, client):
                 try:
                     result = await sync_to_async(extract_info, listener.link)
                 except ValueError as w:
-                    await logger(e=w, warning=True)
+                    await group_logger(e=w, warning=True)
                     await asyncio.sleep(1)
                     job.pop(0)
                     continue
