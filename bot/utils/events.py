@@ -220,7 +220,7 @@ class Event:
         quoted = copy.deepcopy(self.message)
         if self.is_edit:
             quoted.Info.ID = self.edited_id
-            patch_msg(quoted, quoted.protocol.editedMessage)
+            patch_msg(quoted, copy.deepcopy(self.protocol.editedMessage))
         return quoted
 
     async def _send_message(
