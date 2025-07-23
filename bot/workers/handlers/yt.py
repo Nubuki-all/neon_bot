@@ -123,8 +123,8 @@ async def youtube_reply(event, args, client):
                         quality = "720"
                 try:
                     result = await sync_to_async(extract_info, listener.link)
-                except Exception:
-                    await logger(Exception)
+                except ValueError as w:
+                    await logger(e=w, warning=True)
                     await asyncio.sleep(1)
                     job.pop(0)
                     continue
