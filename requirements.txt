@@ -10,7 +10,6 @@ html_telegraph_poster
 humanize
 lxml[html_clean]
 pymongo
-python-anilist
 python-decouple
 python-ffmpeg
 pytz
@@ -20,6 +19,7 @@ w3lib
 Wand
 yt-dlp[default,curl-cffi]
 git+https://github.com/Nubuki-all/neonize@patch-1
+git+https://github.com/Nubuki-all/python-anilist
 git+https://github.com/Nubuki-all/Real-ESRGAN
 #Snyk pins 
 certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
