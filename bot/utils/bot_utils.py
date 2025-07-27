@@ -354,13 +354,13 @@ def clean_whatsapp_md(text: str) -> str:
       `monospace`  → monospace
     """
     # 1) Triple‑backtick blocks (multiline monospace)
-    text = re.sub(r'```(.*?)```', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r"```(.*?)```", r"\1", text, flags=re.DOTALL)
     # 2) Single‑backtick monospace
-    text = re.sub(r'`([^`]+)`', r'\1', text)
+    text = re.sub(r"`([^`]+)`", r"\1", text)
     # 3) Bold
-    text = re.sub(r'\*([^\*]+)\*', r'\1', text)
+    text = re.sub(r"\*([^\*]+)\*", r"\1", text)
     # 4) Italic
-    text = re.sub(r'_([^_]+)_', r'\1', text)
+    text = re.sub(r"_([^_]+)_", r"\1", text)
     # 5) Strikethrough
-    text = re.sub(r'~([^~]+)~', r'\1', text)
+    text = re.sub(r"~([^~]+)~", r"\1", text)
     return text
