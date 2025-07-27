@@ -3,6 +3,7 @@ aiohttp_retry
 aiosqlite
 apscheduler
 beautifulsoup4
+chatterbot[dev]
 clean_links
 emoji-country-flag
 feedparser

@@ -24,6 +24,7 @@ from .utils.os_utils import re_x
 from .utils.sudo_button_utils import poll_as_button_handler
 from .workers.handlers.afk import activate_afk, afk_helper
 from .workers.handlers.ani import airing, anime
+from .workers.handlers.chatbot import add_chatbot_handler
 from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.fun import getmeme
 from .workers.handlers.manage import (
@@ -234,6 +235,9 @@ async def _(client: NewAClient, message: Event):
 
 
 ## ALL ##
+
+
+add_chatbot_handler()
 
 
 @bot.register(None)

@@ -32,7 +32,7 @@ class Config:
             self.BLOCK_NSFW = config("BLOCK_NSFW", default=True, cast=bool)
             self.DISABLE_CIP = config("DISABLE_CIP", default=False, cast=bool)
             self.PH_NUMBER = config("PH_NUMBER", default="")
-
+            self.CB_DB = config("CHATBOT_DB", default=None)
             self.CMD_PREFIX = config("CMD_PREFIX", default="")
             self.DATABASE_URL = config("DATABASE_URL", default=None)
             self.DBNAME = config("DBNAME", default="Neon")
