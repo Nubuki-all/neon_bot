@@ -17,7 +17,7 @@ async def chat(event, _, client):
             return
         response = await sync_to_async(chat_bot.get_response, text)
         await asyncio.sleep(1)
-        await event.reply(response)
+        await event.reply(str(response))
     except Exception:
         await logger(Exception)
 
