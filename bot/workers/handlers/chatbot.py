@@ -13,7 +13,7 @@ async def chat(event, _, client):
             return
         if event.chat.is_group:
             return
-        if text in function_dict:
+        if text.split()[0] in function_dict:
             return
         response = await sync_to_async(chat_bot.get_response, text)
         await asyncio.sleep(1)
