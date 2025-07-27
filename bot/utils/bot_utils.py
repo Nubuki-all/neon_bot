@@ -342,3 +342,25 @@ def ensure_default_db(uri: str, default_db: str) -> str:
         )
     )
     return rebuilt
+
+
+def clean_whatsapp_md(text: str) -> str:
+    """
+    Remove WhatsApp Markdown markers:
+      *bold*       → bold
+      _italic_     → italic
+      ~strike~     → strike
+      ```code```   → code
+      `monospace`  → monospace
+    """
+    # 1) Triple‑backtick blocks (multiline monospace)
+    text = re.sub(r'```(.*?)```', r'\1', text, flags=re.DOTALL)
+    # 2) Single‑backtick monospace
+    text = re.sub(r'`([^`]+)`', r'\1', text)
+    # 3) Bold
+    text = re.sub(r'\*([^\*]+)\*', r'\1', text)
+    # 4) Italic
+    text = re.sub(r'_([^_]+)_', r'\1', text)
+    # 5) Strikethrough
+    text = re.sub(r'~([^~]+)~', r'\1', text)
+    return text
