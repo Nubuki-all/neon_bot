@@ -6,6 +6,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from hashlib import sha256
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 
 import aiohttp
 import httpx
@@ -314,3 +315,29 @@ async def write_binary(file, bytes_):
             f.write(bytes_)
 
     return await sync_to_async(stdlib_write, file, bytes_)
+
+
+
+def ensure_default_db(uri: str, default_db: str) -> str:
+    """
+    If `uri` has no path component (i.e. no '/dbname' after the hosts),
+    inject '/<default_db>' before any query string. Otherwise leave it alone.
+    """
+    parsed = urlparse(uri)
+    # parsed.path will be '' or '/' if no db is present
+    if parsed.path not in (None, '', '/'):
+        return uri
+
+    # build a new path
+    new_path = '/' + default_db
+
+    # reassemble the URI with the new path
+    rebuilt = urlunparse((
+        parsed.scheme,
+        parsed.netloc,
+        new_path,
+        parsed.params,
+        parsed.query,
+        parsed.fragment
+    ))
+    return rebuilt

@@ -3,6 +3,8 @@ from chatterbot.trainers import ChatterBotCorpusTrainer
 
 from bot.config import conf
 
+from .bot_utils import ensure_default_db
+
 if conf.CB_DB:
     chat_bot = ChatBot(
         "N.",
@@ -12,7 +14,7 @@ if conf.CB_DB:
             "chatterbot.logic.MathematicalEvaluation",
             "chatterbot.logic.TimeLogicAdapter",
         ],
-        database_uri=conf.CB_DB,
+        database_uri=ensure_default_db(conf.CB_DB, "chatterbot"),
     )
     trainer = ChatterBotCorpusTrainer(chat_bot)
     trainer.train("chatterbot.corpus.english")
