@@ -1,6 +1,6 @@
 import asyncio
 
-from bot.config import bot, conf
+from bot.config import bot
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.chatbot_utils import chat_bot
 from bot.utils.log_utils import logger
