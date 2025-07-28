@@ -393,6 +393,30 @@ class Event:
         msg = self.gen_new_msg(response, private=reply_privately)
         return construct_event(msg)
 
+    async def reply_album(
+        self,
+        files: list,
+        caption: str = None,
+        quote: bool = True,
+        ghost_mentions: str = None,
+        mentions_are_lids: bool = False,
+        mentions_are_jids: bool = False,
+        add_msg_secret: bool = False,
+    ):
+        quoted = self._get_quoted() if quote else None
+        mentions_are_not_jids = False if mentions_are_jids else self.lid_address
+        responses = await self.client.send_album(
+            self.chat.jid,
+            files,
+            caption,
+            quoted=quoted,
+            ghost_mentions=ghost_mentions,
+            mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
+            add_msg_secret=add_msg_secret,
+        )
+        msg = self.gen_new_msg(responses[0])
+        return construct_event(msg)
+
     async def reply_audio(
         self,
         audio: str | bytes,
@@ -534,7 +558,7 @@ class Event:
         add_msg_secret: bool = False,
     ):
         quoted = self._get_quoted() if quote else None
-        response = await self.client.send_stickerpack(
+        responses = await self.client.send_stickerpack(
             self.chat.jid,
             files,
             quoted=quoted,
@@ -545,7 +569,7 @@ class Event:
             passthrough=passthrough,
             add_msg_secret=add_msg_secret,
         )
-        msg = self.gen_new_msg(response[-1])
+        msg = self.gen_new_msg(responses[-1])
         return construct_event(msg)
 
     async def reply_video(
