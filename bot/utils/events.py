@@ -667,6 +667,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         if _id in anti_duplicate:
             return
         anti_duplicate.append(_id)
+        bot.pending_saved_messages.append(event)
         if event.type == "text" and event.text:
             command, args = (
                 event.text.split(maxsplit=1)
