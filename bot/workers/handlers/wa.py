@@ -5,6 +5,7 @@ import io
 import random
 import uuid
 from datetime import datetime as dt
+from os.path import splitext as split_ext
 
 import torch
 from clean_links.clean import clean_url
@@ -22,6 +23,7 @@ from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
     human_format_num,
+    is_video_file,
     list_to_str,
     png_to_jpg,
     same_week,
@@ -178,15 +180,22 @@ async def compress(event, args, client):
     try:
         if not (replied := event.reply_to_message):
             return await event.reply("*Kindly reply to video.*")
-        if not replied.video:
+        ext = ""
+        f_name = ""
+        if replied.document:
+            if not is_video_file(replied.document.fileName):
+                return await event.reply("*Replied message is not a video.*")
+            f_name, ext = split_ext(replied.document.fileName)
+        elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         args = args.casefold() if args else ""
+        ext = ext or ".mp4"
 
         async with event.react("📥"):
             file = await replied.download()
 
         _id = f"{event.chat.id}:{event.id}"
-        in_ = f"comp/{_id}.mp4"
+        in_ = f"comp/{_id}{ext}"
         out_ = f"comp/{_id}-1.mkv"
         quality = {"480p": "854x480", "720p": "1280x720", "1080p": "1920x1080"}
         title_ = (replied.caption or "").split("\n")[-1]
@@ -203,7 +212,8 @@ async def compress(event, args, client):
             )
         s_remove(in_)
         async with event.react("📤"):
-            file_name = "video_" + dt.now().isoformat("_", "seconds") + ".mkv"
+            file_name = f_name or "video_" + dt.now().isoformat("_", "seconds") 
+            file_name += ".mkv" 
             await event.reply_document(out_, file_name, file_name)
         s_remove(out_)
     except Exception:

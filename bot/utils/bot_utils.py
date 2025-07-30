@@ -175,6 +175,40 @@ def human_format_num(num):
     )
 
 
+def is_video_file(filename: str):
+    video_file_extensions = (
+        ".3g2",
+        ".3gp",
+        ".3gp2",
+        ".3gpp",
+        ".avc",
+        ".avd",
+        ".avi",
+        ".evo",
+        ".fli",
+        ".flv",
+        ".flx",
+        ".m4u",
+        ".m4v",
+        ".mkv",
+        ".mov",
+        ".movie",
+        ".mp21",
+        ".mp21",
+        ".mp2v",
+        ".mp4",
+        ".mp4v",
+        ".mpeg",
+        ".mpeg1",
+        ".mpeg4",
+        ".mpf",
+        ".mpg",
+        ".mpg2",
+        ".xvid",
+    )
+    if filename.endswith((video_file_extensions)):
+        return True
+
 async def png_to_jpg(png: bytes | str):
     raw = False if isinstance(png, str) else True
     ffmpeg = (

@@ -32,8 +32,8 @@ class BaseUser(ABC):
         self.is_hidden: bool = False
 
     @abstractmethod
-    def construct(self, message, alt: bool = False):
-        """Populate user fields from a MessageEv"""
+    def construct(self, info: base_msg_info, alt: bool = False):
+        """Populate user fields from a Message.Info"""
         ...
 
 
@@ -47,8 +47,8 @@ class BaseChat(ABC):
         self.is_empty: bool = False
 
     @abstractmethod
-    def construct(self, msg_source):
-        """Populate chat fields from a base_msg_source"""
+    def construct(self, msg_source: base_msg_source):
+        """Populate chat fields from a MessageSource"""
         ...
 
 
