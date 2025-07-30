@@ -209,6 +209,7 @@ def is_video_file(filename: str):
     if filename.endswith((video_file_extensions)):
         return True
 
+
 async def png_to_jpg(png: bytes | str):
     raw = False if isinstance(png, str) else True
     ffmpeg = (
