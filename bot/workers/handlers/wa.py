@@ -163,6 +163,7 @@ async def to_mp3(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+comp_sem = asyncio.Semaphore(4)
 
 async def compress(event, args, client):
     """
@@ -203,8 +204,10 @@ async def compress(event, args, client):
 
         with open(in_, "wb") as f:
             f.write(file)
+        
         async with event.react("⏲️"):
-            process, stdout, stderr = await enshell(cmd_str)
+            async with comp_sem:
+                process, stdout, stderr = await enshell(cmd_str)
         if process.returncode != 0:
             raise RuntimeError(
                 # type: ignore
