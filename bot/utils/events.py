@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import copy
 import inspect
@@ -23,17 +25,19 @@ from bot import (
     jid,
 )
 from bot.config import bot, conf
+from bot.types.event import BaseEvent, Chat, User
 
+from .bot_utils import write_binary
 from .log_utils import logger
 
 
-class Event:
+class Event(BaseEvent):
     def __init__(self):
+        super().__init__()
         self.client = bot.client
-        self.constructed = False
-
-    def __str__(self):
-        return self.text
+        self.chat = Chat()
+        self.user = User()
+        self.alt_user = User()
 
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -44,33 +48,6 @@ class Event:
                 v = None
             setattr(result, k, copy.deepcopy(v, memo))
         return result
-
-    class User:
-        def __init__(self):
-            self.name = None
-
-        def construct(self, message: MessageEv, alt=False):
-            self.name = message.Info.Pushname
-            self.jid = (
-                message.Info.MessageSource.Sender
-                if not alt
-                else message.Info.MessageSource.SenderAlt
-            )
-            self.id = self.jid.User
-            self.is_empty = self.jid.IsEmpty
-            self.server = self.jid.Server
-            self.is_hidden = self.server == "lid"
-
-    class Chat:
-        def __init__(self):
-            self.name = None
-
-        def construct(self, msg_source: base_msg_source):
-            self.jid = msg_source.Chat
-            self.id = self.jid.User
-            self.is_empty = msg_source.Chat.IsEmpty
-            self.is_group = msg_source.IsGroup
-            self.server = self.jid.Server
 
     def _construct_media(self, message=None):
         for msg, v in (message or self._message).ListFields():
@@ -92,72 +69,46 @@ class Event:
             self.media = v
             break
 
-    def _populate(self):
-        attrs = [
-            "audio",
-            "document",
-            "image",
-            "media",
-            "protocol",
-            "ptv",
-            "reaction",
-            "video",
-            "view_once",
-            "sticker",
-            "stickerPack",
-        ]
-        attrs.extend(["album_id", "caption", "edited_id", "lid_address", "revoked_id"])
-        attrs.extend(["message_association", "pollUpdate", "senderKeyDistribution"])
-        for a in attrs:
-            setattr(self, a, None)
-
-    def construct(self, message: MessageEv, add_replied: bool = True):
+    def construct(self, message: MessageEv, add_replied: bool = True) -> Event:
         self.message = message
-        self.outgoing = message.Info.MessageSource.IsFromMe
-        self._populate()
-        if self.message.Info.MessageSource.AddressingMode == 2:
+        msg_info = message.Info
+        msg_source = msg_info.MessageSource
+        self.outgoing = msg_source.IsFromMe
+        if msg_source.AddressingMode == 2:
             self.lid_address = True
 
         # Patch message if it was sent by current user on another device
         if self.outgoing:
-            if self.message.Info.MessageSource.Sender.Server == "lid":
+            if msg_source.Sender.Server == "lid":
                 patch_msg_sender(
-                    self.message,
-                    self.message.Info.MessageSource.Sender,
+                    message,
+                    msg_source.Sender,
                     bot.client.me.JID,
                 )
             else:
                 patch_msg_sender(
-                    self.message,
-                    self.message.Info.MessageSource.Sender,
+                    message,
+                    msg_source.Sender,
                     bot.client.me.LID,
                 )
-        self.chat = self.Chat()
-        self.chat.construct(message.Info.MessageSource)
-        self.alt_user = self.User()
-        self.alt_user.construct(self.message, alt=True)
-        self.user = self.User()
-        self.user.construct(self.message)
+        self.chat.construct(msg_source)
+        self.alt_user.construct(msg_info, alt=True)
+        self.user.construct(msg_info)
 
         # To do support other message types
-        self.id = message.Info.ID
-        self.type = message.Info.Type
-        self.type = "text" if message.Info.MediaType == "url" else self.type
-        self.media_type = message.Info.MediaType
+        self.id = msg_info.ID
+        self.type = msg_info.Type
+        self.type = "text" if msg_info.MediaType == "url" else self.type
+        self.media_type = msg_info.MediaType
         self._message = message.Message
-        self.ext_msg = message.Message.extendedTextMessage
-        self.text_msg = message.Message.conversation
-        self.short_text = self.text_msg
-        self.text = self.ext_msg.text
-        self.timestamp = self.message.Info.Timestamp
-        # mention_str = f"@{(self.w_id.split('@'))[0]}"
-        # self.mentioned = self.text.startswith(mention_str) if self.text else False
-        # if self.mentioned:
-        #    self.text = (self.text.split(maxsplit=1)[1]).strip()
-        self.text = self.text or self.short_text or None
+        self._ext_msg = message.Message.extendedTextMessage
+        self._text_msg = message.Message.conversation
+        self._short_text = self._text_msg
+        self.text = self._ext_msg.text
+        self.timestamp = msg_info.Timestamp
+        self.text = self.text or self._short_text or None
         self._construct_media()
-        self.is_edit = False
-        self.is_revoke = False
+
         if self.protocol:
             if self.protocol.type == 0:
                 self.is_revoke = True
@@ -186,7 +137,6 @@ class Event:
             if not (self.text or self.is_edit)
             else self.caption
         )
-        self.is_actual_media = self.is_view_once = self.is_album = False
         if media := (self.audio or self.image or self.ptv or self.video):
             self.is_actual_media = True
             self.is_view_once = media.viewOnce
@@ -198,13 +148,13 @@ class Event:
                 self.is_album = True
                 self.album_id = self.message_association.parentMessageKey.ID
 
-        self.context_info = (
+        self._context_info = (
             self.media.contextInfo
             if add_replied and self.media and self.media.contextInfo.ByteSize()
             else None
         )
         self.reply_to_message = self.get_replied_msg()
-        self.is_status = message.Info.MessageSource.Chat.User.casefold() == "status"
+        self.is_status = msg_source.Chat.User.casefold() == "status"
         self.constructed = True
         return self
 
@@ -214,7 +164,7 @@ class Event:
         )
         return await self.client.send_message(self.chat.jid, reaction)
 
-    def _get_quoted(self):
+    def _get_quoted(self) -> MessageEv:
         if not (self.media or self.text):
             return
         quoted = copy.deepcopy(self.message)
@@ -232,7 +182,7 @@ class Event:
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         if not isinstance(message, str):
             field_name = (
@@ -256,7 +206,7 @@ class Event:
         await self.client.revoke_message(self.chat.jid, self.from_user.jid, self.id)
         return
 
-    async def download(self, path: str = None):
+    async def download(self, path: str = None) -> bytes | None:
         if not (
             self.audio or self.document or self.image or self.sticker or self.video
         ):
@@ -264,16 +214,15 @@ class Event:
         bytes_ = await download_media(self._message)
         if not path:
             return bytes_
-        with open(path, "wb") as file:
-            file.write(bytes_)
+        await write_binary(path, bytes_)
 
-    async def edit(self, text: str = None, message=None):
+    async def edit(self, text: str = None, message=None) -> Event:
         msg = Message(conversation=text) if text else message
         response = await self.client.edit_message(self.chat.jid, self.id, msg)
         msg = self.gen_new_msg(response)
         return construct_event(msg)
 
-    async def _send_reaction(self, emoji: str):
+    async def _send_reaction(self, emoji: str) -> Event:
         """Internal method to send a reaction."""
         reaction = await self.client.build_reaction(
             self.chat.jid, self.from_user.jid, self.id, emoji
@@ -338,7 +287,7 @@ class Event:
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         if not self.constructed:
             return
         if file:
@@ -402,7 +351,7 @@ class Event:
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         responses = await self.client.send_album(
@@ -423,7 +372,7 @@ class Event:
         ptt: bool = False,
         quote: bool = True,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
 
         response = await self.client.send_audio(
@@ -442,7 +391,7 @@ class Event:
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
         _, file_name = (
             os.path.split(document)
@@ -474,7 +423,7 @@ class Event:
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_video(
@@ -502,7 +451,7 @@ class Event:
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_image(
@@ -529,7 +478,7 @@ class Event:
         animated_gif: bool = False,
         passthrough: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
         response = await self.client.send_sticker(
             self.chat.jid,
@@ -556,7 +505,7 @@ class Event:
         animated_gif: bool = False,
         passthrough: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
         responses = await self.client.send_stickerpack(
             self.chat.jid,
@@ -583,7 +532,7 @@ class Event:
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
-    ):
+    ) -> Event:
         quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
         response = await self.client.send_video(
@@ -616,7 +565,7 @@ class Event:
         # return construct_event(msg)
         return response
 
-    def gen_new_msg(self, response: SendResponse, private=False):
+    def gen_new_msg(self, response: SendResponse, private=False) -> MessageEv:
         msg = copy.deepcopy(self.message)
         msg.Info.ID = response.ID
         msg.Info.Pushname = bot.client.me.PushName
@@ -631,22 +580,22 @@ class Event:
             patch_msg_sender(msg, bot.client.me.JID, bot.client.me.LID)
         return msg
 
-    def get_replied_msg(self):
-        if not (self.context_info and self.context_info.stanzaID):
+    def get_replied_msg(self) -> Event:
+        if not (self._context_info and self._context_info.stanzaID):
             return
-        if self.context_info.remoteJID:
-            chat_id, server = self.context_info.remoteJID.split("@", maxsplit=1)
+        if self._context_info.remoteJID:
+            chat_id, server = self._context_info.remoteJID.split("@", maxsplit=1)
         else:
             chat_id = self.chat.id
             server = self.chat.server
         msg = construct_message(
             chat_id,
-            (self.context_info.participant.split("@"))[0],
-            self.context_info.stanzaID,
+            (self._context_info.participant.split("@"))[0],
+            self._context_info.stanzaID,
             None,
             server,
-            (self.context_info.participant.split("@"))[1],
-            self.context_info.quotedMessage,
+            (self._context_info.participant.split("@"))[1],
+            self._context_info.quotedMessage,
         )
         return construct_event(msg, False)
 
@@ -718,7 +667,6 @@ async def on_message(client: NewAClient, message: MessageEv):
         if _id in anti_duplicate:
             return
         anti_duplicate.append(_id)
-        bot.pending_saved_messages.append(event)
         if event.type == "text" and event.text:
             command, args = (
                 event.text.split(maxsplit=1)
@@ -737,7 +685,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         await logger(Exception)
 
 
-def construct_event(message: MessageEv, add_replied=True):
+def construct_event(message: MessageEv, add_replied=True) -> Event:
     msg = Event()
     return msg.construct(message, add_replied=add_replied)
 
@@ -752,7 +700,7 @@ def construct_message(
     Msg=None,
     user_id2=None,
     userver2="lid",
-):
+) -> MessageEv:
     if text:
         message = Message(conversation=text)
     else:
@@ -771,7 +719,7 @@ def construct_message(
     )
 
 
-def construct_msg_and_evt(*args, **kwargs):
+def construct_msg_and_evt(*args, **kwargs) -> Event:
     return construct_event(construct_message(*args, **kwargs))
 
 
@@ -824,6 +772,7 @@ async def event_handler(
     split_args: str = " ",
     default_args: str = False,
     use_default_args: str | None | bool = False,
+    replace_args=None,
 ):
     args = (
         event.text.split(split_args, maxsplit=1)[1].strip()
@@ -841,4 +790,5 @@ async def event_handler(
         if disable_help:
             return
         return await event.reply(f"{inspect.getdoc(function)}")
+    args = replace_args or args
     await function(event, args, client)
