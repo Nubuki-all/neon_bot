@@ -486,7 +486,10 @@ async def sticker_to_image(event, args, client):
                         img2.coalesce()
                         gif = img2.make_blob(format="gif")
             else:
-                pic = await png_to_jpg(file)
+                with wand_image(blob=file, format="webp") as img:
+                    with img.convert("jpeg") as img2:
+                        pic = img2.make_blob(format="jpeg")
+                # pic = await png_to_jpg(file)
         async with event.react("📤"):
             if is_animated:
                 await event.reply_gif(gif)
