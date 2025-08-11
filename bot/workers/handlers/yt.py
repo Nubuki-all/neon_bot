@@ -78,6 +78,8 @@ async def youtube_reply(event, args, client):
     try:
         if not event.text:
             return
+        if event.is_edit:
+            return
         if "#no_ytdl" in event.text.casefold():
             return
         if event.chat.is_group and not chat_is_allowed(event):

@@ -310,6 +310,7 @@ class YoutubeDLHelper:
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 return await event.react("🙅")
+        await event.react("✅")
         self._on_download_error(f"*Download with gid: {self._gid} has been cancelled!*")
         await self.clean_up()
 
