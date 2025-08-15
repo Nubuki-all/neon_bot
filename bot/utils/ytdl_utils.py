@@ -334,7 +334,11 @@ class YoutubeDLHelper:
         while not self._listener.is_cancelled:
             if self.download_is_complete:
                 break
-            if self.size > 5000000000:
+            if (diff := (time.time() - self.start)) > 1800:
+                self._listener.is_cancelled = True
+                await self.message.edit("*Download Timed out!*")
+                continue
+            if self.size > 5000000000 or self.downloaded_bytes > 5000000000:
                 self._listener.is_cancelled = True
                 await self.message.edit(
                     f"*{self.name or 'Media'} is bigger than the preset max size limit.*"
@@ -346,6 +350,7 @@ class YoutubeDLHelper:
                     f"*{self.name or 'Media'} too large to upload.*"
                 )
                 continue
+            
             ud_type = "*Downloading*"
             ud_type += f":\n{self.name}" if self.name else "…"
             remaining_size = self.size - self.downloaded_bytes
@@ -353,8 +358,6 @@ class YoutubeDLHelper:
             current = self.downloaded_bytes
             speed = self.download_speed
             time_to_completion = self.eta
-            now = time.time()
-            diff = now - self.start
             fin_str = enhearts()
 
             progress = "\n{0}{1}\n*Progress:* {2}%\n".format(

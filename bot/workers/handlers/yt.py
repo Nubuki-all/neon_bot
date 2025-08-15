@@ -195,6 +195,7 @@ async def youtube_reply(event, args, client):
                 job.pop(0)
             except Exception:
                 await logger(Exception)
+                await ytdl.clean_up()
                 job.pop(0)
     except Exception:
         await logger(Exception)
