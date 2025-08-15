@@ -350,7 +350,7 @@ class YoutubeDLHelper:
                     f"*{self.name or 'Media'} too large to upload.*"
                 )
                 continue
-            
+
             ud_type = "*Downloading*"
             ud_type += f":\n{self.name}" if self.name else "…"
             remaining_size = self.size - self.downloaded_bytes
