@@ -1208,6 +1208,7 @@ async def gc_handler(gc_msg):
         leave = None
         if gc_msg.Leave:
             if handled_self_leave(gc_msg):
+                await save2db2(bot.group_dict, "groups")
                 return
             leave = True
         elif gc_msg.Join:
@@ -1223,12 +1224,13 @@ async def gc_handler(gc_msg):
         await logger(Exception)
 
 
-def handle_self_join(message):
+async def handle_self_join(message):
     log(e=message)
-    if message.Type != "linked_group_join":
-        return
+    # if message.Type != "linked_group_join":
+    #     return
     gc_jid = message.GroupInfo.JID
     bot.group_dict.get(gc_jid.User, {}).update({"left": False})
+    await save2db2(bot.group_dict, "groups")
     log(e=f"Joined group with JID: {gc_jid}")
 
 
@@ -1243,6 +1245,7 @@ def handled_self_leave(gc_event):
             return
     bot.group_dict.get(gc_event.JID.User, {}).update({"left": True})
     log(e=f"Left group with JID: {gc_event.JID}")
+    bot.temp2 = gc_event
     return True
 
 
