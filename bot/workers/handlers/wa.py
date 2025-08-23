@@ -1244,19 +1244,28 @@ def handled_self_leave(gc_event):
         if bot.client.me.JID.User != user:
             return
     bot.group_dict.get(gc_event.JID.User, {}).update({"left": True})
-    log(e=f"Left group with JID: {gc_event.JID}")
+    if gc_event.Sender.User == user:
+        info = "Banned from group"
+    else:
+        info = "Left group"
+    log(e=f"{info} with JID: {gc_event.JID}")
     bot.temp2 = gc_event
     return True
 
 
 async def goodbye_msg(gc_event):
-    msg = "_It was nice knowing you, {}!_"
+    msg1 = "_It was nice knowing you, {}!_"
+    msg2 = "*Another one bites the dust...!*\n@{} banned @{}."
     user = gc_event.Leave[0].User
     server = gc_event.Leave[0].Server
     user_info = await get_user_info(user)
+    if (doer := gc_event.Sender.User) != user:
+        msg = msg2.format(doer, user)
+    else:
+        msg = msg1.format(user_info.PushName or "@" + user)
     await bot.client.send_message(
         gc_event.JID,
-        msg.format(user_info.PushName or "@" + user),
+        msg,
         mentions_are_lids=(server == "lid"),
     )
 
