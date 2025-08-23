@@ -1244,7 +1244,7 @@ def handled_self_leave(gc_event):
         if bot.client.me.JID.User != user:
             return
     bot.group_dict.get(gc_event.JID.User, {}).update({"left": True})
-    if gc_event.Sender.User == user:
+    if gc_event.Sender.User != user:
         info = "Banned from group"
     else:
         info = "Left group"
