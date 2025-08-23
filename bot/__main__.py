@@ -46,7 +46,7 @@ from .workers.handlers.manage import (
 )
 from .workers.handlers.role import roles
 from .workers.handlers.stuff import gc_info, getcmds, hello, up
-from .workers.handlers.wa import gc_handler, sticker_reply
+from .workers.handlers.wa import gc_handler, handle_self_join, sticker_reply
 from .workers.handlers.yt import youtube_reply
 
 ## Client Event Handlers ##
@@ -91,7 +91,8 @@ async def _(client: NewAClient, message: GroupInfoEv):
 @bot.client.event(JoinedGroupEv)
 async def _(client: NewAClient, message: JoinedGroupEv):
     LOGS.info("JoinedGroupEv:")
-    LOGS.info(message)
+    handle_self_join(message)
+    #LOGS.info(message)
     bot.temp1 = message
 
 

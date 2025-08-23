@@ -1211,8 +1211,7 @@ async def gc_handler(gc_msg):
                 return
             leave = True
         elif gc_msg.Join:
-            if handled_self_join(gc_msg):
-                return
+            pass
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
         if not bot.group_dict.get(gc_msg.JID.User, {}).get("greetings"):
@@ -1224,18 +1223,13 @@ async def gc_handler(gc_msg):
         await logger(Exception)
 
 
-def handled_self_join(gc_event):
-    user = gc_event.Join[0].User
-    server = gc_event.Join[0].Server
-    if server == "lid":
-        if bot.client.me.LID.User != user:
-            return
-    else:
-        if bot.client.me.JID.User != user:
-            return
-    bot.group_dict.get(gc_event.JID.User, {}).update({"left": False})
-    log(e=f"Joined group with JID: {gc_event.JID}")
-    return True
+def handle_self_join(message):
+    log(e=message)
+    if message.Type != "linked_group_join":
+        return
+    gc_jid = message.GroupInfo.JID
+    bot.group_dict.get(gc_jid.User, {}).update({"left": False})
+    log(e=f"Joined group with JID: {gc_jid}")
 
 
 def handled_self_leave(gc_event):
