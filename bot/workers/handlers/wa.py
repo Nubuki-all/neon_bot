@@ -1223,6 +1223,7 @@ async def gc_handler(gc_msg):
     except Exception:
         await logger(Exception)
 
+
 def handled_self_join(gc_event):
     user = gc_event.Join[0].User
     server = gc_event.Join[0].Server
