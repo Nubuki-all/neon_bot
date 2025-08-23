@@ -36,7 +36,7 @@ from bot.utils.bot_utils import (
     waiting_for_turn,
 )
 from bot.utils.db_utils import save2db2
-from bot.utils.log_utils import logger
+from bot.utils.log_utils import log, logger
 from bot.utils.msg_store import (
     get_deleted_message_ids,
     get_messages,
@@ -1207,9 +1207,12 @@ async def gc_handler(gc_msg):
     try:
         leave = None
         if gc_msg.Leave:
+            if handled_self_leave(gc_msg):
+                return
             leave = True
         elif gc_msg.Join:
-            pass
+            if handled_self_join(gc_msg):
+                return
         else:
             return await logger(e=f"Unknown GroupInfoEv {gc_msg}")
         if not bot.group_dict.get(gc_msg.JID.User, {}).get("greetings"):
@@ -1220,21 +1223,49 @@ async def gc_handler(gc_msg):
     except Exception:
         await logger(Exception)
 
+def handled_self_join(gc_event):
+    user = gc_event.Join[0].User
+    server = gc_event.Join[0].Server
+    if server == "lid":
+        if bot.client.me.LID.User != user:
+            return
+    else:
+        if bot.client.me.JID.User != user:
+            return
+    bot.group_dict.get(gc_event.JID.User, {}).update({"left": False})
+    log(e=f"Joined group with JID: {gc_event.JID}")
+    return True
+
+
+def handled_self_leave(gc_event):
+    user = gc_event.Leave[0].User
+    server = gc_event.Leave[0].Server
+    if server == "lid":
+        if bot.client.me.LID.User != user:
+            return
+    else:
+        if bot.client.me.JID.User != user:
+            return
+    bot.group_dict.get(gc_event.JID.User, {}).update({"left": True})
+    log(e=f"Left group with JID: {gc_event.JID}")
+    return True
+
 
 async def goodbye_msg(gc_event):
     msg = "_It was nice knowing you, {}!_"
-    user_info = await get_user_info(gc_event.Leave[0].User)
+    user = gc_event.Leave[0].User
+    server = gc_event.Leave[0].Server
+    user_info = await get_user_info(user)
     await bot.client.send_message(
         gc_event.JID,
-        msg.format(user_info.PushName or "@" + gc_event.Leave[0].User),
-        mentions_are_lids=(gc_event.Leave[0].Server == "lid"),
+        msg.format(user_info.PushName or "@" + user),
+        mentions_are_lids=(server == "lid"),
     )
 
 
 async def welcome_msg(gc_event):
     msg = "*Hi there* {0}, Welcome to *{1}*!\nRemember to be respectful and follow the rules."
     msg += "\n\n*Joined through:* {2}"
-    # user_info = await get_user_info(gc_event.Join.User)
     group_info = await bot.client.get_group_info(gc_event.JID)
     chat_name = group_info.GroupName.Name
     user_name = f"@{gc_event.Join[0].User}"

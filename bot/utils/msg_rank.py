@@ -24,6 +24,8 @@ async def auto_rank():
             group_info = groups[group]
             if not group_info.get("msg_chat"):
                 continue
+            if group_info.get("left"):
+                continue
             msg = await get_ranking_msg(group, tag=True)
             if not msg:
                 continue
@@ -44,6 +46,10 @@ async def auto_rank():
             )
             await asyncio.sleep(3)
         except Exception:
+            await logger(
+                e=f"Error occurred while handling message ranking for group with id: {group}",
+                error=True,
+            )
             await logger(Exception)
     try:
         if write:
