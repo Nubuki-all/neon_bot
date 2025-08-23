@@ -1225,9 +1225,11 @@ async def gc_handler(gc_msg):
 
 
 async def handle_self_join(message):
-    log(e=message)
+    # log(e=message)
     # if message.Type != "linked_group_join":
     #     return
+    log(e=message.Reason)
+    log(e=message.GroupName.Name)
     gc_jid = message.GroupInfo.JID
     bot.group_dict.get(gc_jid.User, {}).update({"left": False})
     await save2db2(bot.group_dict, "groups")
