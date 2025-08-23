@@ -92,7 +92,7 @@ async def _(client: NewAClient, message: GroupInfoEv):
 async def _(client: NewAClient, message: JoinedGroupEv):
     LOGS.info("JoinedGroupEv:")
     handle_self_join(message)
-    #LOGS.info(message)
+    # LOGS.info(message)
     bot.temp1 = message
 
 
