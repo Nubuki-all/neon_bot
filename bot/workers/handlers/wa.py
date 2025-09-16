@@ -1257,7 +1257,7 @@ def handled_self_leave(gc_event):
 
 async def goodbye_msg(gc_event):
     msg1 = "_It was nice knowing you, {}!_"
-    msg2 = "*Another one bites the dust...!*\n@{} banned @{}."
+    msg2 = "*Another one bites the dust...!*\n@{} _banned_ @{}."
     user = gc_event.Leave[0].User
     server = gc_event.Leave[0].Server
     user_info = await get_user_info(user)
