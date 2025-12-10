@@ -804,7 +804,7 @@ async def save_notes(event, args, client, silent=False):
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
-        status_msg = await event.reply("…") if not silent
+        status_msg = await event.reply("…") if not silent else None
         # note gen:
         note_type = str
         if replied.text:
