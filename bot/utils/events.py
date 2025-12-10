@@ -74,7 +74,7 @@ class Event(BaseEvent):
         msg_info = message.Info
         msg_source = msg_info.MessageSource
         self.outgoing = msg_source.IsFromMe
-        if msg_source.AddressingMode == 2:
+        if msg_source.AddressingMode == 2 or msg_source.Chat.Server == "lid":
             self.lid_address = True
 
         # Patch message if it was sent by current user on another device
