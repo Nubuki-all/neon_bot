@@ -202,7 +202,10 @@ async def compress(event, args, client):
         out_ = f"comp/{_id}-1.mkv"
         quality = {"480p": "854x480", "720p": "1280x720", "1080p": "1920x1080"}
         title_ = (replied.caption or "").split("\n")[-1]
-        cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{title_} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {quality.get(args, "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
+        cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{title_} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {
+            quality.get(
+                args,
+                "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
 
         with open(in_, "wb") as f:
             f.write(file)
@@ -741,7 +744,8 @@ async def list_notes(event, args, client):
             if filter_ and notes[title].get("user") != user:
                 continue
             user_name = notes[title].get("user_name")
-            msg_ += f"\n{i}. *{title}*{f' added by *{user_name}*' if event.chat.is_group and not filter_ else ''}"
+            msg_ += f"\n{i}. *{title}*{
+                f' added by *{user_name}*' if event.chat.is_group and not filter_ else ''}"
             i += 1
         if not msg_:
             return await event.reply(
@@ -1182,7 +1186,8 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
             continue
         value = sorted_ms_rank_dict[user]
         user_info = await get_user_info(user, server)
-        msg += f"{i}. {(user_info.PushName or '👤 Unknown') if not tag else ('@'+ user)} · {human_format_num(value)}\n"
+        msg += f"{i}. {(user_info.PushName or '👤 Unknown') if not tag else ('@' +
+                                                                            user)} · {human_format_num(value)}\n"
         medals = get_medals(chat_id, user)
         msg += f"    └{medals}\n" if medals else ""
         i += 1
@@ -1192,7 +1197,9 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
         return
     act_mem = len(msg_rank_dict.keys()) - 2
     total_msg = msg_rank_dict.get("total")
-    return f"📈 *MESSAGE LEADERBOARD*\n{msg}\n👥 *Participants:* {human_format_num(act_mem)}\n✉️ *Total messages:* {human_format_num(total_msg)}"
+    return f"📈 *MESSAGE LEADERBOARD*\n{msg}\n👥 *Participants:* {
+        human_format_num(act_mem)}\n✉️ *Total messages:* {
+        human_format_num(total_msg)}"
 
 
 def get_medals(chat_id, user):
@@ -1306,6 +1313,7 @@ async def welcome_msg(gc_event):
         )
         evt.lid_address = gc.get("lid_address", False)
         s_rules(evt, False)
+
 
 async def save_filter(event, args, client):
     """
@@ -1659,9 +1667,10 @@ async def set_rules(event, args, client):
             return await event.react("✅")
         else:
             return await event.react("✖️")
-            
+
     except Exception:
         await logger(Exception)
+
 
 async def delete_rules(event, args, client):
     """
@@ -1691,9 +1700,10 @@ async def delete_rules(event, args, client):
     except Exception:
         await logger(Exception)
 
+
 async def get_rules(event, args, client):
     """
-    Get Groups Rules in PM 
+    Get Groups Rules in PM
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -1707,7 +1717,8 @@ async def get_rules(event, args, client):
         return s_rules(event)
     except Exception:
         await logger(Exception)
-        
+
+
 async def s_rules(event, pm=True):
     chat = event.chat.id
     gc = bot.group_dict.get(event.chat.id, {})
@@ -1715,7 +1726,9 @@ async def s_rules(event, pm=True):
         return
     try:
         if rules != "rules":
-            return await clean_reply(event, event.reply_to_message, "reply", rules, reply_privately=pm)
+            return await clean_reply(
+                event, event.reply_to_message, "reply", rules, reply_privately=pm
+            )
         notes = bot.notes_dict[chat]
         if not (u_note := notes.get("rules")):
             return
@@ -1725,7 +1738,9 @@ async def s_rules(event, pm=True):
             u_note.get("note_type"),
         )
         if note_type == str:
-            return await clean_reply(event, event.reply_to_message, "reply", note, reply_privately=pm)
+            return await clean_reply(
+                event, event.reply_to_message, "reply", note, reply_privately=pm
+            )
         elif note_type == bytes:
             return await clean_reply(
                 event,
@@ -1741,10 +1756,15 @@ async def s_rules(event, pm=True):
             if hasattr(note, "viewOnce"):
                 note.viewOnce = False
             return await clean_reply(
-                event, event.reply_to_message, "reply", message=note, reply_privately=pm,
+                event,
+                event.reply_to_message,
+                "reply",
+                message=note,
+                reply_privately=pm,
             )
     except Exception:
         logger(Exception)
+
 
 async def test_button(event, args, client):
     user = event.from_user.id

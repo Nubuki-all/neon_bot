@@ -58,7 +58,9 @@ async def gen_meme(link, pm=False):
         meme_list.append(pl)
         sb = result.get("subreddit")
         nsfw_text = "*🔞 NSFW*\n"
-        caption = f"{nsfw_text if nsfw else ''}*{title.strip()}*\n{pl}\n\nBy u/{author} in r/{sb}"
+        caption = f"{
+            nsfw_text if nsfw else ''}*{
+            title.strip()}*\n{pl}\n\nBy u/{author} in r/{sb}"
         url = result.get("url")
         filename = f"{_id}.{url.split('.')[-1]}"
         nsfw = False if pm else nsfw
@@ -250,7 +252,8 @@ async def gif_helper(event, args, client):
         return await event.reply("TENOR_API_KEY is needed for this function to work.")
     if not args:
         args = "anime"
-    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon"
+    url = f"https://tenor.googleapis.com/v2/search?key={
+        conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon"
     result = await get_json(url)
     if not result:
         return await event.reply("*Request Failed!*")
@@ -288,7 +291,8 @@ async def sticker_helper(event, args, client):
         return await event.reply("TENOR_API_KEY is needed for this function to work.")
     if not args:
         args = "anime"
-    url = f"https://tenor.googleapis.com/v2/search?key={conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon&searchfilter=sticker"
+    url = f"https://tenor.googleapis.com/v2/search?key={
+        conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon&searchfilter=sticker"
     result = await get_json(url)
     if not result:
         return await event.reply("*Request Failed!*")

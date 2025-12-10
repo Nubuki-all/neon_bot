@@ -63,7 +63,8 @@ async def bash(event, cmd, client):
     o = stdout.decode()
     if not o:
         o = "Tip:\nIf you want to see the results of your code, I suggest printing them to stdout."
-    OUTPUT = f"QUERY:\n__Command:__\n{cmd} \n__PID:__\n{process.pid}\n\nstderr: \n{e}\nOutput:\n{o}"
+    OUTPUT = f"QUERY:\n__Command:__\n{cmd} \n__PID:__\n{
+        process.pid}\n\nstderr: \n{e}\nOutput:\n{o}"
     if len(OUTPUT) > 4000:
         with io.BytesIO(str.encode(OUTPUT)) as out_file:
             await event.reply_document(
@@ -75,7 +76,8 @@ async def bash(event, cmd, client):
             await asyncio.sleep(3)
             return
     else:
-        OUTPUT = f"```bash\n{cmd}```\n\n_PID:_\n{process.pid}\n\n```Stderr:\n{e}```\n\n```Output:\n{o}```\n"
+        OUTPUT = f"```bash\n{cmd}```\n\n_PID:_\n{
+            process.pid}\n\n```Stderr:\n{e}```\n\n```Output:\n{o}```\n"
         await event.reply(OUTPUT, link_preview=False)
 
 

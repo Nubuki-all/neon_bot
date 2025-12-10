@@ -147,7 +147,10 @@ async def afk_helper(event, args, client):
             reped.append(user)
             await asyncio.sleep(1)
             await event.reply(
-                f"*@{event.user.id} tagged you in @{jid.Jid2String(event.chat.jid)} while you were AFK!*",
+                f"*@{
+                    event.user.id} tagged you in @{
+                    jid.Jid2String(
+                        event.chat.jid)} while you were AFK!*",
                 to=user_jid,
                 reply_privately=True,
                 # mentions_are_lids=True,
