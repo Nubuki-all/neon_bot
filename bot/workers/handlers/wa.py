@@ -1681,7 +1681,7 @@ async def delete_rules(event, args, client):
         admin_user = user_is_admin(user, group_info.Participants)
         if not admin_user:
             return await event.reply("*Command can only be used by an admin.*")
-        gc = bot.group_dict.get.(event.chat.id, {})
+        gc = bot.group_dict.get(event.chat.id, {})
         if not gc["rules"]:
             return await event.reply("*No rules were set.*")
         else:
@@ -1710,7 +1710,7 @@ async def get_rules(event, args, client):
         
 async def s_rules(event, pm=True):
     chat = event.chat.id
-    gc = bot.group_dict.get.(event.chat.id, {})
+    gc = bot.group_dict.get(event.chat.id, {})
     if not (rules := gc.get("rules")) or not isinstance(rules, str):
         return
     try:
