@@ -804,7 +804,7 @@ async def save_notes(event, args, client, silent=False):
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
-        status_msg = await event.reply("…") if not silent else None
+        status_msg = await event.reply("…") if not silent els
         # note gen:
         note_type = str
         if replied.text:
@@ -1293,7 +1293,7 @@ async def welcome_msg(gc_event):
         msg.format(user_name, chat_name, gc_event.JoinReason),
         mentions_are_lids=(gc_event.Join[0].Server == "lid"),
     )
-    if (gc := bot.group_dict.get.(gc_event.JID.User, {})) and (r := gc.get("rules")):
+    if (gc := bot.group_dict.get(gc_event.JID.User, {})) and (r := gc.get("rules")):
         user_jid = bot.client.me.JID
         evt = construct_msg_and_evt(
             gc_event.JID.User,
