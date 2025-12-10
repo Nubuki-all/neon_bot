@@ -1654,7 +1654,7 @@ async def set_rules(event, args, client):
             return await event.reply("*Kindly reply to a message.*")
         gc = bot.group_dict.setdefault(event.chat.id, {})
         if replied.is_actual_media or replied.sticker:
-            status = save_notes(event, "rules", client, True)
+            status = await save_notes(event, "rules", client, True)
             if status:
                 gc["rules"] = "notes"
                 gc["lid_address"] = event.lid_address
@@ -1714,7 +1714,7 @@ async def get_rules(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        return s_rules(event)
+        return await s_rules(event)
     except Exception:
         await logger(Exception)
 
@@ -1725,7 +1725,7 @@ async def s_rules(event, pm=True):
     if not (rules := gc.get("rules")) or not isinstance(rules, str):
         return
     try:
-        if rules != "rules":
+        if rules != "notes":
             return await clean_reply(
                 event, event.reply_to_message, "reply", rules, reply_privately=pm
             )
