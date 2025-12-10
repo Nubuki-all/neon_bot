@@ -314,7 +314,7 @@ class Event(BaseEvent):
             )
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
 
-        await self.send_typing_status()
+        await self.send_typing_status(privately=reply_privately)
         try:
             response = await self.client.reply_message(
                 text,
@@ -338,7 +338,7 @@ class Event(BaseEvent):
                 mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
                 add_msg_secret=add_msg_secret,
             )
-        await self.send_typing_status(False)
+        await self.send_typing_status(False, reply_privately)
         msg = self.gen_new_msg(response, private=reply_privately)
         return construct_event(msg)
 
@@ -549,14 +549,17 @@ class Event(BaseEvent):
         msg = self.gen_new_msg(response)
         return construct_event(msg)
 
-    async def send_typing_status(self, typing=True):
+    async def send_typing_status(self, typing=True, privately=False):
         status = (
             ChatPresence.CHAT_PRESENCE_COMPOSING
             if typing
             else ChatPresence.CHAT_PRESENCE_PAUSED
         )
+        chat = self.chat.jid
+        if privately:
+            chat = self.from_user.jid
         return await self.client.send_chat_presence(
-            self.chat.jid, status, ChatPresenceMedia.CHAT_PRESENCE_MEDIA_TEXT
+            chat, status, ChatPresenceMedia.CHAT_PRESENCE_MEDIA_TEXT
         )
 
     async def upload_file(self, file: bytes):

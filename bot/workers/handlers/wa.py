@@ -800,11 +800,11 @@ async def save_notes(event, args, client, silent=False):
             admin_user = user_is_admin(user, group_info.Participants)
             if not admin_user:
                 return await event.reply(
-                    f"Note with name '{args}' can only be set be an admin."
+                    f"Note with name '{args}' can only be set by an admin."
                 )
             args = "rules"
-        elif (notes := bot.notes_dict[chat]).get(args):
-            if not user_is_owner(user) and user != notes[args]["user"]:
+        if (notes := bot.notes_dict[chat]).get(args):
+            if not user_is_owner(user) and user != notes[args]["user"] and args != "rules":
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
@@ -1312,7 +1312,7 @@ async def welcome_msg(gc_event):
             msg.Message,
         )
         evt.lid_address = gc.get("lid_address", False)
-        s_rules(evt, False)
+        await s_rules(evt, False)
 
 
 async def save_filter(event, args, client):
