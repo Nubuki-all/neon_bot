@@ -762,7 +762,7 @@ async def list_notes(event, args, client):
         await event.react("❌")
 
 
-async def save_notes(event, args, client):
+async def save_notes(event, args, client, silent=False):
     """
     Saves a replied Text/media message to bot database;
     Can be retrieved with get {note_name}
@@ -791,12 +791,20 @@ async def save_notes(event, args, client):
             return await event.reply(f"Given note_name *{args}* is blocked.")
         if not bot.notes_dict.get(chat):
             bot.notes_dict[chat] = {}
-        if (notes := bot.notes_dict[chat]).get(args):
+        if event.chat.is_group and args.casefold() == "rules":
+            group_info = await bot.client.get_group_info(event.chat.jid)
+            admin_user = user_is_admin(user, group_info.Participants)
+            if not admin_user:
+                return await event.reply(
+                    f"Note with name '{args}' can only be set be an admin."
+                )
+            args = "rules"
+        elif (notes := bot.notes_dict[chat]).get(args):
             if not user_is_owner(user) and user != notes[args]["user"]:
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
-        status_msg = await event.reply("…")
+        status_msg = await event.reply("…") if not silent
         # note gen:
         note_type = str
         if replied.text:
@@ -824,6 +832,8 @@ async def save_notes(event, args, client):
         }
         notes.update(data)
         await save2db2(bot.notes_dict, "note")
+        if silent:
+            return True
         await status_msg.edit(f"_Saved replied message to notes with name:_ *{args}*")
     except DownloadError:
         await status_msg.edit("*Download Failed!*\nPlease ask that it be resent.")
@@ -1278,12 +1288,24 @@ async def welcome_msg(gc_event):
     group_info = await bot.client.get_group_info(gc_event.JID)
     chat_name = group_info.GroupName.Name
     user_name = f"@{gc_event.Join[0].User}"
-    await bot.client.send_message(
+    msg = await bot.client.send_message(
         gc_event.JID,
         msg.format(user_name, chat_name, gc_event.JoinReason),
         mentions_are_lids=(gc_event.Join[0].Server == "lid"),
     )
-
+    if (gc := bot.group_dict.get.(gc_event.JID.User, {})) and (r := gc.get("rules")):
+        user_jid = bot.client.me.JID
+        evt = construct_msg_and_evt(
+            gc_event.JID.User,
+            user_jid.User,
+            msg.ID,
+            None,
+            "g.us",
+            user_jid.Server,
+            msg.Message,
+        )
+        evt.lid_address = gc.get("lid_address", False)
+        s_rules(evt, False)
 
 async def save_filter(event, args, client):
     """
@@ -1601,6 +1623,129 @@ async def repeat(event, args, client):
         await logger(Exception)
 
 
+async def set_rules(event, args, client):
+    """
+    Set Groups Rules
+    Arguments:
+        Reply to a Message intended to be used as a Da rules.
+    """
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        group_info = await bot.client.get_group_info(event.chat.jid)
+        admin_user = user_is_admin(user, group_info.Participants)
+        if not admin_user:
+            return await event.reply("*Command can only be used by an admin.*")
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Kindly reply to a message.*")
+        gc = bot.group_dict.setdefault(event.chat.id, {})
+        if replied.is_actual_media or replied.sticker:
+            status = save_notes(event, "rules", client, True)
+            if status:
+                gc["rules"] = "notes"
+                gc["lid_address"] = event.lid_address
+                await save2db2(bot.group_dict, "groups")
+                return await event.react("✅")
+        elif text := replied.text:
+            gc["rules"] = text
+            gc["lid_address"] = event.lid_address
+            await save2db2(bot.group_dict, "groups")
+            return await event.react("✅")
+        else:
+            return await event.react("✖️")
+            
+    except Exception:
+        await logger(Exception)
+
+async def delete_rules(event, args, client):
+    """
+    Delete Groups Rules
+    Note: Does not delete the rules note if one was set!
+    """
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        group_info = await bot.client.get_group_info(event.chat.jid)
+        admin_user = user_is_admin(user, group_info.Participants)
+        if not admin_user:
+            return await event.reply("*Command can only be used by an admin.*")
+        gc = bot.group_dict.get.(event.chat.id, {})
+        if not gc["rules"]:
+            return await event.reply("*No rules were set.*")
+        else:
+            gc["rules"] = None
+            await save2db2(bot.group_dict, "groups")
+            return await event.react("✅")
+    except Exception:
+        await logger(Exception)
+
+async def get_rules(event, args, client):
+    """
+    Get Groups Rules in PM 
+    """
+    user = event.from_user.id
+    if not event.chat.is_group:
+        return
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        return s_rules(event)
+    except Exception:
+        await logger(Exception)
+        
+async def s_rules(event, pm=True):
+    chat = event.chat.id
+    gc = bot.group_dict.get.(event.chat.id, {})
+    if not (rules := gc.get("rules")) or not isinstance(rules, str):
+        return
+    try:
+        if rules != "rules":
+            return await clean_reply(event, event.reply_to_message, "reply", rules, reply_privately=pm)
+        notes = bot.notes_dict[chat]
+        if not (u_note := notes.get("rules")):
+            return
+        user, note, note_type = (
+            u_note.get("user"),
+            u_note.get("note"),
+            u_note.get("note_type"),
+        )
+        if note_type == str:
+            return await clean_reply(event, event.reply_to_message, "reply", note, reply_privately=pm)
+        elif note_type == bytes:
+            return await clean_reply(
+                event,
+                event.reply_to_message,
+                "reply_photo",
+                note[0],
+                note[1],
+                reply_privately=pm,
+            )
+        elif note_type == Message:
+            note = copy.deepcopy(note)
+            newlines = "\n\n"
+            if hasattr(note, "viewOnce"):
+                note.viewOnce = False
+            return await clean_reply(
+                event, event.reply_to_message, "reply", message=note, reply_privately=pm,
+            )
+    except Exception:
+        logger(Exception)
+
 async def test_button(event, args, client):
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -1649,8 +1794,11 @@ bot.add_handler(tools, "tools")
 bot.add_handler(get_notes, "get")
 bot.add_handler(repeat, "repeat")
 bot.add_handler(undelete, "undel")
+bot.add_handler(get_rules, "rules")
 bot.add_handler(compress, "compress")
 bot.add_handler(pick_random, "random")
+bot.add_handler(set_rules, "setrules")
+bot.add_handler(delete_rules, "delrules")
 bot.add_handler(list_filters, "filters")
 bot.add_handler(sanitize_url, "sanitize")
 bot.add_handler(screenshot, "screenshot")
@@ -1658,6 +1806,7 @@ bot.add_handler(upscale_image, "upscale")
 bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
 bot.add_handler(sticker_to_image, "stick2img")
+
 
 bot.add_handler(
     save_notes,
