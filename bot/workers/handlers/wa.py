@@ -804,7 +804,11 @@ async def save_notes(event, args, client, silent=False):
                 )
             args = "rules"
         if (notes := bot.notes_dict[chat]).get(args):
-            if not user_is_owner(user) and user != notes[args]["user"] and args != "rules":
+            if (
+                not user_is_owner(user)
+                and user != notes[args]["user"]
+                and args != "rules"
+            ):
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
