@@ -1794,7 +1794,7 @@ async def save_reminder(event, args, client):
         parsed_time = parse_reminder_time_hybrid(args)
         if parsed_time is None:
             return await event.reply("Invalid time.")
-        _id = uuid.uuid4()
+        _id = str(uuid.uuid4())
         chat = Jid2String(event.chat.jid)
         store = {
             "id": _id,
