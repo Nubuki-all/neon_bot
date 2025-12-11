@@ -7,7 +7,7 @@ from apscheduler.triggers.date import DateTrigger
 from dateutil import parser as dateutil_parser
 from neonize.utils.jid import build_jid
 
-from bot.conf import bot
+from bot.config import bot
 
 scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
