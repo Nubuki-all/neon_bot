@@ -57,7 +57,7 @@ if conf.DATABASE_URL:
     rssdb = db["rss"]
     userdb = db["users"]
     nfdb = db["note_filter"]
-    reminddb = db["reminders"]
+    remdb = db["reminders"]
 
     load_db(nfdb, "note", bot.notes_dict, "dict")
     load_db(nfdb, "filter", bot.filters_dict, "dict")

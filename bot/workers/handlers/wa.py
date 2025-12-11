@@ -66,7 +66,7 @@ from bot.utils.os_utils import enshell, s_remove
 from bot.utils.parse_td_utils import parse_reminder_time_hybrid
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
-from bot.workers.auto.reminder import schedule_reminder_async
+from bot.workers.auto.reminder import schedule_reminder_async, cancel_reminder
 
 
 async def tools(event, args, client):
@@ -1870,6 +1870,7 @@ async def delete_reminders(event, args, client):
         if not gcru.get(args):
             return await event.reply("Reminder with given ID not found.")
         gcru.pop(args)
+        cancel_reminder(args)
         await save2db2(bot.remind_dict, "reminder")
         await event.reply(f"Deleted reminder with ID: {args}")
     except Exception:
