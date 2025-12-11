@@ -9,6 +9,7 @@ from neonize.utils.jid import build_jid
 
 from bot.config import bot
 from bot.utils.db_utils import save2db2
+from bot.utils.log_utils import log
 
 scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
@@ -35,11 +36,12 @@ def parse_iso_to_utc(iso_str: str, assume_tz: str = "Africa/Lagos"):
 def _schedule_coroutine(coro, job_id: str):
     """Helper called by APScheduler when job fires — create the asyncio task."""
     # scheduler runs in same event loop context so this is safe
+    log(e=f"Reminder #{job_id} is due")
     asyncio.create_task(coro)
 
 
 async def schedule_reminder_async(
-    reminder_uui5d: str,
+    reminder_uuid: str,
     store: dict,
     chat_id: str,
     user_id: str,
@@ -59,8 +61,8 @@ async def schedule_reminder_async(
     scheduler.add_job(
         func=_schedule_coroutine,
         trigger=trigger,
-        args=(send_reminder_async(chat_id, user_id, store), str(reminder_uuid)),
-        id=str(reminder_uuid),
+        args=(send_reminder_async(chat_id, user_id, store), reminder_uuid),
+        id=reminder_uuid,
         replace_existing=True,
         misfire_grace_time=60,
     )
@@ -68,7 +70,7 @@ async def schedule_reminder_async(
 
 def cancel_reminder(reminder_uuid: str):
     try:
-        scheduler.remove_job(str(reminder_uuid))
+        scheduler.remove_job(reminder_uuid)
     except Exception:
         pass
 
