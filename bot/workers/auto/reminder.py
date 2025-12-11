@@ -15,7 +15,7 @@ scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 async def send_reminder_async(chat_id: str, user_id: str, store: dict):
     chat_jid = build_jid(chat_id.split("@")[0], chat_id.split("@")[1])
     await bot.client.reply_message(
-        "@" + user + ": *Reminder*",
+        "@" + user_id + ": *Reminder*",
         store["message"],
         chat_jid,
         mentions_are_lids=store["lid_address"],
