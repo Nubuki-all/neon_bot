@@ -1776,7 +1776,7 @@ async def s_rules(event, pm=True):
                 reply_privately=pm,
             )
     except Exception:
-        logger(Exception)
+        await logger(Exception)
 
 
 async def save_reminder(event, args, client):
@@ -1810,7 +1810,7 @@ async def save_reminder(event, args, client):
             f"Reminder set for " + get_date_from_isostr(parsed_time) + f"\n*ID:*{_id}"
         )
     except Exception:
-        logger(Exception)
+        await logger(Exception)
 
 
 async def list_reminders(event, args, client):
@@ -1838,7 +1838,7 @@ async def list_reminders(event, args, client):
             return await event.reply("No reminders found for user.")
         await event.reply(f"*Reminders:*\n{msg}")
     except Exception:
-        logger(Exception)
+        await logger(Exception)
 
 
 async def delete_reminders(event, args, client):
@@ -1874,7 +1874,7 @@ async def delete_reminders(event, args, client):
         await save2db2(bot.remind_dict, "reminder")
         await event.reply(f"Deleted reminder with ID: {args}")
     except Exception:
-        logger(Exception)
+        await logger(Exception)
 
 
 async def test_button(event, args, client):
