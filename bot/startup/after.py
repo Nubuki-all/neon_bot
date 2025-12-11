@@ -13,6 +13,8 @@ from bot.utils.msg_store import Base as sql_base
 from bot.utils.msg_store import auto_save_msg, engine
 from bot.utils.msg_utils import send_presence
 from bot.utils.rss_utils import scheduler
+from bot.workers.auto.reminder import scheduler as reminder_scheduler
+from bot.workers.auto.reminder import reschedule_all
 
 
 async def onrestart():
@@ -106,6 +108,8 @@ async def on_startup():
             await asyncio.sleep(1)
         scheduler.start()
         scheduler2.start()
+        reminder_scheduler.start()
+        asyncio.create_task(asyncio.to_thread(reschedule_all))
         if len(sys.argv) == 3:
             await onrestart()
         else:
@@ -116,3 +120,4 @@ async def on_startup():
         LOGS.info("Bot has started.")
     except Exception:
         await logger(Exception)
+

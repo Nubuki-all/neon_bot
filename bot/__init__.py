@@ -74,6 +74,7 @@ heavy_proc_lock = asyncio.Lock()
 local_fdb = ".local_filterdb.pkl"
 local_gcdb = ".local_groups.pkl"
 local_rdb = ".local_rssdb.pkl"
+local_remdb = ".local_remdb.pkl"
 local_udb = ".local_users.pkl"
 local_ndb = ".local_notedb.pkl"
 log_file_name = "logs.txt"
@@ -134,3 +135,4 @@ bot.disable_cic = conf.DISABLE_CIP
 bot.tgp_client = TelegraphPoster(use_api=True, telegraph_api_url=conf.TELEGRAPH_API)
 
 bot.client = NewAClient(conf.WA_DB)
+

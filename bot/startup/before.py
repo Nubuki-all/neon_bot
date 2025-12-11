@@ -57,16 +57,18 @@ if conf.DATABASE_URL:
     rssdb = db["rss"]
     userdb = db["users"]
     nfdb = db["note_filter"]
+    reminddb = db["reminders"]
 
     load_db(nfdb, "note", bot.notes_dict, "dict")
     load_db(nfdb, "filter", bot.filters_dict, "dict")
+    load_db(remdb, "reminders", bot.remind_dict, "dict")
     load_db(rssdb, "rss", bot.rss_dict, "dict")
     load_db(userdb, "groups", bot.group_dict, "dict")
     load_db(userdb, "users", bot.user_dict, "dict")
 
 
 else:
-    rssdb = userdb = miscdb = nfdb = None
+    rssdb = userdb = miscdb = nfdb = remdb= None
 
     load_local_db()
 
@@ -85,3 +87,4 @@ def check_for_pg_tools():
 
 check_for_pg_tools()
 create_api_token()
+

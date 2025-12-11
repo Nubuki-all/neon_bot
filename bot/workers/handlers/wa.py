@@ -12,6 +12,7 @@ from clean_links.clean import clean_url
 from neonize.exc import DownloadError
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import Message
 from neonize.utils.ffmpeg import AFFmpeg
+from neonize.utils.jid import Jid2String
 from PIL import Image
 from RealESRGAN import RealESRGAN
 from urlextract import URLExtract
@@ -22,6 +23,7 @@ from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
+    get_date_from_isostr,
     human_format_num,
     is_video_file,
     list_to_str,
@@ -60,9 +62,11 @@ from bot.utils.msg_utils import (
     user_is_owner,
     user_is_privileged,
 )
+from bot.utils.parse_td_utils import parse_reminder_time_hybrid
 from bot.utils.os_utils import enshell, s_remove
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
+from bot.workers.auto.reminder import schedule_reminder_async
 
 
 async def tools(event, args, client):
@@ -89,6 +93,11 @@ async def tools(event, args, client):
             f"{pre}repeat - *Repeat a replied message*{s}"
             f"{pre}sanitize - *Sanitize link or message*{s}"
             f"{pre}screenshot - *Generate a screenshot from a url*{s}"
+            f"{s}"
+            f"*Rules:*{s}"
+            f"{pre}rules - *Get Group Rules in PM/DM*"
+            f"{pre}setrules - *[Admins Only] Set Group Rules*"
+            f"{pre}delrules - *[Admins Only] Delete Group Rules*"
             f"{s}"
             f"*Stickers:*{s}"
             f"{pre}sticker - *Turns images/vids/gifs to stickers*{s}"
@@ -1639,7 +1648,7 @@ async def set_rules(event, args, client):
     """
     Set Groups Rules
     Arguments:
-        Reply to a Message intended to be used as a Da rules.
+        Reply to a Message intended to be used as Da rules.
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -1770,6 +1779,99 @@ async def s_rules(event, pm=True):
         logger(Exception)
 
 
+async def save_reminder(event, args, client):
+    """
+    Remind user of a replied message at a future time
+    Argument: Future Time
+    """
+    user = event.from_user.id
+    if not (user_is_privileged(user)):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        parsed_time = parse_reminder_time_hybrid(args)
+        if parsed_time is None:
+            return await event.reply("Invalid time.")
+        _id = uuid.uuid4()
+        chat = Jid2String(event.chat.jid)
+        store = {
+            "id": _id,
+            "message": (event.reply_to_message or event).message,
+            "user": user,
+            "time": parsed_time,
+            "lid_address": event.lid_address,
+        }
+        bot.remind_dict.setdefault(chat, {}).setdefault(user, {})[_id] = store
+        await save2db2(bot.remind_dict, "reminder")
+        schedule_reminder_async(_id, store, chat_, user)
+        await event.reply(f"Reminder set for "+ get_date_from_isostr(parsed_time)+f"\n*ID:*{_id}")
+    except Exception:
+        logger(Exception)
+        
+async def list_reminders(event, args, client):
+    """
+    List all your reminders
+    """
+    user = event.from_user.id
+    if not (user_is_privileged(user)):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+
+        chat = Jid2String(event.chat.jid)
+        if not (gcr := bot.remind_dict.get(chat)):
+            return await event.reply("No reminders found here.")
+        if not (gcru := gcr.get(user)):
+            return await event.reply("No reminders found for user.")
+        
+        msg = ""
+        for _id, store in gcru.values():
+            msg += f"- *{_id}*  🔔 @{get_date_from_isostr(store['time'])}"
+        if msg == "":
+            return await event.reply("No reminders found for user.")
+        await event.reply(f"*Reminders:*\n{msg}")
+    except Exception:
+        logger(Exception)
+    
+async def delete_reminders(event, args, client):
+    """
+    Delete your reminders by id
+    Get the id by listing all reminders 
+    Arguments:
+        id: id of reminder to delete 
+        "all": delete all reminders 
+    """
+    user = event.from_user.id
+    if not (user_is_privileged(user)):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        chat = Jid2String(event.chat.jid)
+        if not (gcr := bot.remind_dict.get(chat)):
+            return await event.reply("No reminders found here.")
+        if not (gcru := gcr.get(user)):
+            return await event.reply("No reminders found for user.")
+        if args == "all":
+            for _id, store in gcru.values():
+                cancel_reminder(_id)
+            gcr[user] = {}
+            await save2db2(bot.remind_dict, "reminder")
+            return await event.reply("All reminders have been deleted.")
+        if not gcru.get(args):
+            return await event.reply("Reminder with given ID not found.")
+        gcru.pop(args)
+        await save2db2(bot.remind_dict, "reminder")
+        await event.reply(f"Deleted reminder with ID: {args}")
+    except Exception:
+        logger(Exception)
+    
+
 async def test_button(event, args, client):
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -1830,6 +1932,7 @@ bot.add_handler(upscale_image, "upscale")
 bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
 bot.add_handler(sticker_to_image, "stick2img")
+bot.add_handler(list_reminders, "all_reminders")
 
 
 bot.add_handler(
@@ -1852,7 +1955,18 @@ bot.add_handler(
     "del_filter",
     require_args=True,
 )
+bot.add_handler(
+    delete_reminders,
+    "del_reminder",
+    require_args=True,
+)
+bot.add_handler(
+    save_reminder,
+    "remindme",
+    require_args=True,
+)
 
 
 # test
 bot.add_handler(test_button, "button")
+

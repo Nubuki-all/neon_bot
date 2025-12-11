@@ -2,7 +2,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 
 from bot import asyncio
 from bot.config import bot, conf
-from bot.startup.before import nfdb, pickle, rssdb, userdb
+from bot.startup.before import nfdb, pickle, remdb, rssdb, userdb
 
 from .bot_utils import sync_to_async
 from .local_db_utils import save2db_lcl2
@@ -20,6 +20,7 @@ database = conf.DATABASE_URL
 db_cluster = {
     "filter": nfdb,
     "note": nfdb,
+    "reminders": remdb,
     "rss": rssdb,
     "users": userdb,
     "groups": userdb,
@@ -147,3 +148,4 @@ async def restore_wa_db():
 
 
 bot.backup_wa_db = backup_wa_db
+

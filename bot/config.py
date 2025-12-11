@@ -95,6 +95,7 @@ class Runtime_Config:
         self.pending_saved_messages = []
         self.pg_tools_are_installed = False
         self.notes_dict = {}
+        self.remind_dict = {}
         self.rss_dict = {}
         self.rss_ran_once = False
         self.stop_back_up = False
@@ -104,3 +105,4 @@ class Runtime_Config:
 
 conf = Config()
 bot = Runtime_Config()
+
