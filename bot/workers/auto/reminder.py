@@ -14,7 +14,11 @@ from bot.utils.log_utils import log
 scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
 
-async def send_reminder_async(chat_id: str, user_id: str, store: dict):
+async def send_reminder_async(chat_id: str, user_id: str, store: dict, from_scheduler: bool = False):
+    if from_scheduler:
+        log(e=f"Reminder #{store["id"]} is due")
+    else:
+        log(e=f"Reminder #{store["id"]} was missed due to downtime")
     chat_jid = build_jid(chat_id.split("@")[0], chat_id.split("@")[1])
     await bot.client.reply_message(
         "@" + user_id + ": *Reminder*",
@@ -33,11 +37,6 @@ def parse_iso_to_utc(iso_str: str, assume_tz: str = "Africa/Lagos"):
     return dt.astimezone(pytz.UTC)
 
 
-def _schedule_coroutine(coro, job_id: str):
-    """Helper called by APScheduler when job fires — create the asyncio task."""
-    # scheduler runs in same event loop context so this is safe
-    log(e=f"Reminder #{job_id} is due")
-    asyncio.create_task(coro)
 
 
 async def schedule_reminder_async(
@@ -59,9 +58,9 @@ async def schedule_reminder_async(
     trigger = DateTrigger(run_date=run_dt_utc, timezone=pytz.UTC)
     # schedule a small wrapper which will create the coroutine task at run-time
     scheduler.add_job(
-        func=_schedule_coroutine,
+        func=send_reminder_async,
         trigger=trigger,
-        args=(send_reminder_async(chat_id, user_id, store), reminder_uuid),
+        args=(chat_id, user_id, store, True),
         id=reminder_uuid,
         replace_existing=True,
         misfire_grace_time=60,

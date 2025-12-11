@@ -1807,7 +1807,7 @@ async def save_reminder(event, args, client):
         await save2db2(bot.remind_dict, "reminders")
         await schedule_reminder_async(_id, store, chat, user)
         await event.reply(
-            f"Reminder set for " + get_date_from_isostr(parsed_time) + f"\n*ID:*{_id}"
+            f"Reminder set for " + get_date_from_isostr(parsed_time) + f"\n*ID:* _{_id}_"
         )
     except Exception:
         await logger(Exception)
