@@ -62,6 +62,7 @@ async def schedule_reminder_async(
         trigger=trigger,
         args=(chat_id, user_id, store, True),
         id=reminder_uuid,
+        name="Reminders",
         replace_existing=True,
         misfire_grace_time=60,
     )

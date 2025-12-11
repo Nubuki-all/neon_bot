@@ -1834,7 +1834,7 @@ async def list_reminders(event, args, client):
             return await event.reply("No reminders found for user.")
 
         msg = ""
-        for _id, store in gcru.values():
+        for _id, store in gcru.items():
             msg += f"- *{_id}*  🔔 @{get_date_from_isostr(store['time'])}"
         if msg == "":
             return await event.reply("No reminders found for user.")
@@ -1864,7 +1864,7 @@ async def delete_reminders(event, args, client):
         if not (gcru := gcr.get(user)):
             return await event.reply("No reminders found for user.")
         if args == "all":
-            for _id, store in gcru.values():
+            for _id in gcru:
                 cancel_reminder(_id)
             gcr[user] = {}
             await save2db2(bot.remind_dict, "reminders")
