@@ -66,7 +66,7 @@ from bot.utils.os_utils import enshell, s_remove
 from bot.utils.parse_td_utils import parse_reminder_time_hybrid
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
-from bot.workers.auto.reminder import schedule_reminder_async, cancel_reminder
+from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
 
 
 async def tools(event, args, client):
