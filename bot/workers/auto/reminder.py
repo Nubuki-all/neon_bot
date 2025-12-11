@@ -8,6 +8,7 @@ from dateutil import parser as dateutil_parser
 from neonize.utils.jid import build_jid
 
 from bot.config import bot
+from bot.utils.db_utils import save2db2
 
 scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
@@ -18,7 +19,7 @@ async def send_reminder_async(chat_id: str, user_id: str, store: dict):
         "@" + user_id + ": *Reminder*",
         store["message"],
         chat_jid,
-        mentions_are_lids=store["lid_address"],
+        #mentions_are_lids=store["lid_address"],
     )
     bot.remind_dict.setdefault(chat_id, {}).setdefault(user_id, {}).pop(store["id"])
     await save2db2(bot.remind_dict, "reminders")
