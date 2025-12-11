@@ -14,7 +14,9 @@ from bot.utils.log_utils import log
 scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
 
-async def send_reminder_async(chat_id: str, user_id: str, store: dict, from_scheduler: bool = False):
+async def send_reminder_async(
+    chat_id: str, user_id: str, store: dict, from_scheduler: bool = False
+):
     if from_scheduler:
         log(e=f"Reminder #{store["id"]} is due")
     else:
@@ -35,8 +37,6 @@ def parse_iso_to_utc(iso_str: str, assume_tz: str = "Africa/Lagos"):
     if dt.tzinfo is None:
         dt = pytz.timezone(assume_tz).localize(dt)
     return dt.astimezone(pytz.UTC)
-
-
 
 
 async def schedule_reminder_async(
