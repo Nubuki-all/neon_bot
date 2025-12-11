@@ -21,7 +21,7 @@ async def send_reminder_async(chat_id: str, user_id: str, store: dict):
         mentions_are_lids=store["lid_address"],
     )
     bot.remind_dict.setdefault(chat_id, {}).setdefault(user_id, {}).pop(store["id"])
-    await save2db2(bot.remind_dict, "reminder")
+    await save2db2(bot.remind_dict, "reminders")
 
 
 def parse_iso_to_utc(iso_str: str, assume_tz: str = "Africa/Lagos"):

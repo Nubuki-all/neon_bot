@@ -1804,7 +1804,7 @@ async def save_reminder(event, args, client):
             "lid_address": event.lid_address,
         }
         bot.remind_dict.setdefault(chat, {}).setdefault(user, {})[_id] = store
-        await save2db2(bot.remind_dict, "reminder")
+        await save2db2(bot.remind_dict, "reminders")
         schedule_reminder_async(_id, store, chat_, user)
         await event.reply(
             f"Reminder set for " + get_date_from_isostr(parsed_time) + f"\n*ID:*{_id}"
@@ -1865,13 +1865,13 @@ async def delete_reminders(event, args, client):
             for _id, store in gcru.values():
                 cancel_reminder(_id)
             gcr[user] = {}
-            await save2db2(bot.remind_dict, "reminder")
+            await save2db2(bot.remind_dict, "reminders")
             return await event.reply("All reminders have been deleted.")
         if not gcru.get(args):
             return await event.reply("Reminder with given ID not found.")
         gcru.pop(args)
         cancel_reminder(args)
-        await save2db2(bot.remind_dict, "reminder")
+        await save2db2(bot.remind_dict, "reminders")
         await event.reply(f"Deleted reminder with ID: {args}")
     except Exception:
         await logger(Exception)
