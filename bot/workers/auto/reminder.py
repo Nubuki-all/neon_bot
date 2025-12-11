@@ -37,7 +37,7 @@ def _schedule_coroutine(coro, job_id: str):
     asyncio.create_task(coro)
 
 
-def schedule_reminder_async(
+async def schedule_reminder_async(
     reminder_uui5d: str,
     store: dict,
     chat_id: str,
@@ -72,8 +72,8 @@ def cancel_reminder(reminder_uuid: str):
         pass
 
 
-def reschedule_all(assume_tz: str = "Africa/Lagos"):
+async def reschedule_all(assume_tz: str = "Africa/Lagos"):
     for chat_id, users in list(bot.remind_dict.items()):
         for user_id, reminders in list(users.items()):
             for rid, store in list(reminders.items()):
-                schedule_reminder_async(rid, store, chat_id, user_id, assume_tz)
+                await schedule_reminder_async(rid, store, chat_id, user_id, assume_tz)

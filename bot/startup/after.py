@@ -109,7 +109,7 @@ async def on_startup():
         scheduler.start()
         scheduler2.start()
         reminder_scheduler.start()
-        asyncio.create_task(asyncio.to_thread(reschedule_all))
+        asyncio.create_task(reschedule_all)
         if len(sys.argv) == 3:
             await onrestart()
         else:
