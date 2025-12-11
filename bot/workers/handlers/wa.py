@@ -1835,10 +1835,10 @@ async def list_reminders(event, args, client):
 
         msg = ""
         for _id, store in gcru.items():
-            msg += f"- *{_id}*  🔔 @{get_date_from_isostr(store['time'])}"
+            msg += f"\n- *{_id}*  🔔 @{get_date_from_isostr(store['time'])}"
         if msg == "":
             return await event.reply("No reminders found for user.")
-        await event.reply(f"*Reminders:*\n{msg}")
+        await event.reply(f"*Reminders:*{msg}")
     except Exception:
         await logger(Exception)
 
