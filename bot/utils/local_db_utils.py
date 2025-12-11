@@ -25,7 +25,7 @@ def load_local_db():
         with open(local_rdb, "rb") as file:
             local_dict = pickle.load(file)
         bot.rss_dict.update(local_dict)
-    
+
     if file_exists(local_remdb):
         with open(local_remdb, "rb") as file:
             local_dict = pickle.load(file)
@@ -56,4 +56,3 @@ def save2db_lcl2(db):
     elif db == "users":
         with open(local_udb, "wb") as file:
             pickle.dump(bot.user_dict, file)
-

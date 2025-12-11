@@ -62,8 +62,8 @@ from bot.utils.msg_utils import (
     user_is_owner,
     user_is_privileged,
 )
-from bot.utils.parse_td_utils import parse_reminder_time_hybrid
 from bot.utils.os_utils import enshell, s_remove
+from bot.utils.parse_td_utils import parse_reminder_time_hybrid
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
 from bot.workers.auto.reminder import schedule_reminder_async
@@ -1806,10 +1806,13 @@ async def save_reminder(event, args, client):
         bot.remind_dict.setdefault(chat, {}).setdefault(user, {})[_id] = store
         await save2db2(bot.remind_dict, "reminder")
         schedule_reminder_async(_id, store, chat_, user)
-        await event.reply(f"Reminder set for "+ get_date_from_isostr(parsed_time)+f"\n*ID:*{_id}")
+        await event.reply(
+            f"Reminder set for " + get_date_from_isostr(parsed_time) + f"\n*ID:*{_id}"
+        )
     except Exception:
         logger(Exception)
-        
+
+
 async def list_reminders(event, args, client):
     """
     List all your reminders
@@ -1827,7 +1830,7 @@ async def list_reminders(event, args, client):
             return await event.reply("No reminders found here.")
         if not (gcru := gcr.get(user)):
             return await event.reply("No reminders found for user.")
-        
+
         msg = ""
         for _id, store in gcru.values():
             msg += f"- *{_id}*  🔔 @{get_date_from_isostr(store['time'])}"
@@ -1836,14 +1839,15 @@ async def list_reminders(event, args, client):
         await event.reply(f"*Reminders:*\n{msg}")
     except Exception:
         logger(Exception)
-    
+
+
 async def delete_reminders(event, args, client):
     """
     Delete your reminders by id
-    Get the id by listing all reminders 
+    Get the id by listing all reminders
     Arguments:
-        id: id of reminder to delete 
-        "all": delete all reminders 
+        id: id of reminder to delete
+        "all": delete all reminders
     """
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -1870,7 +1874,7 @@ async def delete_reminders(event, args, client):
         await event.reply(f"Deleted reminder with ID: {args}")
     except Exception:
         logger(Exception)
-    
+
 
 async def test_button(event, args, client):
     user = event.from_user.id
@@ -1969,4 +1973,3 @@ bot.add_handler(
 
 # test
 bot.add_handler(test_button, "button")
-

@@ -1,9 +1,11 @@
 import datetime
+import re
+from typing import Optional
+
 import dateparser
 import pytz
-import re
 from dateutil.relativedelta import relativedelta
-from typing import Optional
+
 
 def _parse_duration_to_relativedelta(text: str) -> Optional[relativedelta]:
     token_re = re.compile(
@@ -36,7 +38,9 @@ def _parse_duration_to_relativedelta(text: str) -> Optional[relativedelta]:
     return relativedelta(**kwargs)
 
 
-def _next_weekday_from(base: datetime.datetime, target_weekday: int) -> datetime.datetime:
+def _next_weekday_from(
+    base: datetime.datetime, target_weekday: int
+) -> datetime.datetime:
     """
     Return the datetime for the next target_weekday (0=Monday .. 6=Sunday).
     'Next' means strictly future; if today is the target, it returns next week's day.
@@ -48,7 +52,9 @@ def _next_weekday_from(base: datetime.datetime, target_weekday: int) -> datetime
     return base + datetime.timedelta(days=days_ahead)
 
 
-def parse_reminder_time_hybrid(user_phrase: str, to_timezone: str = "Africa/Lagos") -> Optional[str]:
+def parse_reminder_time_hybrid(
+    user_phrase: str, to_timezone: str = "Africa/Lagos"
+) -> Optional[str]:
     """
     Parse a user phrase into an ISO8601 string anchored to `to_timezone`.
     Returns ISO string (timezone-aware) or None if parsing fails.
@@ -60,27 +66,34 @@ def parse_reminder_time_hybrid(user_phrase: str, to_timezone: str = "Africa/Lago
     - Duration-only inputs like "2hrs, 2mins" are supported.
     """
     tz = pytz.timezone(to_timezone)
-    now_tz = datetime.datetime.now(tz)  # RELATIVE_BASE for dateparser and durations
+    # RELATIVE_BASE for dateparser and durations
+    now_tz = datetime.datetime.now(tz)
     phrase = user_phrase.strip().lower()
 
     # Duration-only detection (e.g. "in 2hrs", "2hrs 2mins")
     duration_full_re = re.compile(
         r"^(?:in\s+)?(?:\d+\s*(?:years?|yrs?|y|months?|mo|weeks?|w|days?|d|hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)(?:[\s,]*)?)+$",
-        flags=re.IGNORECASE
+        flags=re.IGNORECASE,
     )
     if duration_full_re.match(phrase):
         rd = _parse_duration_to_relativedelta(phrase)
         if rd:
             target = now_tz + rd
-            # dateparser not involved here so localize/ensure tz, then return iso
+            # dateparser not involved here so localize/ensure tz, then return
+            # iso
             if target.tzinfo is None:
                 target = tz.localize(target)
             return target.isoformat()
 
     # "next <weekday>" with optional "at <time>" or direct time token
     weekday_names = {
-        "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-        "friday": 4, "saturday": 5, "sunday": 6
+        "monday": 0,
+        "tuesday": 1,
+        "wednesday": 2,
+        "thursday": 3,
+        "friday": 4,
+        "saturday": 5,
+        "sunday": 6,
     }
     m = re.match(r"next\s+(\w+)(?:\s+at\s+(.+)|\s+(.+))?$", phrase)
     if m:
@@ -98,7 +111,8 @@ def parse_reminder_time_hybrid(user_phrase: str, to_timezone: str = "Africa/Lago
                 }
                 parsed = dateparser.parse(combined, settings=settings)
                 if parsed:
-                    # dateparser should honor TIMEZONE and return tz-aware; if not, localize once
+                    # dateparser should honor TIMEZONE and return tz-aware; if
+                    # not, localize once
                     if parsed.tzinfo is None:
                         parsed = tz.localize(parsed)
                     return parsed.isoformat()
@@ -107,7 +121,8 @@ def parse_reminder_time_hybrid(user_phrase: str, to_timezone: str = "Africa/Lago
             midnight = tz.localize(midnight) if midnight.tzinfo is None else midnight
             return midnight.isoformat()
 
-    # Fallback to dateparser using now_tz as RELATIVE_BASE and TIMEZONE=to_timezone
+    # Fallback to dateparser using now_tz as RELATIVE_BASE and
+    # TIMEZONE=to_timezone
     settings = {
         "RETURN_AS_TIMEZONE_AWARE": True,
         "TIMEZONE": to_timezone,
@@ -118,7 +133,8 @@ def parse_reminder_time_hybrid(user_phrase: str, to_timezone: str = "Africa/Lago
     parsed = dateparser.parse(phrase, settings=settings)
     if not parsed:
         return None
-    # parsed should already be timezone-aware in `to_timezone`. If it's not, localize to tz once.
+    # parsed should already be timezone-aware in `to_timezone`. If it's not,
+    # localize to tz once.
     if parsed.tzinfo is None:
         parsed = tz.localize(parsed)
     return parsed.isoformat()

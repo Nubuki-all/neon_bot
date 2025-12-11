@@ -131,16 +131,17 @@ def get_date_from_ts(timestamp):
     except Exception:
         return 0
 
+
 def get_date_from_isostr(iso_str):
-    if iso_str.endswith('Z'):
-        iso_str = iso_str.replace('Z', '+00:00')
+    if iso_str.endswith("Z"):
+        iso_str = iso_str.replace("Z", "+00:00")
 
     try:
         dt_object = datetime.datetime.fromisoformat(iso_str)
     except ValueError:
         dt_object = datetime.datetime.strptime(iso_str, "%Y-%m-%dT%H:%M:%S%z")
-    
-    return dt_object.strftime("%Y-%m-%d %I:%M %p %Z") 
+
+    return dt_object.strftime("%Y-%m-%d %I:%M %p %Z")
 
 
 def time_formatter(seconds: float) -> str:
@@ -410,4 +411,3 @@ def clean_whatsapp_md(text: str) -> str:
     # 5) Strikethrough
     text = re.sub(r"~([^~]+)~", r"\1", text)
     return text
-

@@ -105,4 +105,3 @@ class Runtime_Config:
 
 conf = Config()
 bot = Runtime_Config()
-

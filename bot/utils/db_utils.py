@@ -148,4 +148,3 @@ async def restore_wa_db():
 
 
 bot.backup_wa_db = backup_wa_db
-

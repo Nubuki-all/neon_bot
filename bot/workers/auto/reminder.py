@@ -1,12 +1,13 @@
-import uuid
-import datetime
-from dateutil import parser as dateutil_parser
-import pytz
 import asyncio
-from bot.conf import bot
+import datetime
+
+import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
+from dateutil import parser as dateutil_parser
 from neonize.utils.jid import build_jid
+
+from bot.conf import bot
 
 scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 
@@ -14,7 +15,7 @@ scheduler = AsyncIOScheduler(timezone=pytz.UTC)
 async def send_reminder_async(chat_id: str, user_id: str, store: dict):
     chat_jid = build_jid(chat.split("@")[0], chat.split("@")[1])
     await bot.client.reply_message(
-        "@"+user+": *Reminder*",
+        "@" + user + ": *Reminder*",
         store["message"],
         chat_jid,
         mentions_are_lids=store["lid_address"],
@@ -36,8 +37,13 @@ def _schedule_coroutine(coro, job_id: str):
     asyncio.create_task(coro)
 
 
-def schedule_reminder_async(reminder_uui5d: str, store: dict, chat_id: str, user_id: str,
-                            assume_tz: str = "Africa/Lagos"):
+def schedule_reminder_async(
+    reminder_uui5d: str,
+    store: dict,
+    chat_id: str,
+    user_id: str,
+    assume_tz: str = "Africa/Lagos",
+):
     iso = store.get("time")
     if not iso:
         return
@@ -55,7 +61,7 @@ def schedule_reminder_async(reminder_uui5d: str, store: dict, chat_id: str, user
         args=(send_reminder_async(chat_id, user_id, store), str(reminder_uuid)),
         id=str(reminder_uuid),
         replace_existing=True,
-        misfire_grace_time=60
+        misfire_grace_time=60,
     )
 
 
@@ -71,5 +77,3 @@ def reschedule_all(assume_tz: str = "Africa/Lagos"):
         for user_id, reminders in list(users.items()):
             for rid, store in list(reminders.items()):
                 schedule_reminder_async(rid, store, chat_id, user_id, assume_tz)
-
-

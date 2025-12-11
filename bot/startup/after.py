@@ -13,8 +13,8 @@ from bot.utils.msg_store import Base as sql_base
 from bot.utils.msg_store import auto_save_msg, engine
 from bot.utils.msg_utils import send_presence
 from bot.utils.rss_utils import scheduler
-from bot.workers.auto.reminder import scheduler as reminder_scheduler
 from bot.workers.auto.reminder import reschedule_all
+from bot.workers.auto.reminder import scheduler as reminder_scheduler
 
 
 async def onrestart():
@@ -120,4 +120,3 @@ async def on_startup():
         LOGS.info("Bot has started.")
     except Exception:
         await logger(Exception)
-

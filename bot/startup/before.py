@@ -68,7 +68,7 @@ if conf.DATABASE_URL:
 
 
 else:
-    rssdb = userdb = miscdb = nfdb = remdb= None
+    rssdb = userdb = miscdb = nfdb = remdb = None
 
     load_local_db()
 
@@ -87,4 +87,3 @@ def check_for_pg_tools():
 
 check_for_pg_tools()
 create_api_token()
-
