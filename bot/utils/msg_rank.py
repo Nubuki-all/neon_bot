@@ -89,8 +89,8 @@ async def auto_rank():
 
     try:
         if write_week:
-            groups["last_rank_clear"] = (
-                datetime.datetime.today() + datetime.timedelta(days=2)
+            groups["last_rank_clear"] = datetime.datetime.today() + datetime.timedelta(
+                days=2
             )
         if write_month:
             groups["last_monthly_rank_clear"] = datetime.datetime.today()

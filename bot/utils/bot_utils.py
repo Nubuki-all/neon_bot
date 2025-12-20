@@ -267,6 +267,7 @@ async def shutdown_services():
         while bot.pending_saved_messages:
             await asyncio.sleep(1)
 
+
 def same_month(date, day_offset: int = 1, hour_offset: int = 0):
     """returns true if datetime object is part of the current month"""
     d1 = date

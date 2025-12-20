@@ -1743,7 +1743,11 @@ async def s_rules(event, pm=True):
     if not (rules := gc.get("rules")) or not isinstance(rules, str):
         if pm:
             return await clean_reply(
-                event, event.reply_to_message, "reply", "*No Rules Set Yet!*", reply_privately=pm
+                event,
+                event.reply_to_message,
+                "reply",
+                "*No Rules Set Yet!*",
+                reply_privately=pm,
             )
         return
     try:

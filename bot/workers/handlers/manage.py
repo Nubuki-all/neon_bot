@@ -814,7 +814,7 @@ async def enable_amr(event, args, client):
     """
     Enables auto message ranking in a group chat.
     Argument:
-        weekly, monthly :- Reset Time 
+        weekly, monthly :- Reset Time
         defaults to weekly.
     """
     if not event.chat.is_group:
@@ -843,7 +843,7 @@ async def enable_amr(event, args, client):
         group_info.update(msg_chat=True)
         ranking = group_info.setdefault("msg_ranking", {})
         ranking["period"] = args.casefold()
-        
+
         await save2db2(bot.group_dict, "groups")
         await event.reply(
             f"Successfully enabled auto message ranking in group: *{chat_name}*"
