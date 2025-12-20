@@ -6,69 +6,114 @@ from bot.config import bot
 from bot.workers.auto.schedule import scheduler2
 from bot.workers.handlers.wa import get_ranking_msg
 
-from .bot_utils import same_week
+from .bot_utils import same_month, same_week
 from .db_utils import save2db2
 from .log_utils import logger
 
 
 async def auto_rank():
-    """
-    Sends the msg ranks of each chat daily
-    """
     groups = bot.group_dict
-    write = False
+    write_week = False
+    write_month = False
+
+    # Weekly window (evaluate once)
+    weekly_clear = groups.get("last_rank_clear")
+    weekly_window = not weekly_clear or not same_week(weekly_clear, 1)
+
     for group in list(groups):
         try:
-            if group in ("last_rank_clear"):
+            if group in ("last_rank_clear", "last_monthly_rank_clear"):
                 continue
+
             group_info = groups[group]
+
             if not group_info.get("msg_chat"):
                 continue
             if group_info.get("left"):
                 continue
+
+            ranking = group_info.setdefault("msg_ranking", {})
+            period = ranking.get("period", "weekly")
+
+            # Monthly groups only send during weekly window
+            if period == "monthly" and not weekly_window:
+                continue
+
             msg = await get_ranking_msg(group, tag=True)
             if not msg:
                 continue
-            server = group_info["msg_ranking"]["server"]
+
+            server = ranking.get("server")
+
             await bot.client.send_message(
-                jid.build_jid(group, "g.us"), msg, mentions_are_lids=(server == 0)
+                jid.build_jid(group, "g.us"),
+                msg,
+                mentions_are_lids=(server == 0),
             )
+
             await asyncio.sleep(3)
-            if not (last_clear := groups.get("last_rank_clear")):
-                groups["last_rank_clear"] = datetime.datetime.today()
-            elif same_week(last_clear, 1):
-                continue
-            write = True
+
+            # ---------- RESET LOGIC ----------
+            if period == "weekly":
+                if not (last_clear := groups.get("last_rank_clear")):
+                    groups["last_rank_clear"] = datetime.datetime.today()
+                elif not weekly_window:
+                    continue
+
+                write_week = True
+
+            else:  # monthly
+                if not (last_clear := groups.get("last_monthly_rank_clear")):
+                    groups["last_monthly_rank_clear"] = datetime.datetime.today()
+                elif same_month(last_clear, 1):
+                    continue
+
+                write_month = True
+
             update_users_rank(group)
-            group_info.setdefault("msg_ranking", {}).clear()
+            ranking.clear()
+
             await bot.client.send_message(
-                jid.build_jid(group, "g.us"), "*Message ranking has been reset.*"
+                jid.build_jid(group, "g.us"),
+                f"*{period.capitalize()} message ranking has been reset.*",
             )
+
             await asyncio.sleep(3)
+
         except Exception:
             await logger(
                 e=f"Error occurred while handling message ranking for group with id: {group}",
                 error=True,
             )
             await logger(Exception)
+
     try:
-        if write:
-            groups.update(
-                last_rank_clear=(datetime.datetime.today() + datetime.timedelta(days=2))
+        if write_week:
+            groups["last_rank_clear"] = (
+                datetime.datetime.today() + datetime.timedelta(days=2)
             )
+        if write_month:
+            groups["last_monthly_rank_clear"] = datetime.datetime.today()
+
+        if write_week or write_month:
             await save2db2(bot.group_dict, "groups")
+
     except Exception:
         await logger(Exception)
 
 
 def update_users_rank(chat_id):
     group = bot.group_dict.setdefault(chat_id, {})
-    msg_rank_dict = group.setdefault("msg_ranking")
+    msg_rank_dict = group.setdefault("msg_ranking", {})
+
     sorted_ms_rank_dict = dict(
         sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
     )
-    sorted_ms_rank_dict.pop("total")
-    sorted_ms_rank_dict.pop("server")
+
+    sorted_ms_rank_dict.pop("total", None)
+    sorted_ms_rank_dict.pop("server", None)
+    sorted_ms_rank_dict.pop("period", None)
+
     t_three = [1, 2, 3]
     for i, user in zip(t_three, list(sorted_ms_rank_dict.keys())):
         user_rank = group.setdefault("msg_stats", {}).setdefault(user, {})

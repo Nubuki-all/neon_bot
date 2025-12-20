@@ -94,6 +94,11 @@ async def tools(event, args, client):
             f"{pre}sanitize - *Sanitize link or message*{s}"
             f"{pre}screenshot - *Generate a screenshot from a url*{s}"
             f"{s}"
+            f"*Reminders:*{s}"
+            f"{pre}remindme- *Tag user to replied message at a specified time*"
+            f"{pre}all_reminders - *List all your reminders*"
+            f"{pre}del_reminder - *Delete all or specified reminders*"
+            f"{s}"
             f"*Rules:*{s}"
             f"{pre}rules - *Get Group Rules in PM/DM*"
             f"{pre}setrules - *[Admins Only] Set Group Rules*"
@@ -1736,6 +1741,10 @@ async def s_rules(event, pm=True):
     chat = event.chat.id
     gc = bot.group_dict.get(event.chat.id, {})
     if not (rules := gc.get("rules")) or not isinstance(rules, str):
+        if pm:
+            return await clean_reply(
+                event, event.reply_to_message, "reply", "*No Rules Set Yet!*", reply_privately=pm
+            )
         return
     try:
         if rules != "notes":

@@ -811,7 +811,12 @@ async def disable_amr(event, args, client):
 
 
 async def enable_amr(event, args, client):
-    "Enables auto message ranking in a group chat."
+    """
+    Enables auto message ranking in a group chat.
+    Argument:
+        weekly, monthly :- Reset Time 
+        defaults to weekly.
+    """
     if not event.chat.is_group:
         return await event.react("🚫")
     try:
@@ -828,11 +833,17 @@ async def enable_amr(event, args, client):
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
         group_info = bot.group_dict.get(chat_id, {})
-        if group_info.get("msg_chat"):
+        if group_info.get("msg_chat") and not args:
             return await event.reply(
                 "This Group chat already has auto message ranking enabled."
             )
-        bot.group_dict.setdefault(chat_id, {}).update(msg_chat=True)
+        if args and args.casefold() not in ("weekly", "monthly"):
+            args = "weekly"
+        group_info = bot.group_dict.setdefault(chat_id, {})
+        group_info.update(msg_chat=True)
+        ranking = group_info.setdefault("msg_ranking", {})
+        ranking["period"] = args.casefold()
+        
         await save2db2(bot.group_dict, "groups")
         await event.reply(
             f"Successfully enabled auto message ranking in group: *{chat_name}*"
