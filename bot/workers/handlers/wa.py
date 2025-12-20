@@ -1751,7 +1751,13 @@ async def s_rules(event, pm=True):
             )
         return
     try:
-        if rules != "notes":
+        if rules not in ("notes", "topic"):
+            return await clean_reply(
+                event, event.reply_to_message, "reply", rules, reply_privately=pm
+            )
+        elif rules == "topic":
+            gc_info = await event.client.get_group_info(event.chat.jid)
+            rules = gc_info.GroupTopic.Topic or "*No group Description.*"
             return await clean_reply(
                 event, event.reply_to_message, "reply", rules, reply_privately=pm
             )
