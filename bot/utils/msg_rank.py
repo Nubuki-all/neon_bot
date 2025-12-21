@@ -107,7 +107,11 @@ def update_users_rank(chat_id):
     msg_rank_dict = group.setdefault("msg_ranking", {})
 
     sorted_ms_rank_dict = dict(
-        sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
+        sorted(
+            ((k, v) for k, v in msg_rank_dict.items() if isinstance(v, int)),
+            key=lambda item: item[1],
+            reverse=True,
+        )
     )
 
     sorted_ms_rank_dict.pop("total", None)

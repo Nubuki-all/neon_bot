@@ -1196,11 +1196,15 @@ async def get_ranking_msg(chat_id, tag=False, full=False):
     server = msg_rank_dict.get("server")
     server = "lid" if not server else "s.whatsapp.net"
     sorted_ms_rank_dict = dict(
-        sorted(msg_rank_dict.items(), key=lambda item: item[1], reverse=True),
+        sorted(
+            ((k, v) for k, v in msg_rank_dict.items() if isinstance(v, int)),
+            key=lambda item: item[1],
+            reverse=True,
+        )
     )
 
     for user in list(sorted_ms_rank_dict.keys()):
-        if user in ("total", "server"):
+        if user in ("total", "server", "period"):
             continue
         value = sorted_ms_rank_dict[user]
         user_info = await get_user_info(user, server)
