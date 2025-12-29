@@ -69,9 +69,13 @@ async def auto_rank():
                     continue
 
                 write_month = True
-
+            saved_config = {
+                "period": ranking.get("period", "weekly"),
+                "server": ranking.get("server")
+            }
             update_users_rank(group)
             ranking.clear()
+            ranking.update(saved_config)
 
             await bot.client.send_message(
                 jid.build_jid(group, "g.us"),
