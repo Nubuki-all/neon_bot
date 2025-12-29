@@ -71,7 +71,7 @@ async def auto_rank():
                 write_month = True
             saved_config = {
                 "period": ranking.get("period", "weekly"),
-                "server": ranking.get("server")
+                "server": ranking.get("server"),
             }
             update_users_rank(group)
             ranking.clear()
