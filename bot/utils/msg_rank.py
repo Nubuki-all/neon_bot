@@ -97,7 +97,9 @@ async def auto_rank():
                 days=2
             )
         if write_month:
-            groups["last_monthly_rank_clear"] = datetime.datetime.today()
+            groups["last_monthly_rank_clear"] = datetime.datetime.today() + datetime.timedelta(
+                days=2
+            )
 
         if write_week or write_month:
             await save2db2(bot.group_dict, "groups")
