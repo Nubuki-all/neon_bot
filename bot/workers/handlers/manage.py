@@ -475,30 +475,37 @@ async def ban(event, args, client):
     if not user_is_privileged(user):
         return await event.react("🚫")
     try:
-        if args and not (args := args.lstrip("@")).isdigit():
+        if args and not (args := args.lstrip("@")).lstrip("+").isdigit():
             return await event.reply("*Please supply a valid id to ban*")
         elif not (args or event.reply_to_message):
             return await event.reply(
                 "*Reply to a message or supply an id to ban the user from using the bot.*"
             )
         _id = ban_id = args or event.reply_to_message.from_user.id
-        if event.lid_address:
+        mentions_are_jids = True
+        if args.startswith("+"):
+            _id = ban_id = args.lstrip("+")
+        elif event.lid_address:
+            mentions_are_jids = False
             ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
             ban_id = ph.User
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
-            return await event.reply(f"@{_id} *is a Sudoer.*")
+            return await event.reply(f"@{_id} *is a Sudoer.*", mentions_are_jids=mentions_are_jids)
         if not user_is_allowed(ban_id):
             return await event.reply(
-                f"@{_id} *has already been banned from using the bot.*"
+                f"@{_id} *has already been banned from using the bot.*",
+                mentions_are_jids=mentions_are_jids,
             )
         if user_is_owner(user):
             bot.user_dict.setdefault(ban_id, {}).update(fbanned=True)
         else:
             bot.user_dict.setdefault(ban_id, {}).update(banned=True)
         await save2db2(bot.user_dict, "users")
-        return await event.reply(f"@{_id} *has been banned from using the bot.*")
+        return await event.reply(f"@{_id} *has been banned from using the bot.*",
+            mentions_are_jids=mentions_are_jids,
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -517,32 +524,43 @@ async def unban(event, args, client):
     if not user_is_privileged(user):
         return await event.react("🚫")
     try:
-        if args and not (args := args.lstrip("@")).isdigit():
+        if args and not (args := args.lstrip("@")).lstrip("+").isdigit():
             return await event.reply("*Please supply a valid id to unban*")
         elif not (args or event.reply_to_message):
             return await event.reply(
                 "*Reply to a message or supply an id to unban the user from using the bot.*"
             )
         _id = ban_id = args or event.reply_to_message.from_user.id
-        if event.lid_address:
+        mentions_are_jids = True
+        if args.startswith("+"):
+            _id = ban_id = args.lstrip("+")
+        elif event.lid_address:
+            mentions_are_jids = False
             ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
             ban_id = ph.User
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
-            return await event.reply(f"@{_id} *is a Sudoer.*")
+            return await event.reply(f"@{_id} *is a Sudoer.*",
+                mentions_are_jids=mentions_are_jids,
+            )
         if user_is_allowed(ban_id):
-            return await event.reply(f"@{_id} *was never banned from using the bot.*")
+            return await event.reply(f"@{_id} *was never banned from using the bot.*",
+                mentions_are_jids=mentions_are_jids,
+            )
         if user_is_banned_by_ownr(_id) and not user_is_owner(user):
             return await event.reply(
-                f"*You're currently not allowed to unban users banned by owner.*"
+                f"*You're currently not allowed to unban users banned by owner.*",
+                mentions_are_jids=mentions_are_jids,
             )
         if user_is_banned_by_ownr(ban_id):
             bot.user_dict.setdefault(ban_id, {}).update(fbanned=False)
         else:
             bot.user_dict.setdefault(ban_id, {}).update(banned=False)
         await save2db2(bot.user_dict, "users")
-        return await event.reply(f"@{_id} *ban has been lifted.*")
+        return await event.reply(f"@{_id} *ban has been lifted.*",
+            mentions_are_jids=mentions_are_jids,
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -654,27 +672,36 @@ async def sudoers(event, args, client):
             )
         else:
             return await event.reply(getdoc(sudoers))
-        if args and not (args := args.lstrip("@")).isdigit():
+        if args and not (args := args.lstrip("@")).lstrip("+").isdigit():
             return await event.reply(msg1)
         elif not (args or event.reply_to_message):
             return await event.reply(msg2)
         _id = su_id = args or event.reply_to_message.from_user.id
-        if event.lid_address:
+        mentions_are_jids = True
+        if args.startswith("+"):
+            _id = su_id = args.lstrip("+")
+        elif event.lid_address:
+            mentions_are_jids = False
             ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
             su_id = ph.User
         if user_is_owner(su_id):
             return await event.reply("*Why?*")
         if arg.a:
             if user_is_sudoer(su_id):
-                return await event.reply(f"@{_id} *is already a Sudoer.*")
+                return await event.reply(f"@{_id} *is already a Sudoer.*",
+                    mentions_are_jids=mentions_are_jids,
+                )
             bot.user_dict.setdefault(su_id, {}).update(sudoer=True)
         if arg.rm:
             if not user_is_sudoer(su_id):
-                return await event.reply(f"@{_id} *is not a Sudoer.*")
+                return await event.reply(f"@{_id} *is not a Sudoer.*",
+                    mentions_are_jids=mentions_are_jids,
+                )
             bot.user_dict.setdefault(su_id, {}).update(sudoer=False)
         await save2db2(bot.user_dict, "users")
         await event.reply(
-            f"@{_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*"
+            f"@{_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*",
+            mentions_are_jids=mentions_are_jids,
         )
     except Exception:
         await logger(Exception)
