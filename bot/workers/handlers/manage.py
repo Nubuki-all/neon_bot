@@ -492,7 +492,9 @@ async def ban(event, args, client):
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
-            return await event.reply(f"@{_id} *is a Sudoer.*", mentions_are_jids=mentions_are_jids)
+            return await event.reply(
+                f"@{_id} *is a Sudoer.*", mentions_are_jids=mentions_are_jids
+            )
         if not user_is_allowed(ban_id):
             return await event.reply(
                 f"@{_id} *has already been banned from using the bot.*",
@@ -503,7 +505,8 @@ async def ban(event, args, client):
         else:
             bot.user_dict.setdefault(ban_id, {}).update(banned=True)
         await save2db2(bot.user_dict, "users")
-        return await event.reply(f"@{_id} *has been banned from using the bot.*",
+        return await event.reply(
+            f"@{_id} *has been banned from using the bot.*",
             mentions_are_jids=mentions_are_jids,
         )
     except Exception:
@@ -541,11 +544,13 @@ async def unban(event, args, client):
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
-            return await event.reply(f"@{_id} *is a Sudoer.*",
+            return await event.reply(
+                f"@{_id} *is a Sudoer.*",
                 mentions_are_jids=mentions_are_jids,
             )
         if user_is_allowed(ban_id):
-            return await event.reply(f"@{_id} *was never banned from using the bot.*",
+            return await event.reply(
+                f"@{_id} *was never banned from using the bot.*",
                 mentions_are_jids=mentions_are_jids,
             )
         if user_is_banned_by_ownr(_id) and not user_is_owner(user):
@@ -558,7 +563,8 @@ async def unban(event, args, client):
         else:
             bot.user_dict.setdefault(ban_id, {}).update(banned=False)
         await save2db2(bot.user_dict, "users")
-        return await event.reply(f"@{_id} *ban has been lifted.*",
+        return await event.reply(
+            f"@{_id} *ban has been lifted.*",
             mentions_are_jids=mentions_are_jids,
         )
     except Exception:
@@ -688,13 +694,15 @@ async def sudoers(event, args, client):
             return await event.reply("*Why?*")
         if arg.a:
             if user_is_sudoer(su_id):
-                return await event.reply(f"@{_id} *is already a Sudoer.*",
+                return await event.reply(
+                    f"@{_id} *is already a Sudoer.*",
                     mentions_are_jids=mentions_are_jids,
                 )
             bot.user_dict.setdefault(su_id, {}).update(sudoer=True)
         if arg.rm:
             if not user_is_sudoer(su_id):
-                return await event.reply(f"@{_id} *is not a Sudoer.*",
+                return await event.reply(
+                    f"@{_id} *is not a Sudoer.*",
                     mentions_are_jids=mentions_are_jids,
                 )
             bot.user_dict.setdefault(su_id, {}).update(sudoer=False)
