@@ -16,7 +16,7 @@ jobs:
 
       - name: Install Lint & Formatting Libraries (including BasedPyright)
         run: |
-          pip install autopep8 autoflake isort black basedpyright
+          pip install autopep8 autoflake isort black basedpyright setuptools
           pip install -r requirements.txt
 
       - name: Run BasedPyright (Reports all errors in annotations)
