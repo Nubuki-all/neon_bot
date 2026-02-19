@@ -501,9 +501,9 @@ async def ban(event, args, client):
                 mentions_are_jids=mentions_are_jids,
             )
         if user_is_owner(user):
-            bot.user_dict.setdefault(ban_id, {}).update(fbanned=True)
+            bot.user_dict.setdefault(ban_id, {}).update(fbanned=True, bannedby=user)
         else:
-            bot.user_dict.setdefault(ban_id, {}).update(banned=True)
+            bot.user_dict.setdefault(ban_id, {}).update(banned=True, bannedby=user)
         await save2db2(bot.user_dict, "users")
         return await event.reply(
             f"@{_id} *has been banned from using the bot.*",
@@ -559,9 +559,9 @@ async def unban(event, args, client):
                 mentions_are_jids=mentions_are_jids,
             )
         if user_is_banned_by_ownr(ban_id):
-            bot.user_dict.setdefault(ban_id, {}).update(fbanned=False)
+            bot.user_dict.setdefault(ban_id, {}).update(fbanned=False, bannedby="")
         else:
-            bot.user_dict.setdefault(ban_id, {}).update(banned=False)
+            bot.user_dict.setdefault(ban_id, {}).update(banned=False, bannedby="")
         await save2db2(bot.user_dict, "users")
         return await event.reply(
             f"@{_id} *ban has been lifted.*",
