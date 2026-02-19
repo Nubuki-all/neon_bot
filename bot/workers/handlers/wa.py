@@ -1085,8 +1085,6 @@ async def tag_all_owners(event, args, client):
                 return
             if not user_is_allowed(user):
                 return await event.react("⛔")
-        if event.media and event.media.contextInfo.nonJIDMentions:
-            return await event.react("👀")
         tags = tag_owners()
         await clean_reply(
             event,
@@ -1117,6 +1115,8 @@ async def tag_everyone(event, args, client):
         if not user_is_privileged(user):
             if not user_is_admin(user, group_info.Participants):
                 return
+        if event.media and event.media.contextInfo.nonJIDMentions:
+            return await event.react("👀")
         tags = tag_users(group_info.Participants)
         await clean_reply(
             event,
