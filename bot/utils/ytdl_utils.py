@@ -652,7 +652,7 @@ class YoutubeDLHelper:
 
         # if not add_to_queue:
         log(e=f"Downloading with YT_DLP: {
-                self.file_name or self._listener.name}")
+            self.file_name or self._listener.name}")
 
         await sync_to_async(self._download, path)
         self.base_name = ospath.splitext(self.file_name or self._listener.name)[0]
