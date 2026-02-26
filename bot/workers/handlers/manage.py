@@ -483,7 +483,7 @@ async def ban(event, args, client):
             )
         _id = ban_id = args or event.reply_to_message.from_user.id
         mentions_are_jids = True
-        if args.startswith("+"):
+        if args and args.startswith("+"):
             _id = ban_id = args.lstrip("+")
         elif event.lid_address:
             mentions_are_jids = False
@@ -535,7 +535,7 @@ async def unban(event, args, client):
             )
         _id = ban_id = args or event.reply_to_message.from_user.id
         mentions_are_jids = True
-        if args.startswith("+"):
+        if args and args.startswith("+"):
             _id = ban_id = args.lstrip("+")
         elif event.lid_address:
             mentions_are_jids = False
