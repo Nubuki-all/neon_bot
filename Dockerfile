@@ -13,7 +13,7 @@ RUN dnf -qq -y update && dnf -qq -y install git bash xz wget curl python3-pip ps
 
 # 3. Install latest ffmpeg & other dependencies
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/64/) && \
-    wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux${arch}-gpl-7.1.tar.xz && tar -xvf *xz && cp *7.1/bin/* /usr/bin && rm -rf *xz && rm -rf *7.1
+    wget -q https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux${arch}-gpl.tar.xz && tar -xvf *xz && cp ffmpeg*gpl/bin/* /usr/bin && rm -rf *xz && rm -rf ffmpeg*
 
 RUN arch=$(arch) && \
     wget -q https://github.com/denoland/deno/releases/download/v2.5.6/deno-${arch}-unknown-linux-gnu.zip && unzip *zip -d out && cp out/deno /usr/bin/ && rm -rf *zip && rm -rf out
