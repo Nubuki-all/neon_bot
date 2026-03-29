@@ -377,6 +377,7 @@ async def screenshot(event, args, client):
         if status_msg:
             await status_msg.delete()
 
+
 async def kang_sticker(event, args, client):
     """
     Kangs replied sticker.
