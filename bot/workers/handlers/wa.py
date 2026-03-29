@@ -105,6 +105,7 @@ async def tools(event, args, client):
             f"{pre}delrules - *[Admins Only] Delete Group Rules*{s}"
             f"{s}"
             f"*Stickers:*{s}"
+            f"{pre}kang - *Kangs a sticker*{s}"
             f"{pre}sticker - *Turns images/vids/gifs to stickers*{s}"
             f"{pre}stick2img - *Turns stickers to images/gifs*{s}"
             f"{s}"
@@ -375,6 +376,40 @@ async def screenshot(event, args, client):
     finally:
         if status_msg:
             await status_msg.delete()
+
+async def kang_sticker(event, args, client):
+    """
+    Kangs replied sticker.
+    Args:
+        Name of sticker [Optional] [Recommended]
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Reply to a sticker to a sticker to kang.*")
+        if not replied.sticker:
+            return await event.reply("*Replied message is not a sticker.*")
+
+        async with event.react("📥"):
+            file = await replied.download()
+
+        async with event.react("👩‍🏭"):
+            bot.client.me = me = await bot.client.get_me()
+            return await event.reply_sticker(
+                file,
+                quote=True,
+                name=(args or random.choice((enquip(), enquip4()))),
+                packname=me.PushName,
+                passthrough=True,
+            )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
 
 
 async def stickerize_image(event, args, client):
@@ -1954,6 +1989,7 @@ bot.add_handler(repeat, "repeat")
 bot.add_handler(undelete, "undel")
 bot.add_handler(get_rules, "rules")
 bot.add_handler(compress, "compress")
+bot.add_handler(kang_sticker, "kang")
 bot.add_handler(pick_random, "random")
 bot.add_handler(set_rules, "setrules")
 bot.add_handler(delete_rules, "delrules")
