@@ -1848,7 +1848,7 @@ async def set_welcome(event, args, client):
             return await event.reply("*Command can only be used by an admin.*")
         if not (replied := event.reply_to_message):
             return await event.reply("*Kindly reply to a message.*")
-        gc = bot.group_dict.setdefault(event.chat., {})
+        gc = bot.group_dict.setdefault(event.chat.id, {})
         if replied.is_actual_media or replied.sticker:
             status = await save_notes(event, "welcome", client, True)
             if status:
