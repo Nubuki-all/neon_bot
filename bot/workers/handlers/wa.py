@@ -1409,7 +1409,7 @@ async def welcome_msg(gc_event):
 
 def s_welcome_msg(gc_event, group_info):
     chat = gc_event.JID.User
-    gc = bot.group_dict.get(event.chat.id, {})
+    gc = bot.group_dict.get(chat, {})
     if not (msg := gc.get("welcome_msg")) or not isinstance(msg, str):
         return "", None
     try:
