@@ -1365,7 +1365,7 @@ async def welcome_msg(gc_event):
         user_jid = bot.client.me.JID
     for jid in gc_event.Join:
         user_name = f"@{jid.User}"
-        if not any_ :
+        if not any_:
             msg = await bot.client.send_message(
                 gc_event.JID,
                 txt.format(user_name, chat_name, gc_event.JoinReason),
@@ -1373,7 +1373,9 @@ async def welcome_msg(gc_event):
             )
         if not isinstance(any_, bytes):
             if hasattr(any_, caption):
-                any_.caption = any_.caption.format(user_name, chat_name, gc_event.JoinReason)
+                any_.caption = any_.caption.format(
+                    user_name, chat_name, gc_event.JoinReason
+                )
             any_.contextInfo.mentionedJID.append(Jid2String(jid))
             field_name = (
                 any_.__class__.__name__[0].lower() + any_.__class__.__name__[1:]
@@ -1430,8 +1432,8 @@ def s_welcome_msg(gc_event, group_info):
             return note[1], note[0]
         elif note_type == Message:
             note = copy.deepcopy(note)
-            ## if hasattr(note, "viewOnce"):
-                ##note.viewOnce = False
+            # if hasattr(note, "viewOnce"):
+            # note.viewOnce = False
             return "", note
     except Exception:
         log(Exception)
@@ -1823,6 +1825,7 @@ async def delete_rules(event, args, client):
     except Exception:
         await logger(Exception)
 
+
 async def set_welcome(event, args, client):
     """
     Set Groups welcome message
@@ -1830,7 +1833,7 @@ async def set_welcome(event, args, client):
         Reply to a Message intended to be used as a welcome message.
         Extra Formatting:
           {0} tag user
-          {1} group name 
+          {1} group name
           {2} join reason
     """
     user = event.from_user.id
@@ -1870,7 +1873,7 @@ async def set_welcome(event, args, client):
 
 async def unset_welcome(event, args, client):
     """
-    Unset groups welcome message 
+    Unset groups welcome message
     Note: Does not delete the welcome note if one was set!
     """
     user = event.from_user.id
@@ -1895,6 +1898,7 @@ async def unset_welcome(event, args, client):
             return await event.react("✅")
     except Exception:
         await logger(Exception)
+
 
 async def get_rules(event, args, client):
     """
