@@ -1372,7 +1372,7 @@ async def welcome_msg(gc_event):
                 mentions_are_lids=(jid.Server == "lid"),
             )
         if not isinstance(any_, bytes):
-            if hasattr(any_, caption):
+            if hasattr(any_, "caption"):
                 any_.caption = any_.caption.format(
                     user_name, chat_name, gc_event.JoinReason
                 )
