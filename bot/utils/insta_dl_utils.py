@@ -25,10 +25,10 @@ from .os_utils import enshell, s_remove
 
 @dataclass
 class Listener:
+    link: str = ""
     completed: bool = False
     error: Optional[str] = None
     is_cancelled: bool = False
-    link: str = ""
     name: Optional[str] = None
     size: int = 0  # total size in bytes (will be updated during dl)
 
@@ -313,7 +313,6 @@ class InstagramHelper:
                 self._on_download_error(f"Trimming failed: {e}")
                 await self.clean_up()
                 return
-        log(e=f"here {len(results)}")
         self._listener.completed = True
         await self.clean_up()
         return results
