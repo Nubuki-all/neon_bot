@@ -96,10 +96,6 @@ class InstagramHelper:
             self._download_speed = 0
         self._listener.name = file_path.split("/")[-1]
 
-        # If a message object is set, update it with progress
-        if self._message:
-            await self._update_message()
-
     async def _progress_loop(self):
         """Runs as a background task, updating the message every 5 seconds."""
         while not self._listener.is_cancelled:
