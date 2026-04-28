@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import secrets
@@ -8,7 +9,7 @@ from typing import Optional
 
 from bot.config import bot, conf
 from bot.fun.emojis import enhearts
-from bot.pkg.insta_dl import download_instagram
+from bot.pkgs.insta_dl import download_instagram
 
 from .bot_utils import (
     hbs,
@@ -75,6 +76,10 @@ class InstagramHelper:
     def name(self):
         return self._listener.name
 
+    @property
+    def download_is_complete(self):
+        return self._listener.completed
+
     async def _on_download_progress(self, current: int, total: int, file_path: str):
         """Called after each chunk; updates internal state and edits the message."""
         if self._listener.is_cancelled:
@@ -131,7 +136,7 @@ class InstagramHelper:
         await event.react("✅")
         self._listener.is_cancelled = True
         self._on_download_error(f"Download with gid: {
-                self._gid} was cancelled.")
+            self._gid} was cancelled.")
         await self.clean_up()
 
     async def clean_up(self):
