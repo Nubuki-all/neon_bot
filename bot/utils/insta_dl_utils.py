@@ -313,7 +313,7 @@ class InstagramHelper:
                 self._on_download_error(f"Trimming failed: {e}")
                 await self.clean_up()
                 return
-        log(e=f"here {len(results}")
+        log(e=f"here {len(results)}")
         self._listener.completed = True
         await self.clean_up()
         return results
