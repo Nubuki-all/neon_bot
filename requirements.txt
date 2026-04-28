@@ -1,5 +1,6 @@
 aiohttp
 aiohttp_retry
+aiofiles
 aiosqlite
 apscheduler
 beautifulsoup4

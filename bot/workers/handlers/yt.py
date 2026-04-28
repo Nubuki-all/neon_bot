@@ -9,6 +9,7 @@ from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
+from bot.pkg.insta_dl import is_valid_instagram_url
 from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
@@ -17,6 +18,9 @@ from bot.utils.ytdl_utils import (
     is_supported,
     is_valid_trim_args,
 )
+from bot.utils.insta_dl_utils import Listener as InstaListener
+from bot.utils.insta_dl_utils import InstagramHelper as InstagramDLHelper
+
 
 
 async def folder_upload(folder, event, status_msg, audio, listener):
@@ -95,7 +99,7 @@ async def youtube_reply(event, args, client):
         supported_links = []
         for url in urls:
             url = clean_url(url)
-            if not is_supported(url):
+            if not (is_supported(url) or is_valid_instagram_url(url)):
                 continue
             supported_links.append(url)
         if not supported_links:
@@ -103,16 +107,20 @@ async def youtube_reply(event, args, client):
         job = list(supported_links)
         while job:
             try:
+                listener = DummyListener(job[0])
+                if is_valid_instagram_url(listener.link):
+                    if await insta_reply(event, listener.link):
+                        job.pop(0)
+                        continue
                 audio = False
                 t_args = None
                 twi = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
-                listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
                 if "music" in listener.link:
                     audio = True
-                    _format = _alt_format = "ba/b-mp3{0}"
+                    _format =  = "ba/b-mp3{0}"
                     quality = "-"
                 elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
@@ -200,3 +208,41 @@ async def youtube_reply(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+
+async def insta_reply(event, link) -> bool:
+    listener = InstaListener(link)
+    insta_dl = InstagramDLHelper(listener)
+    status_msg = await event.reply("*Downloading…*")
+    downloads = await insta_dl.add_download(
+        f"insta_dl/{event.chat.id}:{event.id}",
+        message=status_msg,
+        trim_args=t_args,
+    )
+    if not (insta_dl.download_is_complete or downloads):
+        if listener.is_cancelled and listener.error:
+            await status_msg.edit("*Download Failed;* Trying fallback...")
+        await insta_dl.clean_up()
+        s_remove(insta_dl.folder, folders=True)
+        return
+    await status_msg.edit("Download completed, Now uploading…")
+    for file in downloads:
+        file_name = file.local_path
+        if not file_exists(file_name):
+            await logger(e=f"File: {file_name} not found!", error=True)
+            continue
+        if size_of(file_name) > 100000000:
+            await event.reply(
+                "*Upload failed, Video is too large!*\nTry with lower quality."
+            )
+            continue
+        log(e=f"Uploading {file_name}…")
+    
+        if file.media_type != "image":
+            await event.reply_video(file_name, file.caption)
+        else:
+            await event.reply_photo(file_name, file.caption)
+    await insta_dl.clean_up()
+    s_remove(insta_dl.folder, folders=True)
+    await status_msg.delete() if not insta_dl._listener.is_cancelled else None
+    return True
