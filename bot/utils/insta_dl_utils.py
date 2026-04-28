@@ -113,7 +113,7 @@ class InstagramHelper:
                 await self._update_message()
 
             await asyncio.sleep(5)
-    
+
     async def _update_message(self):
         """Build a progress string and edit the message."""
         fin_str = enhearts()
