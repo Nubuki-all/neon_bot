@@ -70,9 +70,13 @@ async def folder_upload(folder, event, status_msg, audio, listener):
 
 
 async def get_audio_thumbnail(file):
-    image = file[:-3] + "webp"
-    if not file_exists(image):
-        image = file[:-3] + "jpg"
+    for x in ["webp", "jpg", "png"]:
+        image = file[:-3] + x
+        if file_exists(image):
+            break
+    else:
+        return None
+    
     with open(image, "rb") as pfile:
         webp = pfile.read()
     return await png_to_jpg(webp)
@@ -192,8 +196,11 @@ async def youtube_reply(event, args, client):
                         await event.reply_video(file, f"*{base_name}*")
                     else:
                         photo = await get_audio_thumbnail(file)
-                        reply = await event.reply_photo(photo, f"*{base_name}*")
-                        await reply.reply_audio(file)
+                        if photo:
+                            reply = await event.reply_photo(photo, f"*{base_name}*")
+                            await reply.reply_audio(file)
+                        else:
+                            await event.reply_audio(file)
                 else:
                     await folder_upload(
                         ytdl.folder, event, status_msg, audio, ytdl._listener
