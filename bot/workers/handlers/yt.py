@@ -5,7 +5,7 @@ from clean_links.clean import clean_url
 from urlextract import URLExtract
 
 from bot.config import bot
-from bot.pkg.insta_dl import is_valid_instagram_url
+from bot.pkgs.insta_dl import is_valid_instagram_url
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.insta_dl_utils import InstagramHelper as InstagramDLHelper
 from bot.utils.insta_dl_utils import Listener as InstaListener
@@ -104,15 +104,15 @@ async def youtube_reply(event, args, client):
         if not supported_links:
             return
         job = list(supported_links)
+        t_args = extract_bracketed_prefix(text)
         while job:
             try:
                 listener = DummyListener(job[0])
                 if is_valid_instagram_url(listener.link):
-                    if await insta_reply(event, listener.link):
+                    if await insta_reply(event, listener.link, t_args):
                         job.pop(0)
                         continue
                 audio = False
-                t_args = None
                 twi = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
@@ -140,9 +140,7 @@ async def youtube_reply(event, args, client):
                 if result.get("is_live") or result.get("live_status") == "live":
                     return await event.reply("*It's a Live video XD*")
                 playlist = "entries" in result
-                if not (trimmed or playlist) and (
-                    t_args := extract_bracketed_prefix(text)
-                ):
+                if not (trimmed or playlist) and t_args:
                     trimmed = True
                     if not is_valid_trim_args(t_args, total_dur=result.get("duration")):
                         (
@@ -209,7 +207,7 @@ async def youtube_reply(event, args, client):
         await event.react("❌")
 
 
-async def insta_reply(event, link) -> bool:
+async def insta_reply(event, link, t_args=None) -> bool:
     listener = InstaListener(link)
     insta_dl = InstagramDLHelper(listener)
     status_msg = await event.reply("*Downloading…*")
