@@ -5,11 +5,13 @@ from clean_links.clean import clean_url
 from urlextract import URLExtract
 
 from bot.config import bot
+from bot.pkg.insta_dl import is_valid_instagram_url
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
+from bot.utils.insta_dl_utils import InstagramHelper as InstagramDLHelper
+from bot.utils.insta_dl_utils import Listener as InstaListener
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
-from bot.pkg.insta_dl import is_valid_instagram_url
 from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
@@ -18,9 +20,6 @@ from bot.utils.ytdl_utils import (
     is_supported,
     is_valid_trim_args,
 )
-from bot.utils.insta_dl_utils import Listener as InstaListener
-from bot.utils.insta_dl_utils import InstagramHelper as InstagramDLHelper
-
 
 
 async def folder_upload(folder, event, status_msg, audio, listener):
@@ -237,7 +236,7 @@ async def insta_reply(event, link) -> bool:
             )
             continue
         log(e=f"Uploading {file_name}…")
-    
+
         if file.media_type != "image":
             await event.reply_video(file_name, file.caption)
         else:

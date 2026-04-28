@@ -1,14 +1,15 @@
-import asyncio
 import math
 import os
-import shutil
 import secrets
+import shutil
 import time
 from dataclasses import dataclass
 from typing import Optional
+
 from bot.config import bot, conf
 from bot.fun.emojis import enhearts
 from bot.pkg.insta_dl import download_instagram
+
 from .bot_utils import (
     hbs,
     is_valid_video_timestamp,
@@ -16,11 +17,8 @@ from .bot_utils import (
     value_check,
     video_timestamp_to_seconds,
 )
-from .log_utils import log
 from .msg_utils import user_is_admin, user_is_privileged
-
 from .os_utils import enshell, s_remove
-
 
 
 @dataclass
@@ -30,27 +28,30 @@ class Listener:
     is_cancelled: bool = False
     link: str = ""
     name: Optional[str] = None
-    size: int = 0          # total size in bytes (will be updated during dl)
+    size: int = 0  # total size in bytes (will be updated during dl)
+
 
 # ---------------------------------------------------------------------------
 #  The helper class
 # ---------------------------------------------------------------------------
+
+
 class InstagramHelper:
     def __init__(self, listener: Listener):
         self._listener = listener
-        self._gid = ""                     # unique cancel command ID
+        self._gid = ""  # unique cancel command ID
         self._downloaded_bytes = 0
         self._download_speed = 0
         self._eta = "-"
         self._start_time = 0
         self.c_message = None
-        self._message = None               # message object (for progress updates)
+        # message object (for progress updates)
+        self._message = None
         self.cancel_cmd = None
         self.cleaned = False
         self.caption = ""
-        self.ext = ""                      # file extension
-        self.folder =""
-
+        self.ext = ""  # file extension
+        self.folder = ""
 
     @property
     def download_speed(self):
@@ -74,7 +75,6 @@ class InstagramHelper:
     def name(self):
         return self._listener.name
 
-    
     async def _on_download_progress(self, current: int, total: int, file_path: str):
         """Called after each chunk; updates internal state and edits the message."""
         if self._listener.is_cancelled:
@@ -102,8 +102,9 @@ class InstagramHelper:
         """Build a progress string and edit the message."""
         fin_str = enhearts()
         prog = math.floor(self.progress / 10)
-        bar = "".join([fin_str for _ in range(prog)]) + \
-              "".join(["🤍" for _ in range(10 - prog)])  # unfilled heart
+        bar = "".join([fin_str for _ in range(prog)]) + "".join(
+            ["🤍" for _ in range(10 - prog)]
+        )  # unfilled heart
         progress_line = f"\n{bar}\n*Progress:* {round(self.progress, 2)}%\n"
         info_line = (
             f"*{value_check(hbs(self._downloaded_bytes))} of {value_check(hbs(self._listener.size))}*\n"
@@ -111,7 +112,9 @@ class InstagramHelper:
             f"*ETA:* {self._eta}\n"
             f"*Elapsed:* {time_formatter(int(time.time() - self._start_time))}\n"
         )
-        text = f"*Downloading:* {self._listener.name or '...'}" + progress_line + info_line
+        text = (
+            f"*Downloading:* {self._listener.name or '...'}" + progress_line + info_line
+        )
         text += f"\n*To cancel:* `{self.cancel_cmd}`"
         await self._message.edit(text)
 
@@ -127,7 +130,8 @@ class InstagramHelper:
                 return await event.react("🙅")
         await event.react("✅")
         self._listener.is_cancelled = True
-        self._on_download_error(f"Download with gid: {self._gid} was cancelled.")
+        self._on_download_error(f"Download with gid: {
+                self._gid} was cancelled.")
         await self.clean_up()
 
     async def clean_up(self):
@@ -157,9 +161,20 @@ class InstagramHelper:
     async def _get_key_frames(self, path: str):
         """Return list of keyframe timestamps (float seconds)."""
         cmd = [
-            "ffprobe", "-v", "error", "-select_streams", "v:0",
-            "-skip_frame", "nokey", "-show_entries", "frame=pts_time",
-            "-of", "csv=p=0", "-print_format", "json", path
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-skip_frame",
+            "nokey",
+            "-show_entries",
+            "frame=pts_time",
+            "-of",
+            "csv=p=0",
+            "-print_format",
+            "json",
+            path,
         ]
         process, stdout, stderr = await enshell(cmd)
         if process.returncode != 0:
@@ -167,8 +182,14 @@ class InstagramHelper:
         j = json.loads(stdout)
         return [float(x["pts_time"]) for x in j["frames"]]
 
-    async def _trim_video(self, start_time: float, end_time: float,
-                          input_file: str, output_file: str, seek: bool = False):
+    async def _trim_video(
+        self,
+        start_time: float,
+        end_time: float,
+        input_file: str,
+        output_file: str,
+        seek: bool = False,
+    ):
         """
         Trim video using ffmpeg.
         If seek=True, input is seeked to start_time (faster but may be inaccurate
@@ -176,15 +197,33 @@ class InstagramHelper:
         """
         if seek:
             cmd = [
-                "ffmpeg", "-ss", f"{start_time}", "-i", input_file,
-                "-to", f"{end_time}", "-c", "copy", "-avoid_negative_ts", "1",
-                output_file
+                "ffmpeg",
+                "-ss",
+                f"{start_time}",
+                "-i",
+                input_file,
+                "-to",
+                f"{end_time}",
+                "-c",
+                "copy",
+                "-avoid_negative_ts",
+                "1",
+                output_file,
             ]
         else:
             cmd = [
-                "ffmpeg", "-i", input_file,
-                "-ss", f"{start_time}", "-to", f"{end_time}",
-                "-c", "copy", "-avoid_negative_ts", "1", output_file
+                "ffmpeg",
+                "-i",
+                input_file,
+                "-ss",
+                f"{start_time}",
+                "-to",
+                f"{end_time}",
+                "-c",
+                "copy",
+                "-avoid_negative_ts",
+                "1",
+                output_file,
             ]
         process, stdout, stderr = await enshell(cmd)
         if process.returncode != 0:
@@ -197,11 +236,11 @@ class InstagramHelper:
         """
         s_time_str, e_time_str = trim_args.split("-")
         for x in [s_time_str, e_time_str]:
-          if not (x.isdigit() or is_valid_video_timestamp(x)):
-            return False
+            if not (x.isdigit() or is_valid_video_timestamp(x)):
+                return False
 
         start_sec = video_timestamp_to_seconds(s_time_str)  # implement if needed
-        
+
         end_sec = video_timestamp_to_seconds(e_time_str)
 
         # Get keyframes to find a safe seek point
@@ -227,7 +266,7 @@ class InstagramHelper:
     async def add_download(
         self,
         path: str,
-        message = None,              # user message object (for progress edits)
+        message=None,  # user message object (for progress edits)
         trim_args: Optional[str] = None,
     ):
         """
@@ -243,14 +282,16 @@ class InstagramHelper:
         bot.add_handler(self._cancel, self.cancel_cmd)
 
         if message:
-            self.c_message = await message.reply(f"To cancel: `{conf.CMD_PREFIX + self.cancel_cmd}`")
+            self.c_message = await message.reply(
+                f"To cancel: `{conf.CMD_PREFIX + self.cancel_cmd}`"
+            )
 
         try:
             results = await download_instagram(
                 url=self._listener.link,
                 output_dir=path,
-                quiet=True, 
-                progress_callback=self._on_download_progress
+                quiet=True,
+                progress_callback=self._on_download_progress,
             )
         except ValueError as e:
             if str(e) == "Cancelling...":
@@ -276,7 +317,7 @@ class InstagramHelper:
 
         first_result = results[0]
         self._listener.name = os.path.basename(first_result.local_path)
-        
+
         # Trim single video if requested
         if trim_args and len(results) == 1 and first_result.media_type == "video":
             try:
@@ -287,5 +328,5 @@ class InstagramHelper:
                 return
 
         self._listener.completed = True
-        await self.clean_up() 
+        await self.clean_up()
         return results

@@ -1,73 +1,69 @@
-import re
-import os
-import json
-import hmac
-import time
+import asyncio
 import base64
 import hashlib
+import hmac
+import json
+import os
+import re
 import secrets
-import asyncio
+import time
 import urllib.parse
 from dataclasses import dataclass
-from typing import Optional, List, Callable, Awaitable, Any
+from typing import Awaitable, Callable, List, Optional
 
-import aiohttp
 import aiofiles
+import aiohttp
 
-GRAPHQL_ENDPOINT  = "https://www.instagram.com/graphql/query/"
-POLARIS_ACTION    = "PolarisPostActionLoadPostQueryQuery"
-DOC_ID            = "8845758582119845"
+GRAPHQL_ENDPOINT = "https://www.instagram.com/graphql/query/"
+POLARIS_ACTION = "PolarisPostActionLoadPostQueryQuery"
+DOC_ID = "8845758582119845"
 
-IGRAM_API_BASE    = "api.igram.world"
-IGRAM_HOST        = "api-wh.igram.world"
-IGRAM_HMAC_KEY    = "75f2d70d3724f98e4a7d1ffd0ba9cfd907f3ae2632ee159980e2c521bff62358"
-IGRAM_STATIC_TS   = 1771418815381
+IGRAM_API_BASE = "api.igram.world"
+IGRAM_HOST = "api-wh.igram.world"
+IGRAM_HMAC_KEY = "75f2d70d3724f98e4a7d1ffd0ba9cfd907f3ae2632ee159980e2c521bff62358"
+IGRAM_STATIC_TS = 1771418815381
 
-APP_ID            = "936619743392459"
-BLOKS_VERSION_ID  = "6309c8d03d8a3f47a1658ba38b304a3f837142ef5f637ebf1f8f52d4b802951e"
-ASBD_ID           = "129477"
-HIDDEN_STATE      = "20126.HYP:instagram_web_pkg.2.1...0"
-SESSION_INTERNAL  = "7436540909012459023"
-ROLLOUT_HASH      = "1019933358"
+APP_ID = "936619743392459"
+BLOKS_VERSION_ID = "6309c8d03d8a3f47a1658ba38b304a3f837142ef5f637ebf1f8f52d4b802951e"
+ASBD_ID = "129477"
+HIDDEN_STATE = "20126.HYP:instagram_web_pkg.2.1...0"
+SESSION_INTERNAL = "7436540909012459023"
+ROLLOUT_HASH = "1019933358"
 
 WEB_HEADERS = {
-    "Accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Accept-Language":           "en-GB,en;q=0.9",
-    "Cache-Control":             "max-age=0",
-    "Dnt":                       "1",
-    "Priority":                  "u=0, i",
-    "Sec-Ch-Ua":                 'Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99',
-    "Sec-Ch-Ua-Mobile":          "?0",
-    "Sec-Ch-Ua-Platform":        "macOS",
-    "Sec-Fetch-Dest":            "document",
-    "Sec-Fetch-Mode":            "navigate",
-    "Sec-Fetch-Site":            "none",
-    "Sec-Fetch-User":            "?1",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "Accept-Language": "en-GB,en;q=0.9",
+    "Cache-Control": "max-age=0",
+    "Dnt": "1",
+    "Priority": "u=0, i",
+    "Sec-Ch-Ua": 'Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99',
+    "Sec-Ch-Ua-Mobile": "?0",
+    "Sec-Ch-Ua-Platform": "macOS",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
     "Upgrade-Insecure-Requests": "1",
-    "User-Agent":                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 }
 
 EMBED_PATTERN = re.compile(
-    r'new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy',
+    r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy",
     re.DOTALL,
 )
 
 SHORTCODE_RE = re.compile(
-    r'instagram\.com/(?:[^/]+/)?(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)'
+    r"instagram\.com/(?:[^/]+/)?(?:p|reel|reels|tv)/([A-Za-z0-9_-]+)"
 )
-STORY_RE = re.compile(
-    r'instagram\.com/stories/([^/]+)/(\d+)'
-)
-SHARE_RE = re.compile(
-    r'instagram\.com/share(?:/(?:reels?|video|s|p))?/(?P<id>[^/?]+)'
-)
+STORY_RE = re.compile(r"instagram\.com/stories/([^/]+)/(\d+)")
+SHARE_RE = re.compile(r"instagram\.com/share(?:/(?:reels?|video|s|p))?/(?P<id>[^/?]+)")
 
 
 @dataclass
 class DownloadResult:
     local_path: str
     caption: str
-    media_type: str          # "video" or "image"
+    media_type: str  # "video" or "image"
     source_url: str
     thumbnail_url: str
     width: Optional[int] = None
@@ -76,6 +72,7 @@ class DownloadResult:
 
 def random_base64(n_bytes: int) -> str:
     return base64.urlsafe_b64encode(secrets.token_bytes(n_bytes)).rstrip(b"=").decode()
+
 
 def random_alpha(n: int) -> str:
     alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -101,69 +98,74 @@ async def _resolve_share_url(session: aiohttp.ClientSession, share_url: str) -> 
 
 
 def _build_gql_request(shortcode: str):
-    session_str  = "::" + random_alpha(6)
+    session_str = "::" + random_alpha(6)
     session_data = random_base64(8)
-    csrf_token   = random_base64(32)
-    device_id    = random_base64(24)
-    machine_id   = random_base64(24)
-    dynamic_flags= random_base64(154)
-    csr          = random_base64(154)
-    jazoest      = str(secrets.randbelow(10000) + 1)
-    timestamp    = str(int(time.time()))
+    csrf_token = random_base64(32)
+    device_id = random_base64(24)
+    machine_id = random_base64(24)
+    dynamic_flags = random_base64(154)
+    csr = random_base64(154)
+    jazoest = str(secrets.randbelow(10000) + 1)
+    timestamp = str(int(time.time()))
 
-    cookies = "; ".join([
-        f"csrftoken={csrf_token}",
-        f"ig_did={device_id}",
-        "wd=1280x720",
-        "dpr=2",
-        f"mid={machine_id}",
-        "ig_nrcb=1",
-    ])
+    cookies = "; ".join(
+        [
+            f"csrftoken={csrf_token}",
+            f"ig_did={device_id}",
+            "wd=1280x720",
+            "dpr=2",
+            f"mid={machine_id}",
+            "ig_nrcb=1",
+        ]
+    )
 
     headers = {
         **WEB_HEADERS,
-        "x-ig-app-id":        APP_ID,
-        "X-FB-LSD":           session_data,
-        "X-CSRFToken":        csrf_token,
+        "x-ig-app-id": APP_ID,
+        "X-FB-LSD": session_data,
+        "X-CSRFToken": csrf_token,
         "X-Bloks-Version-Id": BLOKS_VERSION_ID,
-        "x-asbd-id":          ASBD_ID,
-        "cookie":             cookies,
-        "Content-Type":       "application/x-www-form-urlencoded",
+        "x-asbd-id": ASBD_ID,
+        "cookie": cookies,
+        "Content-Type": "application/x-www-form-urlencoded",
         "X-FB-Friendly-Name": POLARIS_ACTION,
     }
 
-    variables = json.dumps({
-        "shortcode":               shortcode,
-        "fetch_tagged_user_count": None,
-        "hoisted_comment_id":      None,
-        "hoisted_reply_id":        None,
-    }, separators=(",", ":"))
+    variables = json.dumps(
+        {
+            "shortcode": shortcode,
+            "fetch_tagged_user_count": None,
+            "hoisted_comment_id": None,
+            "hoisted_reply_id": None,
+        },
+        separators=(",", ":"),
+    )
 
     body = {
-        "__d":         "www",
-        "__a":         "1",
-        "__s":         session_str,
-        "__hs":        HIDDEN_STATE,
-        "__req":       "b",
-        "__ccg":       "EXCELLENT",
-        "__rev":       ROLLOUT_HASH,
-        "__hsi":       SESSION_INTERNAL,
-        "__dyn":       dynamic_flags,
-        "__csr":       csr,
-        "__user":      "0",
+        "__d": "www",
+        "__a": "1",
+        "__s": session_str,
+        "__hs": HIDDEN_STATE,
+        "__req": "b",
+        "__ccg": "EXCELLENT",
+        "__rev": ROLLOUT_HASH,
+        "__hsi": SESSION_INTERNAL,
+        "__dyn": dynamic_flags,
+        "__csr": csr,
+        "__user": "0",
         "__comet_req": "7",
-        "libav":       "0",
-        "dpr":         "2",
-        "lsd":         session_data,
-        "jazoest":     jazoest,
-        "__spin_r":    ROLLOUT_HASH,
-        "__spin_b":    "trunk",
-        "__spin_t":    timestamp,
-        "fb_api_caller_class":      "RelayModern",
+        "libav": "0",
+        "dpr": "2",
+        "lsd": session_data,
+        "jazoest": jazoest,
+        "__spin_r": ROLLOUT_HASH,
+        "__spin_b": "trunk",
+        "__spin_t": timestamp,
+        "fb_api_caller_class": "RelayModern",
         "fb_api_req_friendly_name": POLARIS_ACTION,
-        "variables":                variables,
-        "server_timestamps":        "true",
-        "doc_id":                   DOC_ID,
+        "variables": variables,
+        "server_timestamps": "true",
+        "doc_id": DOC_ID,
     }
 
     return headers, urllib.parse.urlencode(body).encode()
@@ -212,7 +214,7 @@ async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> di
     try:
         data = json.loads(raw_json)
     except json.JSONDecodeError:
-        raw_json = re.sub(r',\s*([}\]])', r'\1', raw_json)
+        raw_json = re.sub(r",\s*([}\]])", r"\1", raw_json)
         data = json.loads(raw_json)
 
     ctx_json_raw = _traverse_json(data, "contextJSON")
@@ -222,7 +224,8 @@ async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> di
     if isinstance(ctx_json_raw, str):
         ctx_json = json.loads(ctx_json_raw)
     else:
-        raise RuntimeError(f"Unexpected contextJSON type: {type(ctx_json_raw)}")
+        raise RuntimeError(f"Unexpected contextJSON type: {
+                type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
@@ -232,7 +235,6 @@ async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> di
     if not media:
         raise RuntimeError("shortcode_media not found in gql_data")
     return media
-
 
 
 async def _igram_get_server_time(session: aiohttp.ClientSession) -> int:
@@ -251,21 +253,23 @@ def _igram_sign(partial: dict, ts: int) -> str:
     return hmac.new(key, data_str.encode(), hashlib.sha256).hexdigest()
 
 
-async def _igram_build_payload(session: aiohttp.ClientSession, url_params: dict) -> bytes:
-    now_ms    = int(time.time() * 1000)
+async def _igram_build_payload(
+    session: aiohttp.ClientSession, url_params: dict
+) -> bytes:
+    now_ms = int(time.time() * 1000)
     server_ms = await _igram_get_server_time(session)
-    drift      = server_ms - now_ms
+    drift = server_ms - now_ms
     correction = drift if abs(drift) >= 60000 else 0
-    ts         = now_ms + correction
-    partial    = {"_sc": 0, "_ef": 0, "_df": 0, **url_params}
-    sig        = _igram_sign(partial, ts)
+    ts = now_ms + correction
+    partial = {"_sc": 0, "_ef": 0, "_df": 0, **url_params}
+    sig = _igram_sign(partial, ts)
     final = {
         **partial,
-        "ts":   ts,
-        "_ts":  IGRAM_STATIC_TS,
+        "ts": ts,
+        "_ts": IGRAM_STATIC_TS,
         "_tsc": correction,
-        "_sv":  2,
-        "_s":   sig,
+        "_sv": 2,
+        "_s": sig,
     }
     return json.dumps(final, separators=(",", ":")).encode()
 
@@ -280,17 +284,17 @@ def _get_cdn_url(igram_url: str) -> str:
     return cdn
 
 
-
 async def _get_igram_media(session: aiohttp.ClientSession, shortcode: str) -> list:
     content_url = f"https://www.instagram.com/p/{shortcode}/"
     payload = await _igram_build_payload(session, {"target_url": content_url})
     headers = {
         "Content-Type": "application/json",
-        "Referer":      "https://igram.world/",
-        "User-Agent":   WEB_HEADERS["User-Agent"],
+        "Referer": "https://igram.world/",
+        "User-Agent": WEB_HEADERS["User-Agent"],
     }
-    async with session.post(f"https://{IGRAM_HOST}/api/convert",
-                            data=payload, headers=headers) as resp:
+    async with session.post(
+        f"https://{IGRAM_HOST}/api/convert", data=payload, headers=headers
+    ) as resp:
         resp.raise_for_status()
         data = await resp.json()
 
@@ -301,16 +305,17 @@ async def _get_igram_media(session: aiohttp.ClientSession, shortcode: str) -> li
     return [data]
 
 
-async def _get_igram_story(session: aiohttp.ClientSession, story_url: str) -> DownloadResult:
+async def _get_igram_story(
+    session: aiohttp.ClientSession, story_url: str
+) -> DownloadResult:
     payload = await _igram_build_payload(session, {"url": story_url})
     headers = {
         "Content-Type": "application/json",
-        "Referer":      "https://igram.world/",
-        "User-Agent":   WEB_HEADERS["User-Agent"],
+        "Referer": "https://igram.world/",
+        "User-Agent": WEB_HEADERS["User-Agent"],
     }
     async with session.post(
-        f"https://{IGRAM_HOST}/api/v1/instagram/story",
-        data=payload, headers=headers
+        f"https://{IGRAM_HOST}/api/v1/instagram/story", data=payload, headers=headers
     ) as resp:
         resp.raise_for_status()
         data = await resp.json()
@@ -324,7 +329,9 @@ async def _get_igram_story(session: aiohttp.ClientSession, story_url: str) -> Do
 
     if is_video:
         # pick best quality by height
-        videos = sorted(story["video_versions"], key=lambda v: v["height"], reverse=True)
+        videos = sorted(
+            story["video_versions"], key=lambda v: v["height"], reverse=True
+        )
         best = videos[0]
         source_url = best["url"]
         width, height = best.get("width", 0), best.get("height", 0)
@@ -350,6 +357,7 @@ async def _get_igram_story(session: aiohttp.ClientSession, story_url: str) -> Do
 
 #  Media parsing (posts/reels/IGTV)
 
+
 def _parse_gql_media(data: dict) -> List[DownloadResult]:
     caption = ""
     for edge in data.get("edge_media_to_caption", {}).get("edges", []):
@@ -362,24 +370,28 @@ def _parse_gql_media(data: dict) -> List[DownloadResult]:
     if typename in ("GraphVideo", "XDTGraphVideo"):
         video_url = data["video_url"]
         display_url = data.get("display_url", "")
-        items.append(DownloadResult(
-            local_path="",
-            caption=caption,
-            media_type="video",
-            source_url=video_url,
-            thumbnail_url=display_url,
-            width=data.get("dimensions", {}).get("width"),
-            height=data.get("dimensions", {}).get("height"),
-        ))
+        items.append(
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="video",
+                source_url=video_url,
+                thumbnail_url=display_url,
+                width=data.get("dimensions", {}).get("width"),
+                height=data.get("dimensions", {}).get("height"),
+            )
+        )
     elif typename in ("GraphImage", "XDTGraphImage"):
         url = data["display_url"]
-        items.append(DownloadResult(
-            local_path="",
-            caption=caption,
-            media_type="image",
-            source_url=url,
-            thumbnail_url=url,
-        ))
+        items.append(
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="image",
+                source_url=url,
+                thumbnail_url=url,
+            )
+        )
     elif typename in ("GraphSidecar", "XDTGraphSidecar"):
         for edge in data.get("edge_sidecar_to_children", {}).get("edges", []):
             node = edge.get("node", {})
@@ -387,24 +399,28 @@ def _parse_gql_media(data: dict) -> List[DownloadResult]:
             if node_type in ("GraphVideo", "XDTGraphVideo"):
                 video_url = node["video_url"]
                 display_url = node.get("display_url", "")
-                items.append(DownloadResult(
-                    local_path="",
-                    caption=caption,
-                    media_type="video",
-                    source_url=video_url,
-                    thumbnail_url=display_url,
-                    width=node.get("dimensions", {}).get("width"),
-                    height=node.get("dimensions", {}).get("height"),
-                ))
+                items.append(
+                    DownloadResult(
+                        local_path="",
+                        caption=caption,
+                        media_type="video",
+                        source_url=video_url,
+                        thumbnail_url=display_url,
+                        width=node.get("dimensions", {}).get("width"),
+                        height=node.get("dimensions", {}).get("height"),
+                    )
+                )
             elif node_type in ("GraphImage", "XDTGraphImage"):
                 url = node["display_url"]
-                items.append(DownloadResult(
-                    local_path="",
-                    caption=caption,
-                    media_type="image",
-                    source_url=url,
-                    thumbnail_url=url,
-                ))
+                items.append(
+                    DownloadResult(
+                        local_path="",
+                        caption=caption,
+                        media_type="image",
+                        source_url=url,
+                        thumbnail_url=url,
+                    )
+                )
     return items
 
 
@@ -413,28 +429,31 @@ def _parse_igram_items(raw_items: list) -> List[DownloadResult]:
     for obj in raw_items:
         if not obj.get("url"):
             continue
-        url_obj   = obj["url"][0]
-        cdn_url   = _get_cdn_url(url_obj["url"])
+        url_obj = obj["url"][0]
+        cdn_url = _get_cdn_url(url_obj["url"])
         thumb_url = _get_cdn_url(obj.get("thumb", url_obj["url"]))
-        ext       = url_obj.get("ext", "")
+        ext = url_obj.get("ext", "")
         if ext == "mp4":
-            results.append(DownloadResult(
-                local_path="",
-                caption="",
-                media_type="video",
-                source_url=cdn_url,
-                thumbnail_url=thumb_url,
-            ))
+            results.append(
+                DownloadResult(
+                    local_path="",
+                    caption="",
+                    media_type="video",
+                    source_url=cdn_url,
+                    thumbnail_url=thumb_url,
+                )
+            )
         elif ext in ("jpg", "jpeg", "png", "webp", "heic"):
-            results.append(DownloadResult(
-                local_path="",
-                caption="",
-                media_type="image",
-                source_url=cdn_url,
-                thumbnail_url=thumb_url,
-            ))
+            results.append(
+                DownloadResult(
+                    local_path="",
+                    caption="",
+                    media_type="image",
+                    source_url=cdn_url,
+                    thumbnail_url=thumb_url,
+                )
+            )
     return results
-
 
 
 async def _download_file(
@@ -445,7 +464,7 @@ async def _download_file(
 ) -> None:
     headers = {
         "User-Agent": WEB_HEADERS["User-Agent"],
-        "Referer":    "https://www.instagram.com/",
+        "Referer": "https://www.instagram.com/",
     }
     async with session.get(url, headers=headers) as resp:
         resp.raise_for_status()
