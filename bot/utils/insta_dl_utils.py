@@ -1,3 +1,4 @@
+import asyncio
 import json
 import math
 import os
@@ -48,6 +49,7 @@ class InstagramHelper:
         self.caption = ""
         self.ext = ""
         self.folder = ""
+        self._progress_task: Optional[asyncio.Task] = None
 
     @property
     def download_speed(self):
@@ -98,6 +100,20 @@ class InstagramHelper:
         if self._message:
             await self._update_message()
 
+    async def _progress_loop(self):
+        """Runs as a background task, updating the message every 5 seconds."""
+        while not self._listener.is_cancelled:
+            if self.download_is_complete:
+                # Final update to show 100% then break
+                if self._message:
+                    await self._update_message()
+                break
+
+            if self._message:
+                await self._update_message()
+
+            await asyncio.sleep(5)
+    
     async def _update_message(self):
         """Build a progress string and edit the message."""
         fin_str = enhearts()
@@ -115,7 +131,6 @@ class InstagramHelper:
         text = (
             f"*Downloading:* {self._listener.name or '...'}" + progress_line + info_line
         )
-        text += f"\n*To cancel:* `{self.cancel_cmd}`"
         await self._message.edit(text)
 
     async def _cancel(self, event, __, client):
@@ -137,6 +152,13 @@ class InstagramHelper:
             return
         if self.cancel_cmd:
             bot.unregister(self.cancel_cmd)
+        if self._progress_task and not self._progress_task.done():
+            self._progress_task.cancel()
+            try:
+                await self._progress_task
+            except asyncio.CancelledError:
+                pass
+            self._progress_task = None
         if self.c_message:
             try:
                 await self.c_message.delete()
@@ -271,8 +293,9 @@ class InstagramHelper:
 
         if message:
             self.c_message = await message.reply(
-                f"To cancel: `{conf.CMD_PREFIX + self.cancel_cmd}`"
+                conf.CMD_PREFIX + self.cancel_cmd,
             )
+        self._progress_task = asyncio.create_task(self._progress_loop())
 
         try:
             results = await download_instagram(
