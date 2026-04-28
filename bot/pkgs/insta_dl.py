@@ -225,7 +225,7 @@ async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> di
         ctx_json = json.loads(ctx_json_raw)
     else:
         raise RuntimeError(f"Unexpected contextJSON type: {
-                type(ctx_json_raw)}")
+            type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
