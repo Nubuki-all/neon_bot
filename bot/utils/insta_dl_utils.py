@@ -46,7 +46,7 @@ class InstagramHelper:
         self.cancel_cmd = None
         self.cleaned = False
         self.caption = ""
-        self.ext = "" 
+        self.ext = ""
         self.folder = ""
 
     @property
@@ -118,7 +118,6 @@ class InstagramHelper:
         text += f"\n*To cancel:* `{self.cancel_cmd}`"
         await self._message.edit(text)
 
-    
     async def _cancel(self, event, __, client):
         """Handler registered for the cancel command."""
         user = event.from_user.id
@@ -145,7 +144,6 @@ class InstagramHelper:
                 pass
         self.cleaned = True
 
-    
     def _on_download_error(self, error: str):
         self._listener.is_cancelled = True
         self._listener.error = error
@@ -252,7 +250,6 @@ class InstagramHelper:
         shutil.copy2(tmp2, file_path)
         s_remove(tmp1)
         s_remove(tmp2)
-
 
     async def add_download(
         self,
