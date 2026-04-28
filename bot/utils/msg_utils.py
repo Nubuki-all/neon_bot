@@ -180,7 +180,10 @@ async def send_presence(online=True):
     presence = Presence.AVAILABLE if online else Presence.UNAVAILABLE
     return await bot.client.send_presence(presence)
 
-
+def wrap_lines_with_asterisks(text: str) -> str:
+    """Wrap each non-empty line of text with * at start and end."""
+    return "\n".join(f"*{line}*" if line.strip() else line for line in text.split("\n"))
+    
 def sanitize_text(text: str, truncate=True) -> str:
     if not text:
         return text

@@ -10,7 +10,7 @@ from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.insta_dl_utils import InstagramHelper as InstagramDLHelper
 from bot.utils.insta_dl_utils import Listener as InstaListener
 from bot.utils.log_utils import group_logger, log, logger
-from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix
+from bot.utils.msg_utils import chat_is_allowed, extract_bracketed_prefix, wrap_lines_with_asterisks
 from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
@@ -236,9 +236,9 @@ async def insta_reply(event, link, t_args=None) -> bool:
         log(e=f"Uploading {file_name}…")
 
         if file.media_type != "image":
-            await event.reply_video(file_name, file.caption)
+            await event.reply_video(file_name, wrap_lines_with_asterisks(file.caption))
         else:
-            await event.reply_photo(file_name, file.caption)
+            await event.reply_photo(file_name, wrap_lines_with_asterisks(file.caption))
     await insta_dl.clean_up()
     s_remove(insta_dl.folder, folders=True)
     await status_msg.delete() if not insta_dl._listener.is_cancelled else None
