@@ -18,6 +18,7 @@ from .bot_utils import (
     value_check,
     video_timestamp_to_seconds,
 )
+from .log_utils import log
 from .msg_utils import user_is_admin, user_is_privileged
 from .os_utils import enshell, s_remove
 
@@ -32,11 +33,6 @@ class Listener:
     size: int = 0  # total size in bytes (will be updated during dl)
 
 
-# ---------------------------------------------------------------------------
-#  The helper class
-# ---------------------------------------------------------------------------
-
-
 class InstagramHelper:
     def __init__(self, listener: Listener):
         self._listener = listener
@@ -46,12 +42,11 @@ class InstagramHelper:
         self._eta = "-"
         self._start_time = 0
         self.c_message = None
-        # message object (for progress updates)
         self._message = None
         self.cancel_cmd = None
         self.cleaned = False
         self.caption = ""
-        self.ext = ""  # file extension
+        self.ext = "" 
         self.folder = ""
 
     @property
@@ -123,9 +118,7 @@ class InstagramHelper:
         text += f"\n*To cancel:* `{self.cancel_cmd}`"
         await self._message.edit(text)
 
-    # ─────────────────────────────────────────────────────────────────
-    #  Cancel & cleanup
-    # ─────────────────────────────────────────────────────────────────
+    
     async def _cancel(self, event, __, client):
         """Handler registered for the cancel command."""
         user = event.from_user.id
@@ -152,17 +145,13 @@ class InstagramHelper:
                 pass
         self.cleaned = True
 
-    # ─────────────────────────────────────────────────────────────────
-    #  Error handler
-    # ─────────────────────────────────────────────────────────────────
+    
     def _on_download_error(self, error: str):
         self._listener.is_cancelled = True
         self._listener.error = error
+        log(e=error, error=True)
         s_remove(self.folder, folders=True)
 
-    # ─────────────────────────────────────────────────────────────────
-    #  Trimming utilities (adapted from your yt‑dlp helper)
-    # ─────────────────────────────────────────────────────────────────
     async def _get_key_frames(self, path: str):
         """Return list of keyframe timestamps (float seconds)."""
         cmd = [
@@ -244,11 +233,10 @@ class InstagramHelper:
             if not (x.isdigit() or is_valid_video_timestamp(x)):
                 return False
 
-        start_sec = video_timestamp_to_seconds(s_time_str)  # implement if needed
+        start_sec = video_timestamp_to_seconds(s_time_str)
 
         end_sec = video_timestamp_to_seconds(e_time_str)
 
-        # Get keyframes to find a safe seek point
         kfs = await self._get_key_frames(file_path)
         seek_time = next((x for x in reversed(kfs) if x <= start_sec), 0)
 
@@ -265,9 +253,7 @@ class InstagramHelper:
         s_remove(tmp1)
         s_remove(tmp2)
 
-    # ─────────────────────────────────────────────────────────────────
-    #  Main entry point
-    # ─────────────────────────────────────────────────────────────────
+
     async def add_download(
         self,
         path: str,
@@ -323,7 +309,6 @@ class InstagramHelper:
         first_result = results[0]
         self._listener.name = os.path.basename(first_result.local_path)
 
-        # Trim single video if requested
         if trim_args and len(results) == 1 and first_result.media_type == "video":
             try:
                 await self._apply_trim(first_result.local_path, trim_args)
