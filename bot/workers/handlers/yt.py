@@ -76,7 +76,7 @@ async def get_audio_thumbnail(file):
             break
     else:
         return None
-    
+
     with open(image, "rb") as pfile:
         webp = pfile.read()
     return await png_to_jpg(webp)
