@@ -197,7 +197,7 @@ class InstagramHelper:
         """
         s_time_str, e_time_str = trim_args.split("-")
         for x in [s_time_str, e_time_str]:
-        if not (x.isdigit() or is_valid_video_timestamp(x)):
+          if not (x.isdigit() or is_valid_video_timestamp(x)):
             return False
 
         start_sec = video_timestamp_to_seconds(s_time_str)  # implement if needed
