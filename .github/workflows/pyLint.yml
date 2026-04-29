@@ -21,7 +21,7 @@ jobs:
 
       - name: Run BasedPyright (Reports all errors in annotations)
         run: |
-          basedpyright . || true
+          basedpyright
           
       - name: Check for showstoppers (autopep8)
         run: autopep8 --verbose --in-place --recursive --aggressive --aggressive .
