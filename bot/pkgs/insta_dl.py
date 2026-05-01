@@ -182,6 +182,7 @@ async def _get_gql_media(session: aiohttp.ClientSession, shortcode: str) -> dict
         data = await resp.json()
     if data.get("status") != "ok":
         raise RuntimeError(f"GQL status not ok: {data.get('status')}")
+    _log_.info(data)
     media = data.get("data", {}).get("shortcode_media")
     if not media:
         raise RuntimeError("shortcode_media is None in GQL response")
