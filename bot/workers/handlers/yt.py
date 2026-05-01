@@ -232,7 +232,7 @@ async def insta_reply(event, link, t_args=None) -> bool:
             await status_msg.edit("*Download Failed;* Trying fallback...")
         await insta_dl.clean_up()
         s_remove(insta_dl.folder, folders=True)
-        return
+        return listener.user_cancelled
     await status_msg.edit("Download completed, Now uploading…")
     for file in downloads:
         file_name = file.local_path

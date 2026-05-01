@@ -7,6 +7,7 @@ import os
 import re
 import secrets
 import time
+import traceback
 import urllib.parse
 from dataclasses import dataclass
 from typing import Awaitable, Callable, List, Optional
@@ -46,6 +47,8 @@ WEB_HEADERS = {
     "Upgrade-Insecure-Requests": "1",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 }
+
+_log_ = logging.getLogger(__name__)
 
 EMBED_PATTERN = re.compile(
     r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy",
@@ -546,6 +549,7 @@ async def download_instagram(
             if not quiet:
                 print("[1] Success")
         except Exception as e:
+            _log_.error(traceback.format_exc())
             if not quiet:
                 print(f"[1] Failed: {e}")
 
@@ -559,6 +563,7 @@ async def download_instagram(
                 if not quiet:
                     print("[2] Success")
             except Exception as e:
+                _log_.error(traceback.format_exc())
                 if not quiet:
                     print(f"[2] Failed: {e}")
 
@@ -572,6 +577,7 @@ async def download_instagram(
                 if not quiet:
                     print("[3] Success")
             except Exception as e:
+                _log_.error(traceback.format_exc())
                 if not quiet:
                     print(f"[3] Failed: {e}")
 

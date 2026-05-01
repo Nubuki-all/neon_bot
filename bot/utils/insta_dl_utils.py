@@ -32,6 +32,7 @@ class Listener:
     is_cancelled: bool = False
     name: Optional[str] = None
     size: int = 0  # total size in bytes (will be updated during dl)
+    user_cancelled: bool = False
 
 
 class InstagramHelper:
@@ -138,6 +139,7 @@ class InstagramHelper:
                 return await event.react("🙅")
         await event.react("✅")
         self._listener.is_cancelled = True
+        self._listener.user_cancelled = True
         self._on_download_error(f"Download with gid: {
             self._gid} was cancelled.")
         await self.clean_up()
