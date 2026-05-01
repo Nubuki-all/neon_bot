@@ -182,7 +182,6 @@ async def _get_gql_media(session: aiohttp.ClientSession, shortcode: str) -> dict
         data = await resp.json()
     if data.get("status") != "ok":
         raise RuntimeError(f"GQL status not ok: {data.get('status')}")
-    _log_.info(data)
     media = data.get("data", {}).get("shortcode_media")
     if not media:
         raise RuntimeError("shortcode_media is None in GQL response")
@@ -224,6 +223,7 @@ async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> di
 
     ctx_json_raw = _traverse_json(data, "contextJSON")
     if ctx_json_raw is None:
+        _log_.info(data)
         raise RuntimeError("contextJSON not found in ServerJS blob")
 
     if isinstance(ctx_json_raw, str):
