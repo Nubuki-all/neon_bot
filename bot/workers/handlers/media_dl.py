@@ -115,6 +115,7 @@ async def youtube_reply(event, args, client):
             for check in extractors_checkers:
                 if check(url):
                     supported_links.append(url)
+                    break
         if not supported_links:
             return
         job = list(supported_links)
