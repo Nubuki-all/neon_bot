@@ -8,9 +8,9 @@ from bot.config import bot
 from bot.pkgs.insta_dl import is_valid_instagram_url
 from bot.pkgs.pinterest_dl import is_valid_pinterest_url
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
-from bot.utils.media_dl_utils import MediaHelper as MediaDLHelper
-from bot.utils.media_dl_utils import Listener as MediaListener
 from bot.utils.log_utils import group_logger, log, logger
+from bot.utils.media_dl_utils import Listener as MediaListener
+from bot.utils.media_dl_utils import MediaHelper as MediaDLHelper
 from bot.utils.msg_utils import (
     chat_is_allowed,
     extract_bracketed_prefix,
@@ -107,7 +107,11 @@ async def youtube_reply(event, args, client):
         supported_links = []
         for url in urls:
             url = clean_url(url)
-            extractors_checkers = [is_supported,is_valid_instagram_url, is_valid_pinterest_url]
+            extractors_checkers = [
+                is_supported,
+                is_valid_instagram_url,
+                is_valid_pinterest_url,
+            ]
             for check in extractors_checkers:
                 if check(url):
                     supported_links.append(url)
@@ -119,7 +123,7 @@ async def youtube_reply(event, args, client):
             try:
                 listener = MediaListener(job[0])
                 tryAlt = False
-                
+
                 if is_valid_instagram_url(listener.link):
                     tryAlt = listener.is_insta = True
                 elif is_valid_pinterest_url(listener.link):

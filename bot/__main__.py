@@ -44,10 +44,10 @@ from .workers.handlers.manage import (
     ytdl_disable,
     ytdl_enable,
 )
+from .workers.handlers.media_dl import youtube_reply
 from .workers.handlers.role import roles
 from .workers.handlers.stuff import gc_info, getcmds, hello, up
 from .workers.handlers.wa import gc_handler, handle_self_join, sticker_reply
-from .workers.handlers.media_dl import youtube_reply
 
 ## Client Event Handlers ##
 

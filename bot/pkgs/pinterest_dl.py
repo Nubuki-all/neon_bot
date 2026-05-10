@@ -1,27 +1,26 @@
-import re
-import os
-import json
-import time
-import urllib.parse
 import asyncio
+import json
+import os
+import re
+import urllib.parse
 from dataclasses import dataclass
-from typing import Optional, List, Callable, Awaitable
+from typing import Awaitable, Callable, List, Optional
 
-import aiohttp
 import aiofiles
+import aiohttp
 
 # ---------------------------------------------------------------------------
 #  Constants
 # ---------------------------------------------------------------------------
 
 PIN_RESOURCE_ENDPOINT = "https://www.pinterest.com/resource/PinResource/get/"
-SHORTENER_API_FORMAT  = "https://api.pinterest.com/url_shortener/{}/redirect/"
+SHORTENER_API_FORMAT = "https://api.pinterest.com/url_shortener/{}/redirect/"
 
 PINTEREST_HEADERS = {
     "X-Pinterest-Pws-Handler": "www/[username].js",  # static header from govd
-    "User-Agent":    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept":        "application/json, text/plain, */*",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
     "Accept-Language": "en-GB,en;q=0.9",
 }
 
@@ -32,11 +31,12 @@ FULL_PIN_RE = re.compile(
     r"https?://(?:[^/]+\.)?pinterest\.[^/]+/pin/(?:[\w-]+--)?(?P<id>\d+)"
 )
 
+
 @dataclass
 class DownloadResult:
     local_path: str
     caption: str
-    media_type: str          # "video" or "image"
+    media_type: str  # "video" or "image"
     source_url: str
     thumbnail_url: str
     width: Optional[int] = None
@@ -46,6 +46,7 @@ class DownloadResult:
 # ---------------------------------------------------------------------------
 #  Helpers
 # ---------------------------------------------------------------------------
+
 
 def is_valid_pinterest_url(url: str) -> bool:
     """Return True if the URL matches a Pinterest pin (full or short)."""
@@ -72,7 +73,7 @@ def _pick_best_non_hls_video(video_list: dict) -> Optional[dict]:
     best_height = -1
     for key, info in video_list.items():
         if "HLS" in key:
-            continue                    # skip HLS playlists
+            continue  # skip HLS playlists
         h = info.get("height", 0)
         if h > best_height:
             best_height = h
@@ -91,15 +92,17 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
     if videos and "video_list" in videos:
         best = _pick_best_non_hls_video(videos["video_list"])
         if best:
-            return [DownloadResult(
-                local_path="",
-                caption=caption,
-                media_type="video",
-                source_url=best["url"],
-                thumbnail_url=best.get("thumbnail", best["url"]),
-                width=best.get("width"),
-                height=best.get("height"),
-            )]
+            return [
+                DownloadResult(
+                    local_path="",
+                    caption=caption,
+                    media_type="video",
+                    source_url=best["url"],
+                    thumbnail_url=best.get("thumbnail", best["url"]),
+                    width=best.get("width"),
+                    height=best.get("height"),
+                )
+            ]
 
     # 2. Story pin (pages → blocks or page‑level image)
     story = pin_data.get("story_pin_data")
@@ -111,62 +114,71 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
                     vid_list = block["video"].get("video_list", {})
                     best = _pick_best_non_hls_video(vid_list)
                     if best:
-                        return [DownloadResult(
-                            local_path="",
-                            caption=caption,
-                            media_type="video",
-                            source_url=best["url"],
-                            thumbnail_url=best.get("thumbnail", best["url"]),
-                            width=best.get("width"),
-                            height=best.get("height"),
-                        )]
+                        return [
+                            DownloadResult(
+                                local_path="",
+                                caption=caption,
+                                media_type="video",
+                                source_url=best["url"],
+                                thumbnail_url=best.get("thumbnail", best["url"]),
+                                width=best.get("width"),
+                                height=best.get("height"),
+                            )
+                        ]
 
             # Check page‑level image
             page_img = page.get("image")
             if page_img:
                 originals = page_img.get("images", {}).get("originals")
                 if originals:
-                    return [DownloadResult(
-                        local_path="",
-                        caption=caption,
-                        media_type="image",
-                        source_url=originals["url"],
-                        thumbnail_url=originals["url"],
-                        width=originals.get("width"),
-                        height=originals.get("height"),
-                    )]
+                    return [
+                        DownloadResult(
+                            local_path="",
+                            caption=caption,
+                            media_type="image",
+                            source_url=originals["url"],
+                            thumbnail_url=originals["url"],
+                            width=originals.get("width"),
+                            height=originals.get("height"),
+                        )
+                    ]
 
     # 3. Standard image (orig)
     images = pin_data.get("images")
     if images and images.get("orig"):
         orig = images["orig"]
-        return [DownloadResult(
-            local_path="",
-            caption=caption,
-            media_type="image",
-            source_url=orig["url"],
-            thumbnail_url=orig["url"],
-            width=orig.get("width"),
-            height=orig.get("height"),
-        )]
+        return [
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="image",
+                source_url=orig["url"],
+                thumbnail_url=orig["url"],
+                width=orig.get("width"),
+                height=orig.get("height"),
+            )
+        ]
 
     # 4. Embed GIF (treated as video)
     embed = pin_data.get("embed")
     if embed and embed.get("type") == "gif":
-        return [DownloadResult(
-            local_path="",
-            caption=caption,
-            media_type="video",   # GIF is saved as .mp4
-            source_url=embed["src"],
-            thumbnail_url=embed["src"],
-        )]
+        return [
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="video",  # GIF is saved as .mp4
+                source_url=embed["src"],
+                thumbnail_url=embed["src"],
+            )
+        ]
 
-    return []   # nothing found
+    return []  # nothing found
 
 
 # ---------------------------------------------------------------------------
 #  Async download helper (reusable)
 # ---------------------------------------------------------------------------
+
 
 async def _download_file(
     session: aiohttp.ClientSession,
@@ -176,7 +188,7 @@ async def _download_file(
 ) -> None:
     headers = {
         "User-Agent": PINTEREST_HEADERS["User-Agent"],
-        "Referer":    "https://www.pinterest.com/",
+        "Referer": "https://www.pinterest.com/",
     }
     async with session.get(url, headers=headers) as resp:
         resp.raise_for_status()
@@ -193,6 +205,7 @@ async def _download_file(
 # ---------------------------------------------------------------------------
 #  Main public API
 # ---------------------------------------------------------------------------
+
 
 async def download_pinterest(
     url: str,
@@ -237,12 +250,15 @@ async def download_pinterest(
             print(f"[*] Pin ID: {pin_id}")
 
         # Build API request
-        payload = json.dumps({
-            "options": {
-                "field_set_key": "unauth_react_main_pin",
-                "id": pin_id,
-            }
-        }, separators=(",", ":"))
+        payload = json.dumps(
+            {
+                "options": {
+                    "field_set_key": "unauth_react_main_pin",
+                    "id": pin_id,
+                }
+            },
+            separators=(",", ":"),
+        )
         params = urllib.parse.urlencode({"data": payload})
         api_url = f"{PIN_RESOURCE_ENDPOINT}?{params}"
 

@@ -10,8 +10,6 @@ from typing import Optional
 
 from bot.config import bot, conf
 from bot.fun.emojis import enhearts
-
-
 from bot.pkgs.insta_dl import download_instagram
 from bot.pkgs.pinterest_dl import download_pinterest
 
@@ -260,7 +258,6 @@ class MediaHelper:
         shutil.copy2(tmp2, file_path)
         s_remove(tmp1)
         s_remove(tmp2)
-
 
     async def _download(self, url: str, path: str):
         """Call the appropriate downloader based on the platform."""
