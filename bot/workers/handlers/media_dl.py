@@ -6,9 +6,10 @@ from urlextract import URLExtract
 
 from bot.config import bot
 from bot.pkgs.insta_dl import is_valid_instagram_url
+from bot.pkgs.pinterest_dl import is_valid_pinterest_url
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
-from bot.utils.insta_dl_utils import InstagramHelper as InstagramDLHelper
-from bot.utils.insta_dl_utils import Listener as InstaListener
+from bot.utils.media_dl_utils import MediaHelper as MediaDLHelper
+from bot.utils.media_dl_utils import Listener as MediaListener
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.msg_utils import (
     chat_is_allowed,
@@ -106,24 +107,32 @@ async def youtube_reply(event, args, client):
         supported_links = []
         for url in urls:
             url = clean_url(url)
-            if not (is_supported(url) or is_valid_instagram_url(url)):
-                continue
-            supported_links.append(url)
+            extractors_checkers = [is_supported,is_valid_instagram_url, is_valid_pinterest_url]
+            for check in extractors_checkers:
+                if check(url):
+                    supported_links.append(url)
         if not supported_links:
             return
         job = list(supported_links)
         t_args = extract_bracketed_prefix(text)
         while job:
             try:
-                listener = DummyListener(job[0])
+                listener = MediaListener(job[0])
+                tryAlt = False
+                
                 if is_valid_instagram_url(listener.link):
-                    if await insta_reply(event, listener.link, t_args):
+                    tryAlt = listener.is_insta = True
+                elif is_valid_pinterest_url(listener.link):
+                    tryAlt = listener.is_pintrest = True
+                if tryAlt:
+                    if await media_reply(event, listener, t_args):
                         job.pop(0)
                         continue
                 audio = False
                 twi = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
+                listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
                 if "music" in listener.link:
                     audio = True
@@ -218,20 +227,19 @@ async def youtube_reply(event, args, client):
         await event.react("❌")
 
 
-async def insta_reply(event, link, t_args=None) -> bool:
-    listener = InstaListener(link)
-    insta_dl = InstagramDLHelper(listener)
+async def media_reply(event, listener, t_args=None) -> bool:
+    media_dl = MediaDLHelper(listener)
     status_msg = await event.reply("*Downloading…*")
-    downloads = await insta_dl.add_download(
+    downloads = await media_dl.add_download(
         f"insta_dl/{event.chat.id}:{event.id}",
         message=status_msg,
         trim_args=t_args,
     )
-    if not (insta_dl.download_is_complete or downloads):
+    if not (media_dl.download_is_complete or downloads):
         if listener.is_cancelled and listener.error:
             await status_msg.edit("*Download Failed;* Trying fallback...")
-        await insta_dl.clean_up()
-        s_remove(insta_dl.folder, folders=True)
+        await media_dl.clean_up()
+        s_remove(media_dl.folder, folders=True)
         return listener.user_cancelled
     await status_msg.edit("Download completed, Now uploading…")
     for file in downloads:
@@ -250,7 +258,7 @@ async def insta_reply(event, link, t_args=None) -> bool:
             await event.reply_video(file_name, wrap_lines_with_asterisks(file.caption))
         else:
             await event.reply_photo(file_name, wrap_lines_with_asterisks(file.caption))
-    await insta_dl.clean_up()
-    s_remove(insta_dl.folder, folders=True)
-    await status_msg.delete() if not insta_dl._listener.is_cancelled else None
+    await media_dl.clean_up()
+    s_remove(media_dl.folder, folders=True)
+    await status_msg.delete() if not media_dl._listener.is_cancelled else None
     return True

@@ -10,7 +10,10 @@ from typing import Optional
 
 from bot.config import bot, conf
 from bot.fun.emojis import enhearts
+
+
 from bot.pkgs.insta_dl import download_instagram
+from bot.pkgs.pinterest_dl import download_pinterest
 
 from .bot_utils import (
     hbs,
@@ -31,14 +34,18 @@ class Listener:
     error: Optional[str] = None
     is_cancelled: bool = False
     name: Optional[str] = None
-    size: int = 0  # total size in bytes (will be updated during dl)
+    size: int = 0
     user_cancelled: bool = False
+    is_insta: bool = False
+    is_pintrest: bool = False
 
 
-class InstagramHelper:
+class MediaHelper:
+    """Handles download progress, cancellation, and trimming for Instagram & Pinterest."""
+
     def __init__(self, listener: Listener):
         self._listener = listener
-        self._gid = ""  # unique cancel command ID
+        self._gid = ""
         self._downloaded_bytes = 0
         self._download_speed = 0
         self._eta = "-"
@@ -78,10 +85,10 @@ class InstagramHelper:
     def download_is_complete(self):
         return self._listener.completed
 
+    # ── progress callbacks & UI ────────────────────────────────────
     async def _on_download_progress(self, current: int, total: int, file_path: str):
-        """Called after each chunk; updates internal state and edits the message."""
         if self._listener.is_cancelled:
-            raise ValueError("Cancelling...")  # stops the download
+            raise ValueError("Cancelling...")
 
         self._listener.size = total
         self._downloaded_bytes = current
@@ -98,26 +105,21 @@ class InstagramHelper:
         self._listener.name = file_path.split("/")[-1]
 
     async def _progress_loop(self):
-        """Runs as a background task, updating the message every 5 seconds."""
         while not self._listener.is_cancelled:
             if self.download_is_complete:
-                # Final update to show 100% then break
                 if self._message:
                     await self._update_message()
                 break
-
             if self._message:
                 await self._update_message()
-
             await asyncio.sleep(5)
 
     async def _update_message(self):
-        """Build a progress string and edit the message."""
         fin_str = enhearts()
         prog = math.floor(self.progress / 10)
         bar = "".join([fin_str for _ in range(prog)]) + "".join(
             ["🤍" for _ in range(10 - prog)]
-        )  # unfilled heart
+        )
         progress_line = f"\n{bar}\n*Progress:* {round(self.progress, 2)}%\n"
         info_line = (
             f"*{value_check(hbs(self._downloaded_bytes))} of {value_check(hbs(self._listener.size))}*\n"
@@ -131,7 +133,6 @@ class InstagramHelper:
         await self._message.edit(text)
 
     async def _cancel(self, event, __, client):
-        """Handler registered for the cancel command."""
         user = event.from_user.id
         if not user_is_privileged(user):
             group_info = await client.get_group_info(event.chat.jid)
@@ -145,7 +146,6 @@ class InstagramHelper:
         await self.clean_up()
 
     async def clean_up(self):
-        """Unregister cancel command, delete message, remove partial files."""
         if self.cleaned:
             return
         if self.cancel_cmd:
@@ -170,8 +170,8 @@ class InstagramHelper:
         log(e=error, error=True)
         s_remove(self.folder, folders=True)
 
+    # ── trimming (works for any video) ─────────────────────────────
     async def _get_key_frames(self, path: str):
-        """Return list of keyframe timestamps (float seconds)."""
         cmd = [
             "ffprobe",
             "-v",
@@ -202,11 +202,6 @@ class InstagramHelper:
         output_file: str,
         seek: bool = False,
     ):
-        """
-        Trim video using ffmpeg.
-        If seek=True, input is seeked to start_time (faster but may be inaccurate
-        unless start_time is a keyframe). Otherwise, -ss is placed before -i.
-        """
         if seek:
             cmd = [
                 "ffmpeg",
@@ -242,17 +237,12 @@ class InstagramHelper:
             raise RuntimeError(f"ffmpeg trim failed: {stderr}")
 
     async def _apply_trim(self, file_path: str, trim_args: str):
-        """
-        Trim the downloaded video according to trim_args (e.g., "00:10-01:20"
-        or "10-80" in seconds).  Uses a two‑pass approach for accuracy.
-        """
         s_time_str, e_time_str = trim_args.split("-")
         for x in [s_time_str, e_time_str]:
             if not (x.isdigit() or is_valid_video_timestamp(x)):
                 return False
 
         start_sec = video_timestamp_to_seconds(s_time_str)
-
         end_sec = video_timestamp_to_seconds(e_time_str)
 
         kfs = await self._get_key_frames(file_path)
@@ -271,19 +261,38 @@ class InstagramHelper:
         s_remove(tmp1)
         s_remove(tmp2)
 
+
+    async def _download(self, url: str, path: str):
+        """Call the appropriate downloader based on the platform."""
+        if self._listener.is_insta:
+            return await download_instagram(
+                url=url,
+                output_dir=path,
+                quiet=True,
+                progress_callback=self._on_download_progress,
+            )
+        else:
+            return await download_pinterest(
+                url=url,
+                output_dir=path,
+                quiet=True,
+                progress_callback=self._on_download_progress,
+            )
+
+    # ── main entry point (replaces add_download) ───────────────────
     async def add_download(
         self,
         path: str,
-        message=None,  # user message object (for progress edits)
+        message=None,
         trim_args: Optional[str] = None,
     ):
         """
-        Start an Instagram download.  Registers a cancel command,
-        downloads media, optionally trims videos, and sets listener state.
+        Start an Instagram or Pinterest download.
+        Registers a cancel command, downloads media, optionally trims videos.
         """
         self.folder = path
         self._message = message
-        self._gid = secrets.token_urlsafe(10)  # unique cancel command
+        self._gid = secrets.token_urlsafe(10)
         self.cancel_cmd = f"cancel_{self._gid}"
         self._start_time = time.time()
 
@@ -296,12 +305,7 @@ class InstagramHelper:
         self._progress_task = asyncio.create_task(self._progress_loop())
 
         try:
-            results = await download_instagram(
-                url=self._listener.link,
-                output_dir=path,
-                quiet=True,
-                progress_callback=self._on_download_progress,
-            )
+            results = await self._download(self._listener.link, path)
         except ValueError as e:
             if str(e) == "Cancelling...":
                 self._on_download_error("Download cancelled by user.")
@@ -320,7 +324,7 @@ class InstagramHelper:
             return
 
         if not results:
-            self._on_download_error("No media returned from Instagram.")
+            self._on_download_error("No media returned.")
             await self.clean_up()
             return
 
@@ -334,6 +338,7 @@ class InstagramHelper:
                 self._on_download_error(f"Trimming failed: {e}")
                 await self.clean_up()
                 return
+
         self._listener.completed = True
         await self.clean_up()
         return results
