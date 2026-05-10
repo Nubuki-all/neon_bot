@@ -32,7 +32,7 @@ FULL_PIN_RE = re.compile(
 class DownloadResult:
     local_path: str
     caption: str
-    media_type: str  # "video" or "image"
+    media_type: str  # "video" or "gif" or "image"
     source_url: str
     thumbnail_url: str
     width: Optional[int] = None
@@ -157,7 +157,7 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
             DownloadResult(
                 local_path="",
                 caption=caption,
-                media_type="video",  # GIF is saved as .mp4
+                media_type="gif",  # GIF is saved as .mp4
                 source_url=embed["src"],
                 thumbnail_url=embed["src"],
             )
