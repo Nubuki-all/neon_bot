@@ -744,7 +744,7 @@ async def delete(event, args, client):
 
 
 async def ytdl_enable(event, args, client):
-    "Enables automatic YouTube downloads in a chat."
+    "Enables automatic YouTube/Media downloads in a chat."
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -779,7 +779,7 @@ async def ytdl_enable(event, args, client):
 
 
 async def ytdl_disable(event, args, client):
-    "Disables automatic YouTube downloads in a chat."
+    "Disables automatic YouTube/Media downloads in a chat."
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):

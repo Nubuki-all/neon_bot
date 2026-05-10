@@ -83,7 +83,6 @@ class MediaHelper:
     def download_is_complete(self):
         return self._listener.completed
 
-    # ── progress callbacks & UI ────────────────────────────────────
     async def _on_download_progress(self, current: int, total: int, file_path: str):
         if self._listener.is_cancelled:
             raise ValueError("Cancelling...")
@@ -168,7 +167,6 @@ class MediaHelper:
         log(e=error, error=True)
         s_remove(self.folder, folders=True)
 
-    # ── trimming (works for any video) ─────────────────────────────
     async def _get_key_frames(self, path: str):
         cmd = [
             "ffprobe",

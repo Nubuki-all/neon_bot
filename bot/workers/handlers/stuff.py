@@ -43,7 +43,7 @@ async def getcmds(event, args, client):
 {pre}update - *[Owner | Sudo] Update & restarts bot*
 {pre}restart - *[Owner | Sudo] Restarts bot*
 {pre}ytdl_* - *[Owner | Sudo] Disables/Enables Ytdl*
-{pre}amr_* - *[Owner | Sudo] Disables/Enables Auto msg ranking*
+{pre}amr_* - *[Owner | Sudo] Disables/Enables Auto msg ranking
 {pre}roles - *Get commands for roles*
 {pre}disable - *[Owner | Sudo] Disable bot in a GC*
 {pre}enable - *[Owner | Sudo] Enable bot in a GC*

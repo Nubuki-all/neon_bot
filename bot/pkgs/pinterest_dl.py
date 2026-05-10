@@ -9,10 +9,6 @@ from typing import Awaitable, Callable, List, Optional
 import aiofiles
 import aiohttp
 
-# ---------------------------------------------------------------------------
-#  Constants
-# ---------------------------------------------------------------------------
-
 PIN_RESOURCE_ENDPOINT = "https://www.pinterest.com/resource/PinResource/get/"
 SHORTENER_API_FORMAT = "https://api.pinterest.com/url_shortener/{}/redirect/"
 
@@ -42,10 +38,6 @@ class DownloadResult:
     width: Optional[int] = None
     height: Optional[int] = None
 
-
-# ---------------------------------------------------------------------------
-#  Helpers
-# ---------------------------------------------------------------------------
 
 
 def is_valid_pinterest_url(url: str) -> bool:
@@ -175,11 +167,6 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
     return []  # nothing found
 
 
-# ---------------------------------------------------------------------------
-#  Async download helper (reusable)
-# ---------------------------------------------------------------------------
-
-
 async def _download_file(
     session: aiohttp.ClientSession,
     url: str,
@@ -200,11 +187,6 @@ async def _download_file(
                 done += len(chunk)
                 if progress_callback:
                     await progress_callback(done, total, dest)
-
-
-# ---------------------------------------------------------------------------
-#  Main public API
-# ---------------------------------------------------------------------------
 
 
 async def download_pinterest(

@@ -11,7 +11,7 @@ from bot.utils.msg_utils import (
     user_is_privileged,
 )
 
-from .yt import youtube_reply
+from .media_dl import youtube_reply
 
 meme_list = []
 
