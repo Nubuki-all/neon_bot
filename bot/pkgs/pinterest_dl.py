@@ -8,6 +8,7 @@ from typing import Awaitable, Callable, List, Optional
 
 import aiofiles
 import aiohttp
+import magic
 
 PIN_RESOURCE_ENDPOINT = "https://www.pinterest.com/resource/PinResource/get/"
 SHORTENER_API_FORMAT = "https://api.pinterest.com/url_shortener/{}/redirect/"
@@ -273,6 +274,8 @@ async def download_pinterest(
             if not quiet:
                 print(f"\n[down] {fname}  ({item.media_type})")
             await _download_file(session, item.source_url, dest, progress_callback)
+            if magic.from_file(dest, mime=True) == "image/gif":
+                item.media_type = "gif"
             item.local_path = dest
             if not quiet:
                 print(f"[ok] -> {dest}")
