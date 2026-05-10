@@ -39,7 +39,6 @@ class DownloadResult:
     height: Optional[int] = None
 
 
-
 def is_valid_pinterest_url(url: str) -> bool:
     """Return True if the URL matches a Pinterest pin (full or short)."""
     return bool(FULL_PIN_RE.search(url) or SHORT_PIN_RE.search(url))
