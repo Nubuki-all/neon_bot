@@ -235,7 +235,7 @@ async def media_reply(event, listener, t_args=None) -> bool:
     media_dl = MediaDLHelper(listener)
     status_msg = await event.reply("*Downloading…*")
     downloads = await media_dl.add_download(
-        f"insta_dl/{event.chat.id}:{event.id}",
+        f"media_dl/{event.chat.id}:{event.id}",
         message=status_msg,
         trim_args=t_args,
     )
