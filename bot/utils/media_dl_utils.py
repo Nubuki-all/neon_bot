@@ -138,7 +138,8 @@ class MediaHelper:
         await event.react("✅")
         self._listener.is_cancelled = True
         self._listener.user_cancelled = True
-        self._on_download_error(f"Download with gid: {self._gid} was cancelled.")
+        self._on_download_error(f"Download with gid: {
+                self._gid} was cancelled.")
         await self.clean_up()
 
     async def clean_up(self):

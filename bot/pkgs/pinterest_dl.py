@@ -181,11 +181,16 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
 
 async def _download_hls(url: str, dest: str, progress_callback=None) -> None:
     cmd = [
-        "ffmpeg", "-y",
-        "-i", url,
-        "-c", "copy",
-        "-bsf:a", "aac_adtstoasc",
-        "-movflags", "+faststart",
+        "ffmpeg",
+        "-y",
+        "-i",
+        url,
+        "-c",
+        "copy",
+        "-bsf:a",
+        "aac_adtstoasc",
+        "-movflags",
+        "+faststart",
         dest,
     ]
     proc = await asyncio.create_subprocess_exec(
@@ -195,7 +200,8 @@ async def _download_hls(url: str, dest: str, progress_callback=None) -> None:
     )
     _, stderr = await proc.communicate()
     if proc.returncode != 0:
-        raise RuntimeError(f"ffmpeg HLS download failed: {stderr.decode().strip()}")
+        raise RuntimeError(f"ffmpeg HLS download failed: {
+                stderr.decode().strip()}")
     if progress_callback and os.path.exists(dest):
         total = os.path.getsize(dest)
         await progress_callback(total, total, dest)
