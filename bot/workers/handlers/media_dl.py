@@ -263,7 +263,9 @@ async def media_reply(event, listener, t_args=None) -> bool:
         elif file.media_type == "image":
             await event.reply_photo(file_name, wrap_lines_with_asterisks(file.caption))
         elif file.media_type == "gif":
-            await event.reply_gif(file_name, wrap_lines_with_asterisks(file.caption), as_gif=True)
+            await event.reply_gif(
+                file_name, wrap_lines_with_asterisks(file.caption), as_gif=True
+            )
         else:
             await logger(e=f"Unknown media type: {file.media_type}", error=True)
     await media_dl.clean_up()
