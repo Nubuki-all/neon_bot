@@ -1,7 +1,9 @@
 import asyncio
 import json
+import logging
 import os
 import re
+import traceback
 import urllib.parse
 from dataclasses import dataclass
 from typing import Awaitable, Callable, List, Optional
@@ -10,11 +12,13 @@ import aiofiles
 import aiohttp
 import magic
 
+_log_ = logging.getLogger(__name__)
+
 PIN_RESOURCE_ENDPOINT = "https://www.pinterest.com/resource/PinResource/get/"
 SHORTENER_API_FORMAT = "https://api.pinterest.com/url_shortener/{}/redirect/"
 
 PINTEREST_HEADERS = {
-    "X-Pinterest-Pws-Handler": "www/[username].js",  # static header from govd
+    "X-Pinterest-Pws-Handler": "www/[username].js",
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
@@ -56,21 +60,14 @@ async def _resolve_short_url(session: aiohttp.ClientSession, short_id: str) -> s
     raise RuntimeError(f"Failed to resolve short URL for id {short_id}")
 
 
-def _pick_best_non_hls_video(video_list: dict) -> Optional[dict]:
-    """
-    From a video_list map (e.g. {"V_720P": {...}, "V_HLS": {...}}),
-    pick the non‑HLS entry with the highest height. Returns the full dict.
-    """
-    best = None
-    best_height = -1
-    for key, info in video_list.items():
-        if "HLS" in key:
-            continue  # skip HLS playlists
-        h = info.get("height", 0)
-        if h > best_height:
-            best_height = h
-            best = info
-    return best
+def _pick_best_video(video_list: dict) -> Optional[dict]:
+    if not video_list:
+        return None
+    return max(
+        video_list.values(),
+        key=lambda v: (v.get("width", 0) * v.get("height", 0)),
+        default=None,
+    )
 
 
 def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
@@ -82,7 +79,7 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
     # 1. Standard video
     videos = pin_data.get("videos")
     if videos and "video_list" in videos:
-        best = _pick_best_non_hls_video(videos["video_list"])
+        best = _pick_best_video(videos["video_list"])
         if best:
             return [
                 DownloadResult(
@@ -96,15 +93,30 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
                 )
             ]
 
-    # 2. Story pin (pages → blocks or page‑level image)
+    # 2. Story pin (pages, or page‑level image)
     story = pin_data.get("story_pin_data")
     if story and "pages" in story:
         for page in story["pages"]:
-            # Check blocks first (block_type = 3 is video)
+            page_video = page.get("video")
+            if page_video and isinstance(page_video.get("video_list"), dict):
+                best = _pick_best_video(page_video["video_list"])
+                if best:
+                    return [
+                        DownloadResult(
+                            local_path="",
+                            caption=caption,
+                            media_type="video",
+                            source_url=best["url"],
+                            thumbnail_url=best.get("thumbnail", best["url"]),
+                            width=best.get("width"),
+                            height=best.get("height"),
+                        )
+                    ]
+
             for block in page.get("blocks", []):
                 if block.get("block_type") == 3 and block.get("video"):
                     vid_list = block["video"].get("video_list", {})
-                    best = _pick_best_non_hls_video(vid_list)
+                    best = _pick_best_video(vid_list)
                     if best:
                         return [
                             DownloadResult(
@@ -158,13 +170,35 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
             DownloadResult(
                 local_path="",
                 caption=caption,
-                media_type="gif",  # GIF is saved as .mp4
+                media_type="gif",
                 source_url=embed["src"],
                 thumbnail_url=embed["src"],
             )
         ]
 
-    return []  # nothing found
+    return []
+
+
+async def _download_hls(url: str, dest: str, progress_callback=None) -> None:
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", url,
+        "-c", "copy",
+        "-bsf:a", "aac_adtstoasc",
+        "-movflags", "+faststart",
+        dest,
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        raise RuntimeError(f"ffmpeg HLS download failed: {stderr.decode().strip()}")
+    if progress_callback and os.path.exists(dest):
+        total = os.path.getsize(dest)
+        await progress_callback(total, total, dest)
 
 
 async def _download_file(
@@ -173,6 +207,9 @@ async def _download_file(
     dest: str,
     progress_callback: Optional[Callable[[int, int, str], Awaitable[None]]] = None,
 ) -> None:
+    if url.endswith(".m3u8"):
+        return await _download_hls(url, dest, progress_callback)
+
     headers = {
         "User-Agent": PINTEREST_HEADERS["User-Agent"],
         "Referer": "https://www.pinterest.com/",
@@ -250,6 +287,7 @@ async def download_pinterest(
                 resp.raise_for_status()
                 pin_response = await resp.json()
         except aiohttp.ClientResponseError as e:
+            _log_.error(traceback.format_exc())
             raise RuntimeError(f"Pinterest API error: {e}")
 
         resource = pin_response.get("resource_response")
@@ -262,7 +300,7 @@ async def download_pinterest(
         # Parse media items
         items = _parse_pin_data(pin_data)
         if not items:
-            raise RuntimeError("No downloadable media found (only HLS or missing)")
+            raise RuntimeError("No downloadable media found")
 
         # Download each item (usually one)
         for i, item in enumerate(items):
