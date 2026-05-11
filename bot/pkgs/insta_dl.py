@@ -241,7 +241,7 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
         ctx_json = json.loads(ctx_json_raw)
     else:
         raise RuntimeError(f"Unexpected contextJSON type: {
-                type(ctx_json_raw)}")
+            type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
@@ -323,8 +323,8 @@ async def _get_igram_media(
                 return data
             if data.get("success") is False:
                 raise RuntimeError(f"igram returned success=false: {
-                        data.get(
-                            'message', '')}")
+                    data.get(
+                        'message', '')}")
             return [data]
         except (httpx.TimeoutException, httpx.ReadTimeout) as e:
             last_exc = e
