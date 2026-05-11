@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from typing import Awaitable, Callable, List, Optional
 
 import aiofiles
-import aiohttp
+import httpx
 
 GRAPHQL_ENDPOINT = "https://www.instagram.com/graphql/query/"
 POLARIS_ACTION = "PolarisPostActionLoadPostQueryQuery"
@@ -90,14 +90,22 @@ def is_valid_instagram_url(url: str) -> bool:
     )
 
 
-async def _resolve_share_url(session: aiohttp.ClientSession, share_url: str) -> str:
+def _canonical_instagram_url(original_url: str, shortcode: str) -> str:
+    """Preserve the original path type: /p/, /reel/, /tv/"""
+    match = re.search(r"(https?://[^/]+/(?:p|reel|reels|tv)/[A-Za-z0-9_-]+)", original_url)
+    if match:
+        return match.group(1) + "/"
+    # fallback to /p/ (original behaviour)
+    return f"https://www.instagram.com/p/{shortcode}/"
+
+
+async def _resolve_share_url(client: httpx.AsyncClient, share_url: str) -> str:
     """Follow the share redirect and return the final Instagram URL."""
-    async with session.get(share_url, allow_redirects=False) as resp:
-        if resp.status in (301, 302, 303, 307, 308):
-            location = resp.headers.get("Location")
-            if location:
-                return location
-    # If no redirect, return original (fallback)
+    resp = await client.get(share_url, follow_redirects=False)
+    if resp.status_code in (301, 302, 303, 307, 308):
+        location = resp.headers.get("Location")
+        if location:
+            return location
     return share_url
 
 
@@ -171,18 +179,20 @@ def _build_gql_request(shortcode: str):
         "server_timestamps": "true",
         "doc_id": DOC_ID,
     }
-
     return headers, urllib.parse.urlencode(body).encode()
 
 
-async def _get_gql_media(session: aiohttp.ClientSession, shortcode: str) -> dict:
+async def _get_gql_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     headers, body = _build_gql_request(shortcode)
-    async with session.post(GRAPHQL_ENDPOINT, data=body, headers=headers) as resp:
-        resp.raise_for_status()
-        data = await resp.json()
+    resp = await client.post(GRAPHQL_ENDPOINT, data=body, headers=headers)
+    resp.raise_for_status()
+    data = resp.json()
     if data.get("status") != "ok":
         raise RuntimeError(f"GQL status not ok: {data.get('status')}")
-    media = data.get("data", {}).get("shortcode_media")
+    # The correct key is "xdt_shortcode_media" (Go struct tag)
+    media = data.get("data", {}).get("xdt_shortcode_media")
+    if not media:
+        media = data.get("data", {}).get("shortcode_media")  # fallback
     if not media:
         raise RuntimeError("shortcode_media is None in GQL response")
     return media
@@ -204,11 +214,11 @@ def _traverse_json(obj, key: str):
     return None
 
 
-async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> dict:
+async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned"
-    async with session.get(embed_url, headers=WEB_HEADERS) as resp:
-        resp.raise_for_status()
-        body = await resp.text()
+    resp = await client.get(embed_url, headers=WEB_HEADERS)
+    resp.raise_for_status()
+    body = resp.text
 
     match = EMBED_PATTERN.search(body)
     if not match:
@@ -229,8 +239,7 @@ async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> di
     if isinstance(ctx_json_raw, str):
         ctx_json = json.loads(ctx_json_raw)
     else:
-        raise RuntimeError(f"Unexpected contextJSON type: {
-            type(ctx_json_raw)}")
+        raise RuntimeError(f"Unexpected contextJSON type: {type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
@@ -242,11 +251,11 @@ async def _get_embed_media(session: aiohttp.ClientSession, shortcode: str) -> di
     return media
 
 
-async def _igram_get_server_time(session: aiohttp.ClientSession) -> int:
+async def _igram_get_server_time(client: httpx.AsyncClient) -> int:
     try:
-        async with session.get(f"https://{IGRAM_API_BASE}/msec") as resp:
-            result = await resp.json()
-            return int(result["msec"] * 1000)
+        resp = await client.get(f"https://{IGRAM_API_BASE}/msec", timeout=10)
+        result = resp.json()
+        return int(result["msec"] * 1000)
     except Exception:
         return int(time.time() * 1000)
 
@@ -258,11 +267,9 @@ def _igram_sign(partial: dict, ts: int) -> str:
     return hmac.new(key, data_str.encode(), hashlib.sha256).hexdigest()
 
 
-async def _igram_build_payload(
-    session: aiohttp.ClientSession, url_params: dict
-) -> bytes:
+async def _igram_build_payload(client: httpx.AsyncClient, url_params: dict) -> bytes:
     now_ms = int(time.time() * 1000)
-    server_ms = await _igram_get_server_time(session)
+    server_ms = await _igram_get_server_time(client)
     drift = server_ms - now_ms
     correction = drift if abs(drift) >= 60000 else 0
     ts = now_ms + correction
@@ -289,41 +296,62 @@ def _get_cdn_url(igram_url: str) -> str:
     return cdn
 
 
-async def _get_igram_media(session: aiohttp.ClientSession, shortcode: str) -> list:
-    content_url = f"https://www.instagram.com/p/{shortcode}/"
-    payload = await _igram_build_payload(session, {"target_url": content_url})
+async def _get_igram_media(
+    client: httpx.AsyncClient, original_url: str, shortcode: str, max_retries: int = 2
+) -> list:
+    target_url = _canonical_instagram_url(original_url, shortcode)
+    payload = await _igram_build_payload(client, {"target_url": target_url})
     headers = {
         "Content-Type": "application/json",
         "Referer": "https://igram.world/",
         "User-Agent": WEB_HEADERS["User-Agent"],
     }
-    async with session.post(
-        f"https://{IGRAM_HOST}/api/convert", data=payload, headers=headers
-    ) as resp:
-        resp.raise_for_status()
-        data = await resp.json()
-
-    if isinstance(data, list):
-        return data
-    if data.get("success") is False:
-        raise RuntimeError("igram returned success=false")
-    return [data]
+    last_exc = None
+    for attempt in range(max_retries):
+        try:
+            resp = await client.post(
+                f"https://{IGRAM_HOST}/api/convert",
+                data=payload,
+                headers=headers,
+                timeout=60.0,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, list):
+                return data
+            if data.get("success") is False:
+                raise RuntimeError(f"igram returned success=false: {data.get('message', '')}")
+            return [data]
+        except (httpx.TimeoutException, httpx.ReadTimeout) as e:
+            last_exc = e
+            if attempt < max_retries - 1:
+                await asyncio.sleep(2)
+                continue
+            raise RuntimeError(f"iGram timeout after {max_retries} attempts") from e
+        except Exception as e:
+            last_exc = e
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1)
+                continue
+            raise
+    raise last_exc
 
 
 async def _get_igram_story(
-    session: aiohttp.ClientSession, story_url: str
+    client: httpx.AsyncClient, story_url: str, shortcode: str
 ) -> DownloadResult:
-    payload = await _igram_build_payload(session, {"url": story_url})
+    # shortcode not used for story, but we keep for consistency
+    payload = await _igram_build_payload(client, {"url": story_url})
     headers = {
         "Content-Type": "application/json",
         "Referer": "https://igram.world/",
         "User-Agent": WEB_HEADERS["User-Agent"],
     }
-    async with session.post(
-        f"https://{IGRAM_HOST}/api/v1/instagram/story", data=payload, headers=headers
-    ) as resp:
-        resp.raise_for_status()
-        data = await resp.json()
+    resp = await client.post(
+        f"https://{IGRAM_HOST}/api/v1/instagram/story", data=payload, headers=headers, timeout=60.0
+    )
+    resp.raise_for_status()
+    data = resp.json()
 
     result = data.get("result")
     if not result or len(result) == 0:
@@ -360,9 +388,7 @@ async def _get_igram_story(
     )
 
 
-#  Media parsing (posts/reels/IGTV)
-
-
+# Media parsing
 def _parse_gql_media(data: dict) -> List[DownloadResult]:
     caption = ""
     for edge in data.get("edge_media_to_caption", {}).get("edges", []):
@@ -462,7 +488,7 @@ def _parse_igram_items(raw_items: list) -> List[DownloadResult]:
 
 
 async def _download_file(
-    session: aiohttp.ClientSession,
+    client: httpx.AsyncClient,
     url: str,
     dest: str,
     progress_callback: Optional[Callable[[int, int, str], Awaitable[None]]] = None,
@@ -471,12 +497,12 @@ async def _download_file(
         "User-Agent": WEB_HEADERS["User-Agent"],
         "Referer": "https://www.instagram.com/",
     }
-    async with session.get(url, headers=headers) as resp:
+    async with client.stream("GET", url, headers=headers, follow_redirects=True) as resp:
         resp.raise_for_status()
         total = int(resp.headers.get("Content-Length", 0))
         done = 0
         async with aiofiles.open(dest, "wb") as f:
-            async for chunk in resp.content.iter_chunked(65536):
+            async for chunk in resp.aiter_bytes(chunk_size=65536):
                 await f.write(chunk)
                 done += len(chunk)
                 if progress_callback:
@@ -503,12 +529,12 @@ async def download_instagram(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    async with aiohttp.ClientSession() as session:
+    async with httpx.AsyncClient(http2=True, timeout=30.0, follow_redirects=False) as client:
         # 1. Handle share URLs
         if SHARE_RE.search(url):
             if not quiet:
                 print("[share] Resolving share URL...")
-            url = await _resolve_share_url(session, url)
+            url = await _resolve_share_url(client, url)
             if not quiet:
                 print(f"[share] Resolved to {url}")
 
@@ -518,14 +544,14 @@ async def download_instagram(
             username, story_id = story_match.groups()
             if not quiet:
                 print(f"[story] Downloading story {story_id} from {username}")
-            item = await _get_igram_story(session, url)
-            # Download the story
+            # shortcode not needed for story, pass dummy
+            item = await _get_igram_story(client, url, "")
             ext = "mp4" if item.media_type == "video" else "jpg"
             fname = f"story_{username}_{story_id}.{ext}"
             dest = os.path.join(output_dir, fname)
             if not quiet:
                 print(f"[down] {fname}  ({item.media_type})")
-            await _download_file(session, item.source_url, dest, progress_callback)
+            await _download_file(client, item.source_url, dest, progress_callback)
             item.local_path = dest
             if not quiet:
                 print(f"[ok] -> {dest}")
@@ -546,7 +572,7 @@ async def download_instagram(
         if not quiet:
             print("[1] Trying GQL Web API...")
         try:
-            media = await _get_gql_media(session, shortcode)
+            media = await _get_gql_media(client, shortcode)
             items = _parse_gql_media(media)
             if not quiet:
                 print("[1] Success")
@@ -560,7 +586,7 @@ async def download_instagram(
             if not quiet:
                 print("[2] Trying embed page...")
             try:
-                media = await _get_embed_media(session, shortcode)
+                media = await _get_embed_media(client, shortcode)
                 items = _parse_gql_media(media)
                 if not quiet:
                     print("[2] Success")
@@ -574,7 +600,7 @@ async def download_instagram(
             if not quiet:
                 print("[3] Trying igram.world...")
             try:
-                raw = await _get_igram_media(session, shortcode)
+                raw = await _get_igram_media(client, url, shortcode, max_retries=2)
                 items = _parse_igram_items(raw)
                 if not quiet:
                     print("[3] Success")
@@ -595,7 +621,7 @@ async def download_instagram(
 
             if not quiet:
                 print(f"\n[down] {fname}  ({item.media_type})")
-            await _download_file(session, item.source_url, dest, progress_callback)
+            await _download_file(client, item.source_url, dest, progress_callback)
             item.local_path = dest
             if not quiet:
                 print(f"[ok] -> {dest}")

@@ -12,6 +12,7 @@ from bot.config import bot, conf
 from bot.fun.emojis import enhearts
 from bot.pkgs.insta_dl import download_instagram
 from bot.pkgs.pinterest_dl import download_pinterest
+from bot.pkgs.tiktok_dl import download_tiktok
 
 from .bot_utils import (
     hbs,
@@ -36,6 +37,7 @@ class Listener:
     user_cancelled: bool = False
     is_insta: bool = False
     is_pintrest: bool = False
+    is_tiktok: bool = False
 
 
 class MediaHelper:
@@ -265,6 +267,14 @@ class MediaHelper:
                 output_dir=path,
                 quiet=True,
                 progress_callback=self._on_download_progress,
+            )
+        elif self._listener.is_tiktok:
+            return await download_tiktok(
+                url=url,
+                output_dir=path,
+                quiet=True,
+                progress_callback=self._on_download_progress,
+                cookie_file=".cookies.txt",
             )
         else:
             return await download_pinterest(

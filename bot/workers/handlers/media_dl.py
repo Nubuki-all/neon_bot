@@ -7,6 +7,7 @@ from urlextract import URLExtract
 from bot.config import bot
 from bot.pkgs.insta_dl import is_valid_instagram_url
 from bot.pkgs.pinterest_dl import is_valid_pinterest_url
+from bot.pkgs.tiktok_dl import is_valid_tiktok_url
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.media_dl_utils import Listener as MediaListener
@@ -111,6 +112,7 @@ async def youtube_reply(event, args, client):
                 is_supported,
                 is_valid_instagram_url,
                 is_valid_pinterest_url,
+                is_valid_tiktok_url,
             ]
             for check in extractors_checkers:
                 if check(url):
@@ -125,7 +127,9 @@ async def youtube_reply(event, args, client):
                 listener = MediaListener(job[0])
                 tryAlt = False
 
-                if is_valid_instagram_url(listener.link):
+                if is_valid_tiktok_url(listener.link):
+                    tryAlt = listener.is_tiktok = True
+                elif is_valid_instagram_url(listener.link):
                     tryAlt = listener.is_insta = True
                 elif is_valid_pinterest_url(listener.link):
                     tryAlt = listener.is_pintrest = True
