@@ -201,7 +201,7 @@ async def _download_hls(url: str, dest: str, progress_callback=None) -> None:
     _, stderr = await proc.communicate()
     if proc.returncode != 0:
         raise RuntimeError(f"ffmpeg HLS download failed: {
-                stderr.decode().strip()}")
+            stderr.decode().strip()}")
     if progress_callback and os.path.exists(dest):
         total = os.path.getsize(dest)
         await progress_callback(total, total, dest)

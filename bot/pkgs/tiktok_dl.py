@@ -6,8 +6,8 @@ import re
 import traceback
 from dataclasses import dataclass
 from http.cookiejar import Cookie, CookieJar
-from typing import Optional, List, Callable, Awaitable
-from urllib.parse import urlparse, parse_qs
+from typing import Awaitable, Callable, List, Optional
+from urllib.parse import parse_qs, urlparse
 
 import aiofiles
 import httpx
@@ -33,9 +33,7 @@ WEB_HEADERS = {
     "Pragma": "no-cache",
     "Upgrade-Insecure-Requests": "1",
     "Sec-Ch-Ua": (
-        '"Chromium";v="136", '
-        '"Google Chrome";v="136", '
-        '"Not.A/Brand";v="99"'
+        '"Chromium";v="136", ' '"Google Chrome";v="136", ' '"Not.A/Brand";v="99"'
     ),
     "Sec-Ch-Ua-Mobile": "?0",
     "Sec-Ch-Ua-Platform": '"Windows"',
@@ -66,7 +64,6 @@ class DownloadResult:
     height: Optional[int] = None
 
 
-
 def is_valid_tiktok_url(url: str) -> bool:
     return bool(FULL_TIKTOK_RE.search(url) or SHORT_TIKTOK_RE.search(url))
 
@@ -85,7 +82,6 @@ def _traverse_json(obj, key: str):
             if result is not None:
                 return result
     return None
-
 
 
 def _load_netscape_cookies(filepath: str) -> CookieJar:
@@ -149,7 +145,9 @@ async def _resolve_short_url(client: httpx.AsyncClient, short_url: str) -> str:
     return url
 
 
-async def _fetch_tiktok_page(client: httpx.AsyncClient, video_id: str) -> tuple[dict, dict]:
+async def _fetch_tiktok_page(
+    client: httpx.AsyncClient, video_id: str
+) -> tuple[dict, dict]:
     """
     Fetch the TikTok page and return the parsed itemStruct and the response cookies.
     Retries up to 5 times with a fixed 1‑second delay.
@@ -177,7 +175,8 @@ def _parse_universal_data(html: str) -> dict:
     """Extract the itemStruct from the __UNIVERSAL_DATA_FOR_REHYDRATION__ JSON."""
     match = re.search(
         r'<script[^>]*id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>(.*?)</script>',
-        html, re.DOTALL,
+        html,
+        re.DOTALL,
     )
     if not match:
         raise RuntimeError("Universal data script not found")
@@ -202,13 +201,15 @@ def _parse_tiktok_item(item: dict) -> List[DownloadResult]:
         for img in images:
             url_list = img.get("imageURL", {}).get("urlList", [])
             if url_list:
-                results.append(DownloadResult(
-                    local_path="",
-                    caption=caption,
-                    media_type="image",
-                    source_url=url_list[-1],
-                    thumbnail_url=url_list[-1],
-                ))
+                results.append(
+                    DownloadResult(
+                        local_path="",
+                        caption=caption,
+                        media_type="image",
+                        source_url=url_list[-1],
+                        thumbnail_url=url_list[-1],
+                    )
+                )
         return results
 
     # Single video
@@ -217,15 +218,17 @@ def _parse_tiktok_item(item: dict) -> List[DownloadResult]:
         play_addr = video["PlayAddrStruct"]
         url_list = play_addr.get("UrlList", [])
         if url_list:
-            return [DownloadResult(
-                local_path="",
-                caption=caption,
-                media_type="video",
-                source_url=url_list[-1],
-                thumbnail_url="",
-                width=play_addr.get("Width"),
-                height=play_addr.get("Height"),
-            )]
+            return [
+                DownloadResult(
+                    local_path="",
+                    caption=caption,
+                    media_type="video",
+                    source_url=url_list[-1],
+                    thumbnail_url="",
+                    width=play_addr.get("Width"),
+                    height=play_addr.get("Height"),
+                )
+            ]
     return []
 
 
@@ -245,11 +248,15 @@ async def _download_media(
         "Origin": "https://www.tiktok.com",
         "Connection": "keep-alive",
     }
-    async with httpx.AsyncClient(http2=True, follow_redirects=True, cookies=cookies) as client:
+    async with httpx.AsyncClient(
+        http2=True, follow_redirects=True, cookies=cookies
+    ) as client:
         async with client.stream("GET", url, headers=headers, timeout=60.0) as resp:
             if resp.status_code not in (200, 206):
                 error_body = await resp.aread()
-                raise RuntimeError(f"Download failed ({resp.status_code}): {error_body[:500]}")
+                raise RuntimeError(
+                    f"Download failed ({resp.status_code}): {error_body[:500]}"
+                )
             total = int(resp.headers.get("Content-Length", 0))
             done = 0
             async with aiofiles.open(dest, "wb") as f:
@@ -288,7 +295,9 @@ async def download_tiktok(
         client_cookies = _load_netscape_cookies(cookie_file)
 
     # Create a single httpx client for all initial requests
-    async with httpx.AsyncClient(http2=True, follow_redirects=False, cookies=client_cookies) as client:
+    async with httpx.AsyncClient(
+        http2=True, follow_redirects=False, cookies=client_cookies
+    ) as client:
         # Resolve short URLs
         short_match = SHORT_TIKTOK_RE.search(url)
         if short_match:
@@ -326,8 +335,13 @@ async def download_tiktok(
 
             if not quiet:
                 print(f"\n[down] {fname}  ({item.media_type})")
-            await _download_media(item.source_url, dest, referer=url,
-                                  cookies=response_cookies, progress_callback=progress_callback)
+            await _download_media(
+                item.source_url,
+                dest,
+                referer=url,
+                cookies=response_cookies,
+                progress_callback=progress_callback,
+            )
             item.local_path = dest
             if not quiet:
                 print(f"[ok] -> {dest}")

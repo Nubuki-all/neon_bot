@@ -92,7 +92,9 @@ def is_valid_instagram_url(url: str) -> bool:
 
 def _canonical_instagram_url(original_url: str, shortcode: str) -> str:
     """Preserve the original path type: /p/, /reel/, /tv/"""
-    match = re.search(r"(https?://[^/]+/(?:p|reel|reels|tv)/[A-Za-z0-9_-]+)", original_url)
+    match = re.search(
+        r"(https?://[^/]+/(?:p|reel|reels|tv)/[A-Za-z0-9_-]+)", original_url
+    )
     if match:
         return match.group(1) + "/"
     # fallback to /p/ (original behaviour)
@@ -239,7 +241,8 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     if isinstance(ctx_json_raw, str):
         ctx_json = json.loads(ctx_json_raw)
     else:
-        raise RuntimeError(f"Unexpected contextJSON type: {type(ctx_json_raw)}")
+        raise RuntimeError(f"Unexpected contextJSON type: {
+                type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
@@ -320,7 +323,9 @@ async def _get_igram_media(
             if isinstance(data, list):
                 return data
             if data.get("success") is False:
-                raise RuntimeError(f"igram returned success=false: {data.get('message', '')}")
+                raise RuntimeError(f"igram returned success=false: {
+                        data.get(
+                            'message', '')}")
             return [data]
         except (httpx.TimeoutException, httpx.ReadTimeout) as e:
             last_exc = e
@@ -348,7 +353,10 @@ async def _get_igram_story(
         "User-Agent": WEB_HEADERS["User-Agent"],
     }
     resp = await client.post(
-        f"https://{IGRAM_HOST}/api/v1/instagram/story", data=payload, headers=headers, timeout=60.0
+        f"https://{IGRAM_HOST}/api/v1/instagram/story",
+        data=payload,
+        headers=headers,
+        timeout=60.0,
     )
     resp.raise_for_status()
     data = resp.json()
@@ -497,7 +505,9 @@ async def _download_file(
         "User-Agent": WEB_HEADERS["User-Agent"],
         "Referer": "https://www.instagram.com/",
     }
-    async with client.stream("GET", url, headers=headers, follow_redirects=True) as resp:
+    async with client.stream(
+        "GET", url, headers=headers, follow_redirects=True
+    ) as resp:
         resp.raise_for_status()
         total = int(resp.headers.get("Content-Length", 0))
         done = 0
@@ -529,7 +539,9 @@ async def download_instagram(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    async with httpx.AsyncClient(http2=True, timeout=30.0, follow_redirects=False) as client:
+    async with httpx.AsyncClient(
+        http2=True, timeout=30.0, follow_redirects=False
+    ) as client:
         # 1. Handle share URLs
         if SHARE_RE.search(url):
             if not quiet:
