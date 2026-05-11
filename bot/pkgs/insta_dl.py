@@ -235,7 +235,6 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
 
     ctx_json_raw = _traverse_json(data, "contextJSON")
     if ctx_json_raw is None:
-        _log_.info(data)
         raise RuntimeError("contextJSON not found in ServerJS blob")
 
     if isinstance(ctx_json_raw, str):
