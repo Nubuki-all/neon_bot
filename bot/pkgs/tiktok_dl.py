@@ -154,7 +154,7 @@ async def _fetch_tiktok_page(
     """
     url = f"{VIDEO_URL_BASE}{video_id}"
     last_exc = None
-    for _ in range(5):
+    for _ in range(10):
         try:
             resp = await client.get(url, headers=WEB_HEADERS)
             resp.raise_for_status()
@@ -179,6 +179,7 @@ def _parse_universal_data(html: str) -> dict:
         re.DOTALL,
     )
     if not match:
+        _log_.info(html)
         raise RuntimeError("Universal data script not found")
     data = json.loads(match.group(1))
     default_scope = _traverse_json(data, "__DEFAULT_SCOPE__")
