@@ -175,13 +175,13 @@ async def activate_afk(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if get_afk_status(user):
+        if get_afk_status(event.from_user.hid):
             return
         if not await get_messages(user, limit=1):
             return await event.reply(
                 "*Kindly send me 'Hi' in Dm/Pm in order for you to be able to use this command!*"
             )
-        user_info = await get_user_info(event.from_user.hid)
+        user_info = await get_user_info(user)
         replied = event.reply_to_message
         replied_media = replied.media if replied and replied.is_actual_media else None
         media_sup_cap = hasattr(replied_media, "caption") if replied_media else False
