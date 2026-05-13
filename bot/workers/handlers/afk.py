@@ -175,9 +175,9 @@ async def activate_afk(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if get_afk_status(event.from_user.hid):
+        if get_afk_status(user):
             return
-        if not await get_messages(user, limit=1):
+        if not await get_messages(event.from_user.hid, limit=1):
             return await event.reply(
                 "*Kindly send me 'Hi' in Dm/Pm in order for you to be able to use this command!*"
             )
