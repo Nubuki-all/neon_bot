@@ -1,4 +1,5 @@
 import asyncio
+import json
 import datetime
 import itertools
 import re
@@ -420,3 +421,134 @@ def clean_whatsapp_md(text: str) -> str:
     # 5) Strikethrough
     text = re.sub(r"~([^~]+)~", r"\1", text)
     return text
+
+
+async def _run(*args: str) -> tuple[bytes, bytes, int]:
+    proc = await asyncio.create_subprocess_exec(
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
+    return stdout, stderr, proc.returncode
+
+
+async def probe_video(path: str) -> dict:
+    stdout, _, rc = await _run(
+        "ffprobe", "-v", "quiet",
+        "-print_format", "json",
+        "-show_streams", "-show_format",
+        path,
+    )
+    if rc != 0:
+        raise RuntimeError(f"ffprobe failed on {path}")
+    return json.loads(stdout)
+
+
+async def check_moov_position(path: str) -> bool:
+    """True = moov before mdat (faststart OK)."""
+    _, stderr, _ = await _run("ffprobe", "-v", "trace", "-i", path)
+    text = stderr.decode()
+    moov_pos = text.find("'moov'")
+    mdat_pos = text.find("'mdat'")
+    if moov_pos == -1 or mdat_pos == -1:
+        return False
+    return moov_pos < mdat_pos
+
+
+async def check_container_clean(path: str) -> bool:
+    """True = no UDTA/container parse warnings."""
+    _, stderr, _ = await _run("ffprobe", "-v", "warning", "-i", path)
+    warn = stderr.decode()
+    return "UDTA parsing failed" not in warn and "moov atom not found" not in warn
+
+
+def _get_video_stream(info: dict) -> dict | None:
+    return next((s for s in info["streams"] if s["codec_type"] == "video"), None)
+
+
+def _get_audio_stream(info: dict) -> dict | None:
+    return next((s for s in info["streams"] if s["codec_type"] == "audio"), None)
+
+
+async def needs_normalization(info: dict, path: str) -> list[str]:
+    issues = []
+
+    # Run container checks concurrently
+    faststart, container_clean = await asyncio.gather(
+        check_moov_position(path),
+        check_container_clean(path),
+    )
+
+    if not faststart:
+        issues.append("moov atom at end of file")
+    if not container_clean:
+        issues.append("container has parse warnings (UDTA/moov corruption)")
+
+    video = _get_video_stream(info)
+    if video:
+        bitrate_kbps = int(video.get("bit_rate", 0)) // 1000
+        codec = video.get("codec_name", "")
+        fps_str = video.get("r_frame_rate", "0/1")
+        num, den = map(int, fps_str.split("/"))
+        fps = num / den if den else 0
+
+        if fps > 60.5:
+            issues.append(f"fps={fps:.2f} (above 60fps HD limit)")
+        if bitrate_kbps > 20000:
+            issues.append(f"video bitrate={bitrate_kbps} kbps (risk of mobile stutter)")
+        if codec not in ("h264", "hevc"):
+            issues.append(f"codec={codec} (WhatsApp expects H.264 or HEVC)")
+
+    audio = _get_audio_stream(info)
+    if audio:
+        sample_rate = int(audio.get("sample_rate", 0))
+        if sample_rate not in (44100, 48000):
+            issues.append(f"audio sample rate={sample_rate} Hz (use 44100 or 48000)")
+
+    return issues
+
+
+async def normalize_for_whatsapp(input_path: str, output_path: str, transcode: bool = False):
+    video = _get_video_stream(await probe_video(input_path))
+    codec = video.get("codec_name", "h264") if video else "h264"
+
+    if not transcode:
+        # Remux only
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-c", "copy",
+            "-movflags", "+faststart",
+            "-map_metadata", "-1",
+            output_path,
+        ]
+    elif codec == "hevc":
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-c:v", "libx265",
+            "-preset", "fast",
+            "-crf", "28",
+            "-maxrate", "8000k",
+            "-bufsize", "16000k",
+            "-tag:v", "hvc1", 
+            "-c:a", "copy",
+            "-movflags", "+faststart",
+            "-map_metadata", "-1",
+            output_path,
+        ]
+    else:
+        cmd = [
+            "ffmpeg", "-y", "-i", input_path,
+            "-c:v", "libx264",
+            "-crf", "23",
+            "-maxrate", "8000k",
+            "-bufsize", "16000k",
+            "-c:a", "copy",
+            "-movflags", "+faststart",
+            "-map_metadata", "-1",
+            output_path,
+        ]
+
+    _, stderr, rc = await _run(*cmd)
+    if rc != 0:
+        raise RuntimeError(f"ffmpeg failed: {stderr.decode()}")
