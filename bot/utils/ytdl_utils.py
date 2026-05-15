@@ -17,6 +17,9 @@ from bot.fun.emojis import enhearts
 
 from .bot_utils import (
     hbs,
+    probe_video,
+    normalize_for_whatsapp,
+    needs_normalization,
     is_valid_video_timestamp,
     sync_to_async,
     time_formatter,
@@ -680,6 +683,19 @@ class YoutubeDLHelper:
             shutil.copy2(tmp_file2, file)
             s_remove(tmp_file)
             s_remove(tmp_file2)
+        src = f"{self.folder}/{self.name}"
+        info = await probe_video(src)
+        issues = await needs_normalization(info, src)
+        if issues:
+            dst = f"temp/{message.chat.id}_{message.id}.mp4"
+            await message.edit("🛠️: fixing issues...")
+            needs_transcode = any(
+                "moov" not in i and "container" not in i for i in issues
+            )
+            await normalize_for_whatsapp(src, dst, transcode=needs_transcode)
+            s_remove(src)
+            shutil.copy2(dst, src)
+            s_remove(dst)
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
