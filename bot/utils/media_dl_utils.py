@@ -17,12 +17,12 @@ from bot.pkgs.tiktok_dl import download_tiktok
 from .bot_utils import (
     hbs,
     is_valid_video_timestamp,
+    needs_normalization,
+    normalize_for_whatsapp,
+    probe_video,
     time_formatter,
     value_check,
     video_timestamp_to_seconds,
-    normalize_for_whatsapp,
-    needs_normalization,
-    probe_video,
 )
 from .log_utils import log
 from .msg_utils import user_is_admin, user_is_privileged
@@ -345,7 +345,7 @@ class MediaHelper:
                 self._on_download_error(f"Trimming failed: {e}")
                 await self.clean_up()
                 return
-        
+
         if self._listener.is_tiktok:
             src = results[0].local_path
             info = await probe_video(src)
@@ -353,7 +353,9 @@ class MediaHelper:
             if issues:
                 dst = f"temp/{message.chat.id}_{message.id}.mp4"
                 await message.edit("🛠️: fixing issues...")
-                needs_transcode = any("moov" not in i and "container" not in i for i in issues)
+                needs_transcode = any(
+                    "moov" not in i and "container" not in i for i in issues
+                )
                 await normalize_for_whatsapp(src, dst, transcode=needs_transcode)
                 s_remove(src)
                 shutil.copy2(dst, src)

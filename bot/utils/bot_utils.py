@@ -1,7 +1,7 @@
 import asyncio
-import json
 import datetime
 import itertools
+import json
 import re
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -435,9 +435,13 @@ async def _run(*args: str) -> tuple[bytes, bytes, int]:
 
 async def probe_video(path: str) -> dict:
     stdout, _, rc = await _run(
-        "ffprobe", "-v", "quiet",
-        "-print_format", "json",
-        "-show_streams", "-show_format",
+        "ffprobe",
+        "-v",
+        "quiet",
+        "-print_format",
+        "json",
+        "-show_streams",
+        "-show_format",
         path,
     )
     if rc != 0:
@@ -509,43 +513,73 @@ async def needs_normalization(info: dict, path: str) -> list[str]:
     return issues
 
 
-async def normalize_for_whatsapp(input_path: str, output_path: str, transcode: bool = False):
+async def normalize_for_whatsapp(
+    input_path: str, output_path: str, transcode: bool = False
+):
     video = _get_video_stream(await probe_video(input_path))
     codec = video.get("codec_name", "h264") if video else "h264"
 
     if not transcode:
         # Remux only
         cmd = [
-            "ffmpeg", "-y", "-i", input_path,
-            "-c", "copy",
-            "-movflags", "+faststart",
-            "-map_metadata", "-1",
+            "ffmpeg",
+            "-y",
+            "-i",
+            input_path,
+            "-c",
+            "copy",
+            "-movflags",
+            "+faststart",
+            "-map_metadata",
+            "-1",
             output_path,
         ]
     elif codec == "hevc":
         cmd = [
-            "ffmpeg", "-y", "-i", input_path,
-            "-c:v", "libx265",
-            "-preset", "fast",
-            "-crf", "28",
-            "-maxrate", "8000k",
-            "-bufsize", "16000k",
-            "-tag:v", "hvc1", 
-            "-c:a", "copy",
-            "-movflags", "+faststart",
-            "-map_metadata", "-1",
+            "ffmpeg",
+            "-y",
+            "-i",
+            input_path,
+            "-c:v",
+            "libx265",
+            "-preset",
+            "fast",
+            "-crf",
+            "28",
+            "-maxrate",
+            "8000k",
+            "-bufsize",
+            "16000k",
+            "-tag:v",
+            "hvc1",
+            "-c:a",
+            "copy",
+            "-movflags",
+            "+faststart",
+            "-map_metadata",
+            "-1",
             output_path,
         ]
     else:
         cmd = [
-            "ffmpeg", "-y", "-i", input_path,
-            "-c:v", "libx264",
-            "-crf", "23",
-            "-maxrate", "8000k",
-            "-bufsize", "16000k",
-            "-c:a", "copy",
-            "-movflags", "+faststart",
-            "-map_metadata", "-1",
+            "ffmpeg",
+            "-y",
+            "-i",
+            input_path,
+            "-c:v",
+            "libx264",
+            "-crf",
+            "23",
+            "-maxrate",
+            "8000k",
+            "-bufsize",
+            "16000k",
+            "-c:a",
+            "copy",
+            "-movflags",
+            "+faststart",
+            "-map_metadata",
+            "-1",
             output_path,
         ]
 
