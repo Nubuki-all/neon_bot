@@ -17,10 +17,10 @@ from bot.fun.emojis import enhearts
 
 from .bot_utils import (
     hbs,
-    probe_video,
-    normalize_for_whatsapp,
-    needs_normalization,
     is_valid_video_timestamp,
+    needs_normalization,
+    normalize_for_whatsapp,
+    probe_video,
     sync_to_async,
     time_formatter,
     value_check,
