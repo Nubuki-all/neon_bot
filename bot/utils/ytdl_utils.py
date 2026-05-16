@@ -26,7 +26,7 @@ from .bot_utils import (
     value_check,
     video_timestamp_to_seconds,
 )
-from .log_utils import log
+from .log_utils import log, logger
 from .msg_utils import user_is_admin, user_is_privileged
 from .os_utils import enshell, s_remove
 
@@ -683,19 +683,23 @@ class YoutubeDLHelper:
             shutil.copy2(tmp_file2, file)
             s_remove(tmp_file)
             s_remove(tmp_file2)
-        src = f"{self.folder}/{self.name}"
-        info = await probe_video(src)
-        issues = await needs_normalization(info, src)
-        if issues:
-            dst = f"temp/{message.chat.id}_{message.id}.mp4"
-            await message.edit("🛠️: fixing issues...")
-            needs_transcode = any(
-                "moov" not in i and "container" not in i for i in issues
-            )
-            await normalize_for_whatsapp(src, dst, transcode=needs_transcode)
-            s_remove(src)
-            shutil.copy2(dst, src)
-            s_remove(dst)
+        if not (self.is_playlist or self._ext == ".mp3"):
+            try:
+                src = f"{self.folder}/{self.name}"
+                info = await probe_video(src)
+                issues = await needs_normalization(info, src)
+                if issues:
+                    dst = f"temp/{message.chat.id}_{message.id}.mp4"
+                    await message.edit("🛠️: fixing issues...")
+                    needs_transcode = any(
+                        "moov" not in i and "container" not in i for i in issues
+                    )
+                    await normalize_for_whatsapp(src, dst, transcode=needs_transcode)
+                    s_remove(src)
+                    shutil.copy2(dst, src)
+                    s_remove(dst)
+            except Exception:
+                await logger(Exception)
 
     async def cancel_task(self):
         self._listener.is_cancelled = True
