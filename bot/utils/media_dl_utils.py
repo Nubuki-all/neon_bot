@@ -38,7 +38,7 @@ class Listener:
     name: Optional[str] = None
     size: int = 0
     user_cancelled: bool = False
-    stop_progress: bool = False 
+    stop_progress: bool = False
     is_insta: bool = False
     is_pintrest: bool = False
     is_tiktok: bool = False
