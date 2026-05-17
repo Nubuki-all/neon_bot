@@ -484,6 +484,7 @@ class YoutubeDLHelper:
         options={},
         trim_args=None,
         twi=False,
+        is_tiktok=False,
     ):
         self.folder = path
         self.message = message
@@ -683,7 +684,7 @@ class YoutubeDLHelper:
             shutil.copy2(tmp_file2, file)
             s_remove(tmp_file)
             s_remove(tmp_file2)
-        if not (self.is_playlist or self._ext == ".mp3"):
+        if is_tiktok and not (self.is_playlist or self._ext == ".mp3"):
             try:
                 src = f"{self.folder}/{self.name}"
                 info = await probe_video(src)

@@ -139,6 +139,7 @@ async def youtube_reply(event, args, client):
                         continue
                 audio = False
                 twi = False
+                is_tiktok = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
@@ -177,8 +178,10 @@ async def youtube_reply(event, args, client):
                         t_args = None
                 if result.get("extractor").casefold() != "youtube":
                     _format = _alt_format
-                if result.get("extractor").casefold() == "twitter":
+                elif result.get("extractor").casefold() == "twitter":
                     twi = True
+                elif result.get("extractor").casefold() == "tiktok":
+                    is_tiktok = True
                 status_msg = await event.reply("*Downloading…*")
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",
@@ -187,6 +190,7 @@ async def youtube_reply(event, args, client):
                     status_msg,
                     trim_args=t_args,
                     twi=twi,
+                    is_tiktok=is_tiktok,
                 )
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled and listener.error:
