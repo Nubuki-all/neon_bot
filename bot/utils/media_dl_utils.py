@@ -38,6 +38,7 @@ class Listener:
     name: Optional[str] = None
     size: int = 0
     user_cancelled: bool = False
+    stop_progress: bool = False 
     is_insta: bool = False
     is_pintrest: bool = False
     is_tiktok: bool = False
@@ -107,7 +108,7 @@ class MediaHelper:
         self._listener.name = file_path.split("/")[-1]
 
     async def _progress_loop(self):
-        while not self._listener.is_cancelled:
+        while not self._listener.is_cancelled and not self._listener.stop_progress:
             if self.download_is_complete:
                 if self._message:
                     await self._update_message()
@@ -346,6 +347,7 @@ class MediaHelper:
                 await self.clean_up()
                 return
 
+        self._listener.stop_progress = True
         if self._listener.is_tiktok:
             src = results[0].local_path
             info = await probe_video(src)
