@@ -128,22 +128,67 @@ def _load_netscape_cookies(filepath: str) -> CookieJar:
     return jar
 
 
-async def _resolve_short_url(client: httpx.AsyncClient, short_url: str) -> str:
-    """
-    Follow the VM/VT short link and return the real video/photo URL.
-    Handles geo-blocked login pages with 'redirect_url' parameter.
-    """
-    resp = await client.get(short_url, follow_redirects=True)
-    url = str(resp.url)
-    parsed = urlparse(url)
-    if parsed.path == "/login":
-        params = parse_qs(parsed.query)
-        redirect_target = params.get("redirect_url", [None])[0]
-        if redirect_target:
-            return redirect_target
-        raise RuntimeError("Geo-restricted content – cookies or VPN required")
-    return url
+class RateLimitError(Exception):
+    """Raised when a 429 Too Many Requests is received."""
+    pass
 
+async def _resolve_short_url(
+    client: httpx.AsyncClient,
+    short_url: str,
+    max_retries: int = 5,
+    base_delay: float = 1.0
+) -> str:
+    """
+    Resolve VM/VT short link, handling geo‑blocked login pages and rate limits.
+
+    Args:
+        client: Async HTTPX client.
+        short_url: The shortened URL (e.g., vm.tiktok.com/...).
+        max_retries: Maximum retries on 429 responses.
+        base_delay: Initial delay in seconds before first retry (exponential).
+
+    Returns:
+        The final resolved URL (photo/video page).
+
+    Raises:
+        RateLimitError: If rate limit persists after retries.
+        RuntimeError: On unexpected geo‑block or other failures.
+    """
+    delay = base_delay
+
+    for attempt in range(max_retries + 1):
+        resp = await client.get(short_url, follow_redirects=True)
+
+        # Detect rate limiting
+        if resp.status_code == 429:
+            if attempt < max_retries:
+                await asyncio.sleep(delay)
+                delay *= 2  # exponential backoff
+                continue
+            raise RateLimitError(
+                f"Rate limited after {max_retries} retries for {short_url}"
+            )
+
+        # Raise for other client/server errors (4xx/5xx)
+        resp.raise_for_status()
+
+        # Parse the final URL, handling TikTok's login redirect
+        final_url = str(resp.url)
+        parsed = urlparse(final_url)
+
+        if parsed.path == "/login":
+            params = parse_qs(parsed.query)
+            redirect_target = params.get("redirect_url", [None])[0]
+            if redirect_target:
+                return redirect_target
+            raise RuntimeError(
+                "Geo-restricted content – cookies or VPN required"
+            )
+
+        return final_url
+
+    # Should never reach here, but keep linter happy
+    raise RateLimitError(f"Unexpected retry exit for {short_url}")
 
 async def _fetch_tiktok_page(
     client: httpx.AsyncClient, video_id: str
@@ -178,8 +223,7 @@ def _parse_universal_data(html: str) -> dict:
         html,
         re.DOTALL,
     )
-    if not match:
-        _log_.info(html)
+    
         raise RuntimeError("Universal data script not found")
     data = json.loads(match.group(1))
     default_scope = _traverse_json(data, "__DEFAULT_SCOPE__")
