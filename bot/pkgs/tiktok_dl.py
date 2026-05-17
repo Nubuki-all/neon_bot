@@ -130,13 +130,13 @@ def _load_netscape_cookies(filepath: str) -> CookieJar:
 
 class RateLimitError(Exception):
     """Raised when a 429 Too Many Requests is received."""
-    pass
+
 
 async def _resolve_short_url(
     client: httpx.AsyncClient,
     short_url: str,
     max_retries: int = 5,
-    base_delay: float = 1.0
+    base_delay: float = 1.0,
 ) -> str:
     """
     Resolve VM/VT short link, handling geo‑blocked login pages and rate limits.
@@ -181,14 +181,13 @@ async def _resolve_short_url(
             redirect_target = params.get("redirect_url", [None])[0]
             if redirect_target:
                 return redirect_target
-            raise RuntimeError(
-                "Geo-restricted content – cookies or VPN required"
-            )
+            raise RuntimeError("Geo-restricted content – cookies or VPN required")
 
         return final_url
 
     # Should never reach here, but keep linter happy
     raise RateLimitError(f"Unexpected retry exit for {short_url}")
+
 
 async def _fetch_tiktok_page(
     client: httpx.AsyncClient, video_id: str
