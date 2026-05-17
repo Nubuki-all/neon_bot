@@ -223,7 +223,7 @@ def _parse_universal_data(html: str) -> dict:
         html,
         re.DOTALL,
     )
-    
+    if not match:
         raise RuntimeError("Universal data script not found")
     data = json.loads(match.group(1))
     default_scope = _traverse_json(data, "__DEFAULT_SCOPE__")
