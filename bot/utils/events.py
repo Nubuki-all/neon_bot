@@ -766,6 +766,7 @@ async def download_media(message: Message) -> bytes:
         mms_type,
     )
 
+
 async def dd_media(item, media_type):
     direct_path = item.directPath
     enc_file_hash = item.fileEncSHA256
