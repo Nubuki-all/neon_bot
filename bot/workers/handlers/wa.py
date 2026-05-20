@@ -11,6 +11,7 @@ import torch
 from clean_links.clean import clean_url
 from neonize.exc import DownloadError
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import Message
+from neonize.utils.enum import MediaType
 from neonize.utils.ffmpeg import AFFmpeg
 from neonize.utils.jid import Jid2String
 from PIL import Image
@@ -222,7 +223,7 @@ async def compress(event, args, client):
         if media := compress_cache.get(comp_sha):
             try:
                 async with event.react("📥"):
-                    file = await dd_media(media)
+                    file = await dd_media(media, MediaType.MediaDocument)
                 async with event.react("📤"):
                     file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
                     file_name += ".mkv"

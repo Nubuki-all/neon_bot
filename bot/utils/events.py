@@ -766,18 +766,7 @@ async def download_media(message: Message) -> bytes:
         mms_type,
     )
 
-
-async def dd_media(item):
-    mime = item.mimetype.split("/")[0]
-    match mime:
-        case "image":
-            media_type = MediaType.MediaImage
-        case "video":
-            media_type = MediaType.MediaVideo
-        case "audio":
-            media_type = MediaType.MediaAudio
-        case _:
-            media_type = MediaType.MediaDocument
+async def dd_media(item, media_type):
     direct_path = item.directPath
     enc_file_hash = item.fileEncSHA256
     file_hash = item.fileSHA256
