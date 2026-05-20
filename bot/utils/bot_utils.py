@@ -588,6 +588,7 @@ async def normalize_for_whatsapp(
     if rc != 0:
         raise RuntimeError(f"ffmpeg failed: {stderr.decode()}")
 
+
 class LimitedDict(OrderedDict):
     def __init__(self, maxsize=128, *args, **kwds):
         self.maxsize = maxsize

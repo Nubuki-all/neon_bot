@@ -70,8 +70,8 @@ from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_resp
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
 from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
 
-
 compress_cache = LimitedDict()
+
 
 async def tools(event, args, client):
     """Help Function for the wa module"""
@@ -219,7 +219,7 @@ async def compress(event, args, client):
             args = ""
         ext = ext or ".mp4"
         comp_sha = replied.media.fileSHA256 + args if args else replied.media.fileSHA256
-        if (media := compress_cache.get(comp_sha)):
+        if media := compress_cache.get(comp_sha):
             try:
                 async with event.react("📥"):
                     file = await dd_media(media)
@@ -244,7 +244,13 @@ async def compress(event, args, client):
         cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{title_} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {
             quality.get(
                 args,
-                "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf {crf_quality.get(args, "42")} -c:a libopus -ac 2 -vbr 2  -ab {a_quality.get(args, "32k")} -c:s copy -movflags +faststart {out_}"""
+                "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf {
+            crf_quality.get(
+                args,
+                "42")} -c:a libopus -ac 2 -vbr 2  -ab {
+                    a_quality.get(
+                        args,
+                        "32k")} -c:s copy -movflags +faststart {out_}"""
 
         with open(in_, "wb") as f:
             f.write(file)

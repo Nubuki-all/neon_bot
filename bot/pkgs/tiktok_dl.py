@@ -148,6 +148,7 @@ async def resolve_short_url(short_url, cookie_file=""):
             url = await _resolve_short_url(client, short_url)
         return url
 
+
 async def _resolve_short_url(
     client: httpx.AsyncClient,
     short_url: str,
