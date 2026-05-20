@@ -132,6 +132,22 @@ class RateLimitError(Exception):
     """Raised when a 429 Too Many Requests is received."""
 
 
+async def resolve_short_url(short_url, cookie_file=""):
+    client_cookies = None
+    if cookie_file:
+        client_cookies = _load_netscape_cookies(cookie_file)
+
+    # Create a single httpx client for all initial requests
+    async with httpx.AsyncClient(
+        http2=True, follow_redirects=False, cookies=client_cookies
+    ) as client:
+        # Resolve short URLs
+        short_match = SHORT_TIKTOK_RE.search(short_url)
+        url = ""
+        if short_match:
+            url = await _resolve_short_url(client, short_url)
+        return url
+
 async def _resolve_short_url(
     client: httpx.AsyncClient,
     short_url: str,

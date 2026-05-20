@@ -23,6 +23,7 @@ from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
+    LimitedDict,
     get_date_from_isostr,
     human_format_num,
     is_video_file,
@@ -48,6 +49,7 @@ from bot.utils.msg_utils import (
     chat_is_allowed,
     clean_reply,
     construct_msg_and_evt,
+    dd_media,
     find_role_mentions,
     function_dict,
     get_args,
@@ -68,6 +70,8 @@ from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_resp
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
 from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
 
+
+compress_cache = LimitedDict()
 
 async def tools(event, args, client):
     """Help Function for the wa module"""
@@ -211,7 +215,21 @@ async def compress(event, args, client):
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         args = args.casefold() if args else ""
+        if args not in ["480p", "720p", "1080p"]:
+            args = ""
         ext = ext or ".mp4"
+        comp_sha = replied.media.fileSHA256 + args if args else replied.media.fileSHA256
+        if (media := compress_cache.get(comp_sha)):
+            try:
+                async with event.react("📥"):
+                    file = await dd_media(media)
+                async with event.react("📤"):
+                    file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
+                    file_name += ".mkv"
+                    return await event.reply_document(file, file_name, file_name)
+            except Exception:
+                await logger(Exception)
+                compress_cache.remove(comp_sha)
 
         async with event.react("📥"):
             file = await replied.download()
@@ -220,11 +238,13 @@ async def compress(event, args, client):
         in_ = f"comp/{_id}{ext}"
         out_ = f"comp/{_id}-1.mkv"
         quality = {"480p": "854x480", "720p": "1280x720", "1080p": "1920x1080"}
+        a_quality = {"480p": "32k", "720p": "64k", "1080p": "128k"}
+        crf_quality = {"1080p": "35"}
         title_ = (replied.caption or "").split("\n")[-1]
         cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{title_} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {
             quality.get(
                 args,
-                "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf 42 -c:a libopus -ac 2 -vbr 2  -ab 32k -c:s copy -movflags +faststart {out_}"""
+                "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf {crf_quality.get(args, "42")} -c:a libopus -ac 2 -vbr 2  -ab {a_quality.get(args, "32k")} -c:s copy -movflags +faststart {out_}"""
 
         with open(in_, "wb") as f:
             f.write(file)
@@ -241,7 +261,8 @@ async def compress(event, args, client):
         async with event.react("📤"):
             file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
             file_name += ".mkv"
-            await event.reply_document(out_, file_name, file_name)
+            e = await event.reply_document(out_, file_name, file_name)
+            compress_cache[comp_sha] = e.media
         s_remove(out_)
     except Exception:
         await logger(Exception)

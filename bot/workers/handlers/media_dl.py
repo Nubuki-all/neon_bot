@@ -7,7 +7,7 @@ from urlextract import URLExtract
 from bot.config import bot
 from bot.pkgs.insta_dl import is_valid_instagram_url
 from bot.pkgs.pinterest_dl import is_valid_pinterest_url
-from bot.pkgs.tiktok_dl import is_valid_tiktok_url
+from bot.pkgs.tiktok_dl import is_valid_tiktok_url, resolve_short_url
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.media_dl_utils import Listener as MediaListener
@@ -124,7 +124,7 @@ async def youtube_reply(event, args, client):
         t_args = extract_bracketed_prefix(text)
         while job:
             try:
-                listener = MediaListener(job[0])
+                alt_listener = listener = MediaListener(job[0])
                 tryAlt = False
 
                 if is_valid_tiktok_url(listener.link):
@@ -157,6 +157,13 @@ async def youtube_reply(event, args, client):
                             break
                     else:
                         quality = "720"
+                if alt_listener.is_tiktok:
+                    try:
+                        url = await resolve_short_url(listener.link, ".cookies.txt")
+                        if url:
+                            listener.link = url
+                    except Exception:
+                        log(Exception)
                 try:
                     result = await sync_to_async(extract_info, listener.link)
                 except ValueError as w:

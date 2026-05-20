@@ -4,6 +4,7 @@ import itertools
 import json
 import re
 import uuid
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from hashlib import sha256
@@ -586,3 +587,16 @@ async def normalize_for_whatsapp(
     _, stderr, rc = await _run(*cmd)
     if rc != 0:
         raise RuntimeError(f"ffmpeg failed: {stderr.decode()}")
+
+class LimitedDict(OrderedDict):
+    def __init__(self, maxsize=128, *args, **kwds):
+        self.maxsize = maxsize
+        super().__init__(*args, **kwds)
+
+    def __setitem__(self, key, value):
+        if key in self:
+            self.move_to_end(key)
+        super().__setitem__(key, value)
+        if len(self) > self.maxsize:
+            oldest = next(iter(self))
+            del self[oldest]

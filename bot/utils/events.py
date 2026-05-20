@@ -766,6 +766,33 @@ async def download_media(message: Message) -> bytes:
         mms_type,
     )
 
+async def dd_media(item):
+    mime = item.mimetype.split("/")[0]
+    match mime:
+        case "image":
+            media_type =  MediaType.MediaImage
+        case "video":
+            media_type = MediaType.MediaVideo
+        case "audio":
+            media_type = MediaType.MediaAudio
+        case _:
+            media_type = MediaType.MediaDocument
+    direct_path = item.directPath
+    enc_file_hash = item.fileEncSHA256
+    file_hash = item.fileSHA256
+    media_key = item.mediaKey
+    file_length = item.fileLength
+    mms_type = media_type.to_mms()
+    return await bot.client.download_media_with_path(
+        direct_path,
+        enc_file_hash,
+        file_hash,
+        media_key,
+        file_length,
+        media_type,
+        mms_type,
+    )
+
 
 async def event_handler(
     event: Event,

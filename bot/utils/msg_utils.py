@@ -18,6 +18,7 @@ from .events import (
     construct_event,
     construct_message,
     construct_msg_and_evt,
+    dd_media,
     download_media,
     event_handler,
     function_dict,
