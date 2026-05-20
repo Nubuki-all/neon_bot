@@ -219,7 +219,7 @@ async def compress(event, args, client):
         if args not in ["480p", "720p", "1080p"]:
             args = ""
         ext = ext or ".mp4"
-        comp_sha = replied.media.fileSHA256 + args if args else replied.media.fileSHA256
+        comp_sha = replied.media.fileSHA256 + args.encode("utf-8") if args else replied.media.fileSHA256
         if media := compress_cache.get(comp_sha):
             try:
                 async with event.react("📥"):
