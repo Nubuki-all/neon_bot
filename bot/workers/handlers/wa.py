@@ -234,7 +234,7 @@ async def compress(event, args, client):
                     return await event.reply_document(file, file_name, file_name)
             except Exception:
                 await logger(Exception)
-                compress_cache.remove(comp_sha)
+                compress_cache.pop(comp_sha)
 
         async with event.react("📥"):
             file = await replied.download()

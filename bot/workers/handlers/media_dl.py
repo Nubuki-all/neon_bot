@@ -185,7 +185,7 @@ async def youtube_reply(event, args, client):
                         t_args = None
                 if result.get("extractor").casefold() != "youtube":
                     _format = _alt_format
-                elif result.get("extractor").casefold() == "twitter":
+                if result.get("extractor").casefold() == "twitter":
                     twi = True
                 elif result.get("extractor").casefold() == "tiktok":
                     is_tiktok = True
