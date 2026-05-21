@@ -500,8 +500,9 @@ async def needs_normalization(info: dict, path: str) -> list[str]:
 
         if fps > 60.5:
             issues.append(f"fps={fps:.2f} (above 60fps HD limit)")
-        if bitrate_kbps > 20000:
-            issues.append(f"video bitrate={bitrate_kbps} kbps (risk of mobile stutter)")
+        if bitrate_kbps > 8500:
+            issues.append(f"video bitrate={bitrate_kbps} kbps (exceeds 4,500 kbps WhatsApp limit)")
+
         if codec not in ("h264", "hevc"):
             issues.append(f"codec={codec} (WhatsApp expects H.264 or HEVC)")
 
