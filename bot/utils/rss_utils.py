@@ -115,7 +115,7 @@ def get_pic_url(feed: dict) -> list | None:
     if feed.get("content"):
         content = feed["content"][0]["value"]
     else:
-        return
+        return []
     pics = []
     soups = BeautifulSoup(content, "html.parser")
     for soup in soups.find_all("img"):
