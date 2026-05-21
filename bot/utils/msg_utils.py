@@ -198,7 +198,7 @@ async def parse_and_send_rss(data: dict, chat_ids: list = None):
     try:
         author = data.get("author")
         chats = chat_ids or conf.RSS_CHAT.split()
-        pics = data.get("pic")
+        pics = data.get("pic", [])
         content = data.get("content")
         summary = sanitize_text(data.get("summary"))
         tgh_link = ""
