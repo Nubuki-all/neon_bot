@@ -210,7 +210,10 @@ async def compress(event, args, client):
         ext = ""
         f_name = ""
         if replied.document:
-            if not (replied.document.mimetype.startswith("video") or is_video_file(replied.document.fileName)):
+            if not (
+                replied.document.mimetype.startswith("video")
+                or is_video_file(replied.document.fileName)
+            ):
                 return await event.reply("*Replied message is not a video.*")
             f_name, ext = split_ext(replied.document.fileName)
         elif not replied.video:
