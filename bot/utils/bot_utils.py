@@ -447,7 +447,7 @@ async def save_cookies_txt(browser, path=".cookies.txt"):
         f.write("# Netscape HTTP Cookie File\n")
         for c in result:
             if c.domain is None or c.domain == "":
-                domain = c.host   # CDP provides .host for host‑only cookies
+                domain = c.host  # CDP provides .host for host‑only cookies
                 flag = "FALSE"
             else:
                 domain = c.domain if c.domain.startswith(".") else f".{c.domain}"
@@ -459,7 +459,10 @@ async def save_cookies_txt(browser, path=".cookies.txt"):
             else:
                 expires = int(c.expires)
 
-            f.write(f"{domain}\t{flag}\t{path_val}\t{secure}\t{expires}\t{c.name}\t{c.value}\n")
+            f.write(f"{domain}\t{flag}\t{path_val}\t{secure}\t{expires}\t{
+                    c.name}\t{
+                    c.value}\n")
+
 
 def video_timestamp_to_seconds(timestamp: str) -> int:
     parts = list(map(int, timestamp.split(":")))
