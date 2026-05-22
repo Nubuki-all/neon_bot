@@ -356,7 +356,6 @@ async def full_page_screenshot(page, output="fullpage.png"):
             os.remove(chunk_path)
 
 
-
 def parse_netscape_cookies(file_path):
     cookies = []
     with open(file_path, "r", encoding="utf-8") as f:
@@ -394,6 +393,8 @@ def parse_netscape_cookies(file_path):
                 continue
 
     return cookies
+
+
 async def screenshot_page(
     url: str, full: bool = False, force_dark: bool = True, low_quality: bool = False
 ):
