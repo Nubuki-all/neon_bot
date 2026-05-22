@@ -410,7 +410,12 @@ async def screenshot_page(
         b_args.pop(2)
     browser = await zd.start(headless=True, browser_args=b_args)
     if os.path.exists(".cookies.txt"):
-        await browser.cookies.set_all(parse_netscape_cookies(".cookies.txt"))
+        cookies = parse_netscape_cookies(".cookies.txt")
+        for cookie in cookies:
+            try:
+                await browser.cookies.set_all([cookie])
+            except Exception as e:
+                _log_.warning(f"Failed to set cookie {cookie.name}: {e}")
     page = await browser.get(url)
     await page
     await asyncio.sleep(5)
