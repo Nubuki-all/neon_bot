@@ -356,34 +356,44 @@ async def full_page_screenshot(page, output="fullpage.png"):
             os.remove(chunk_path)
 
 
+
 def parse_netscape_cookies(file_path):
     cookies = []
     with open(file_path, "r", encoding="utf-8") as f:
         for line in f:
-            # Skip comments and empty lines
             if line.startswith("#") or not line.strip():
                 continue
 
             fields = line.strip().split("\t")
             if len(fields) < 7:
-                continue  # Skip malformed lines
+                continue
 
             domain, flag, path, secure, expiration, name, value = fields[:7]
 
-            # Construct dictionary compatible with Zendriver/CDP
+            # Skip cookies with invalid names (e.g. starting with dot)
+            if not name or name.startswith("."):
+                continue
+
             cookie_dict = {
                 "name": name,
                 "value": value,
                 "domain": domain if domain.startswith(".") else f".{domain}",
                 "path": path,
                 "secure": secure.upper() == "TRUE",
-                "expires": int(expiration) if int(expiration) > 0 else None,
             }
-            cdp_cookie = zd.cdp.network.CookieParam.from_json(cookie_dict)
-            cookies.append(cdp_cookie)
+
+            # Only include expires if it's a valid positive timestamp
+            exp = int(expiration)
+            if exp > 0:
+                cookie_dict["expires"] = exp
+
+            try:
+                cdp_cookie = zd.cdp.network.CookieParam.from_json(cookie_dict)
+                cookies.append(cdp_cookie)
+            except Exception:
+                continue
+
     return cookies
-
-
 async def screenshot_page(
     url: str, full: bool = False, force_dark: bool = True, low_quality: bool = False
 ):
