@@ -2,11 +2,10 @@ import asyncio
 import datetime
 import itertools
 import json
+import os
 import re
-import uuid
 import tempfile
 import traceback
-import os
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -14,17 +13,17 @@ from hashlib import sha256
 from urllib.parse import urlparse, urlunparse
 
 import aiohttp
-import httpx
 import pytz
 import requests
 import zendriver as zd
-from PIL import Image
 from ffmpeg.asyncio import FFmpeg
+from PIL import Image
 
 from bot import LOGS, bot, telegraph_errors, time
 
 THREADPOOL = ThreadPoolExecutor(max_workers=1000)
 _log_ = logging.getLogger(__name__)
+
 
 def gfn(fn):
     "gets module path"
@@ -299,10 +298,13 @@ def get_sha256(string: str):
 def trunc_string(string: str, limit: int):
     return (string[: limit - 2] + "…") if len(string) > limit else string
 
+
 async def full_page_screenshot(page, output="fullpage.png"):
     full_height = await page.evaluate("document.body.scrollHeight")
     viewport_height = await page.evaluate("window.innerHeight")
-    width = await page.evaluate("Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, window.innerWidth)")
+    width = await page.evaluate(
+        "Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, window.innerWidth)"
+    )
     dpr = await page.evaluate("window.devicePixelRatio") or 1
 
     if not full_height or not width or full_height < 10 or width < 10:
@@ -352,6 +354,7 @@ async def full_page_screenshot(page, output="fullpage.png"):
         if os.path.exists(chunk_path):
             os.remove(chunk_path)
 
+
 def parse_netscape_cookies(file_path):
     cookies = []
     with open(file_path, "r", encoding="utf-8") as f:
@@ -359,13 +362,13 @@ def parse_netscape_cookies(file_path):
             # Skip comments and empty lines
             if line.startswith("#") or not line.strip():
                 continue
-                
+
             fields = line.strip().split("\t")
             if len(fields) < 7:
                 continue  # Skip malformed lines
-                
+
             domain, flag, path, secure, expiration, name, value = fields[:7]
-            
+
             # Construct dictionary compatible with Zendriver/CDP
             cookie_dict = {
                 "name": name,
@@ -373,27 +376,27 @@ def parse_netscape_cookies(file_path):
                 "domain": domain if domain.startswith(".") else f".{domain}",
                 "path": path,
                 "secure": secure.upper() == "TRUE",
-                "expires": int(expiration) if int(expiration) > 0 else None
+                "expires": int(expiration) if int(expiration) > 0 else None,
             }
             cdp_cookie = zd.cdp.network.CookieParam.from_json(cookie_dict)
             cookies.append(cdp_cookie)
     return cookies
 
-async def screenshot_page(url: str, full: bool=False, force_dark:bool =True, low_quality: bool=False):
+
+async def screenshot_page(
+    url: str, full: bool = False, force_dark: bool = True, low_quality: bool = False
+):
     """
     Generate screenshot from a url.
     """
     b_args = [
-            "--window-size=1920,1080",
-            "--force-device-scale-factor=2",
-            "--force-dark-mode",
-        ]
+        "--window-size=1920,1080",
+        "--force-device-scale-factor=2",
+        "--force-dark-mode",
+    ]
     if not force_dark:
         b_args.pop(2)
-    async with await zd.start(
-        headless=True,
-        browser_args=b_args
-    ) as browser:
+    async with await zd.start(headless=True, browser_args=b_args) as browser:
         if os.path.exists(".cookies.txt"):
             await browser.cookies.set_all(parse_netscape_cookies(".cookies.txt"))
         page = await browser.get(url)
@@ -404,12 +407,12 @@ async def screenshot_page(url: str, full: bool=False, force_dark:bool =True, low
                 await full_page_screenshot(page, path)
             except Exception:
                 _log_.error(traceback.format_exc())
-                await page.save_screenshot(path) 
+                await page.save_screenshot(path)
         else:
             await page.save_screenshot(path)
         output = await read_binary(path)
         return await png_to_jpg(output) if low_quality else output
-        
+
 
 def video_timestamp_to_seconds(timestamp: str) -> int:
     parts = list(map(int, timestamp.split(":")))
