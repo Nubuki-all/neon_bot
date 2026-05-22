@@ -397,23 +397,44 @@ async def screenshot_page(
     ]
     if not force_dark:
         b_args.pop(2)
-    async with await zd.start(headless=True, browser_args=b_args) as browser:
-        if os.path.exists(".cookies.txt"):
-            await browser.cookies.set_all(parse_netscape_cookies(".cookies.txt"))
-        page = await browser.get(url)
-        await asyncio.sleep(5)
-        path = tempfile.mktemp(suffix=".png", prefix="screenshot_")
-        if full:
-            try:
-                await full_page_screenshot(page, path)
-            except Exception:
-                _log_.error(traceback.format_exc())
-                await page.save_screenshot(path)
-        else:
+    browser = await zd.start(headless=True, browser_args=b_args)
+    if os.path.exists(".cookies.txt"):
+        await browser.cookies.set_all(parse_netscape_cookies(".cookies.txt"))
+    page = await browser.get(url)
+    await page
+    await asyncio.sleep(5)
+    path = tempfile.mktemp(suffix=".png", prefix="screenshot_")
+    if full:
+        try:
+            await full_page_screenshot(page, path)
+        except Exception:
+            _log_.error(traceback.format_exc())
             await page.save_screenshot(path)
-        output = await read_binary(path)
-        return await png_to_jpg(output) if low_quality else output
+    else:
+        await page.save_screenshot(path)
+    try:
+        await save_cookies_txt(browser)
+    except Exception:
+        _log_.error(traceback.format_exc())
+    try:
+        await browser.stop()
+    except Exception:
+        _log_.error(traceback.format_exc())
+    output = await read_binary(path)
+    return await png_to_jpg(output) if low_quality else output
 
+async def save_cookies_txt(browser, path=".cookies.txt"):
+    # Fetch all cookies via CDP
+    result = await browser.cookies.get_all()
+
+    with open(path, "w") as f:
+        f.write("# Netscape HTTP Cookie File\n")
+        for c in result:
+            domain = c.domain if c.domain.startswith(".") else f".{c.domain}"
+            flag = "TRUE" if c.domain.startswith(".") else "FALSE"
+            secure = "TRUE" if c.secure else "FALSE"
+            expires = int(c.expires) if c.expires and c.expires > 0 else int(time.time()) + 86400 * 365
+            f.write(f"{domain}\t{flag}\t{c.path}\t{secure}\t{expires}\t{c.name}\t{c.value}\n")
 
 def video_timestamp_to_seconds(timestamp: str) -> int:
     parts = list(map(int, timestamp.split(":")))

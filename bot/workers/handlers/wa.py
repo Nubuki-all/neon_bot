@@ -373,6 +373,10 @@ async def screenshot(event, args, client):
     Generate screenshots from all links in replied message
 
     Can also receive a link as argument
+    Arguments:
+      -l low quality image
+      -d force darkmode (default True)
+      -f Full screenshot of webpage (scrolling screenshot)
     """
     status_msg = None
     user = event.from_user.id
@@ -400,9 +404,9 @@ async def screenshot(event, args, client):
             if not urls:
                 return await event.reply(f"*No link found in your message*")
         arg, args = get_args(
-            ["-l", "store_false"],
-            ["-d", "store_true"],
-            ["-f", "store_false"],
+            ["-l", "store_true"],
+            ["-d", "store_false"],
+            ["-f", "store_true"],
             to_parse=args or "",
             get_unknown=True,
         )

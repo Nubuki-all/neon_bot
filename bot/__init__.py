@@ -106,6 +106,7 @@ LOGS = logging.getLogger(__name__)
 no_verbose = [
     "apscheduler.executors.default",
     "httpx",
+    "zendriver",
 ]
 if not conf.DEBUG:
     log.setLevel(logging.INFO)
