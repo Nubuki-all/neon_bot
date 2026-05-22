@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import itertools
 import json
+import logging
 import os
 import re
 import tempfile
