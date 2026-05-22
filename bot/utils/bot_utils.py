@@ -408,34 +408,40 @@ async def screenshot_page(
     ]
     if not force_dark:
         b_args.pop(2)
-    browser = await zd.start(headless=True, browser_args=b_args)
-    if os.path.exists(".cookies.txt"):
-        cookies = parse_netscape_cookies(".cookies.txt")
-        for cookie in cookies:
+    browser = None
+    try:
+        browser = await zd.start(headless=True, browser_args=b_args)
+        if os.path.exists(".cookies.txt"):
+            cookies = parse_netscape_cookies(".cookies.txt")
+            for cookie in cookies:
+                try:
+                    await browser.cookies.set_all([cookie])
+                except Exception as e:
+                    _log_.warning(f"Failed to set cookie {cookie.name}: {e}")
+        page = await browser.get(url)
+        await page
+        await asyncio.sleep(5)
+        path = tempfile.mktemp(suffix=".png", prefix="screenshot_")
+        if full:
             try:
-                await browser.cookies.set_all([cookie])
-            except Exception as e:
-                _log_.warning(f"Failed to set cookie {cookie.name}: {e}")
-    page = await browser.get(url)
-    await page
-    await asyncio.sleep(5)
-    path = tempfile.mktemp(suffix=".png", prefix="screenshot_")
-    if full:
+                await full_page_screenshot(page, path)
+            except Exception:
+                _log_.error(traceback.format_exc())
+                await page.save_screenshot(path)
+        else:
+            await page.save_screenshot(path)
         try:
-            await full_page_screenshot(page, path)
+            await save_cookies_txt(browser)
         except Exception:
             _log_.error(traceback.format_exc())
-            await page.save_screenshot(path)
-    else:
-        await page.save_screenshot(path)
-    try:
-        await save_cookies_txt(browser)
-    except Exception:
-        _log_.error(traceback.format_exc())
-    try:
-        await browser.stop()
-    except Exception:
-        _log_.error(traceback.format_exc())
+    except Exception as e:
+        raise e
+    finally:
+        if browser:
+            try:
+                await browser.stop()
+            except Exception:
+                _log_.error(traceback.format_exc())
     output = await read_binary(path)
     return await png_to_jpg(output) if low_quality else output
 
