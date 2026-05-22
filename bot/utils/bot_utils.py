@@ -441,25 +441,25 @@ async def screenshot_page(
 
 
 async def save_cookies_txt(browser, path=".cookies.txt"):
-    # Fetch all cookies via CDP
     result = await browser.cookies.get_all()
 
     with open(path, "w") as f:
         f.write("# Netscape HTTP Cookie File\n")
         for c in result:
-            domain = c.domain if c.domain.startswith(".") else f".{c.domain}"
-            flag = "TRUE" if c.domain.startswith(".") else "FALSE"
+            if c.domain is None or c.domain == "":
+                domain = c.host   # CDP provides .host for host‑only cookies
+                flag = "FALSE"
+            else:
+                domain = c.domain if c.domain.startswith(".") else f".{c.domain}"
+                flag = "TRUE" if domain.startswith(".") else "FALSE"
+            path_val = c.path if c.path.startswith("/") else "/"
             secure = "TRUE" if c.secure else "FALSE"
-            expires = (
-                int(c.expires)
-                if c.expires and c.expires > 0
-                else int(time.time()) + 86400 * 365
-            )
-            f.write(f"{domain}\t{flag}\t{
-                    c.path}\t{secure}\t{expires}\t{
-                    c.name}\t{
-                    c.value}\n")
+            if c.expires is None or c.expires <= 0:
+                expires = 0
+            else:
+                expires = int(c.expires)
 
+            f.write(f"{domain}\t{flag}\t{path_val}\t{secure}\t{expires}\t{c.name}\t{c.value}\n")
 
 def video_timestamp_to_seconds(timestamp: str) -> int:
     parts = list(map(int, timestamp.split(":")))
