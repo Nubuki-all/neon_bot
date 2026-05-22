@@ -22,6 +22,7 @@ urlextract
 w3lib
 Wand
 yt-dlp[default,curl-cffi]
+zendriver
 git+https://github.com/Nubuki-all/neonize@patch-1
 git+https://github.com/Nubuki-all/python-anilist
 git+https://github.com/Nubuki-all/Real-ESRGAN

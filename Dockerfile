@@ -9,7 +9,7 @@ ENV TZ=Africa/Lagos
 ENV TERM=xterm
 
 # 2. Install Dependencies
-RUN dnf -qq -y update && dnf -qq -y install git bash xz wget curl python3-pip psmisc procps-ng unzip ImageMagick-devel && if [[ $(arch) == 'aarch64' ]]; then   dnf -qq -y install gcc python3-devel; fi && python3 -m pip install --upgrade pip setuptools
+RUN dnf -qq -y update && dnf -qq -y install git bash xz wget curl python3-pip psmisc procps-ng unzip ImageMagick-devel && python3 -m pip install --upgrade pip setuptools
 
 # 3. Install latest ffmpeg & other dependencies
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/64/) && \
@@ -20,6 +20,24 @@ RUN arch=$(arch) && \
 
 RUN arch=$(arch | sed s/x86_64/x86-64/) && \
     wget -q https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.5.0-linux-${arch}.tar.gz && tar -xvf *gz && cp libwebp*/bin/img2webp /usr/bin && cp libwebp*/bin/webpmux /usr/bin && rm -rf *gz && rm -rf libwebp*
+    
+RUN dnf -qq -y update && dnf -qq -y install \
+    chromium \
+    alsa-lib \
+    atk \
+    cups-libs \
+    gtk3 \
+    libXcomposite \
+    libXdamage \
+    libXrandr \
+    libXtst \
+    pango \
+    xorg-x11-server-Xvfb \
+    mesa-libGL \
+    ca-certificates \
+    && dnf clean all
+
+RUN if [[ $(arch) == 'aarch64' ]]; then   dnf -qq -y install gcc python3-devel; fi 
 
 # Install postgresql repo & latest postgresql 
 RUN if [[ $(arch) == 'x86_64' ]]; then dnf -qq -y install "https://download.postgresql.org/pub/repos/yum/reporpms/F-$(. /etc/os-release; echo $VERSION_ID)-x86_64/pgdg-fedora-repo-latest.noarch.rpm"; fi

@@ -4,6 +4,9 @@ import itertools
 import json
 import re
 import uuid
+import tempfile
+import traceback
+import os
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
@@ -14,13 +17,14 @@ import aiohttp
 import httpx
 import pytz
 import requests
+import zendriver as zd
+from PIL import Image
 from ffmpeg.asyncio import FFmpeg
 
 from bot import LOGS, bot, telegraph_errors, time
 
 THREADPOOL = ThreadPoolExecutor(max_workers=1000)
-http = httpx.AsyncClient(http2=True)
-
+_log_ = logging.getLogger(__name__)
 
 def gfn(fn):
     "gets module path"
@@ -295,34 +299,117 @@ def get_sha256(string: str):
 def trunc_string(string: str, limit: int):
     return (string[: limit - 2] + "…") if len(string) > limit else string
 
+async def full_page_screenshot(page, output="fullpage.png"):
+    full_height = await page.evaluate("document.body.scrollHeight")
+    viewport_height = await page.evaluate("window.innerHeight")
+    width = await page.evaluate("Math.max(document.body.scrollWidth, document.documentElement.scrollWidth, window.innerWidth)")
+    dpr = await page.evaluate("window.devicePixelRatio") or 1
 
-async def screenshot_page(target_url: str):
+    if not full_height or not width or full_height < 10 or width < 10:
+        await page.save_screenshot(output)
+        return
+
+    chunk_path = tempfile.mktemp(suffix=".png", prefix="chunk_")
+
+    try:
+        await page.evaluate("""
+            window.__fixedEls = [];
+            document.querySelectorAll('*').forEach(el => {
+                const pos = window.getComputedStyle(el).position;
+                if (pos === 'fixed' || pos === 'sticky') {
+                    window.__fixedEls.push([el, el.style.visibility]);
+                    el.style.visibility = 'hidden';
+                }
+            });
+        """)
+
+        img_width = int(width * dpr)
+        img_height = int(full_height * dpr)
+        stitched = Image.new("RGB", (img_width, img_height))
+        offset = 0
+
+        while offset < full_height:
+            actual_scroll = min(offset, max(0, full_height - viewport_height))
+            await page.evaluate(f"window.scrollTo(0, {actual_scroll})")
+            await asyncio.sleep(0.3)
+            await page.save_screenshot(chunk_path)
+            chunk = Image.open(chunk_path)
+
+            crop_top = int((offset - actual_scroll) * dpr)
+            if crop_top > 0:
+                chunk = chunk.crop((0, crop_top, chunk.width, chunk.height))
+
+            stitched.paste(chunk, (0, int(offset * dpr)))
+            offset += viewport_height
+
+        await page.evaluate("""
+            window.__fixedEls.forEach(([el, vis]) => el.style.visibility = vis);
+        """)
+
+        stitched.save(output)
+
+    finally:
+        if os.path.exists(chunk_path):
+            os.remove(chunk_path)
+
+def parse_netscape_cookies(file_path):
+    cookies = []
+    with open(file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            # Skip comments and empty lines
+            if line.startswith("#") or not line.strip():
+                continue
+                
+            fields = line.strip().split("\t")
+            if len(fields) < 7:
+                continue  # Skip malformed lines
+                
+            domain, flag, path, secure, expiration, name, value = fields[:7]
+            
+            # Construct dictionary compatible with Zendriver/CDP
+            cookie_dict = {
+                "name": name,
+                "value": value,
+                "domain": domain if domain.startswith(".") else f".{domain}",
+                "path": path,
+                "secure": secure.upper() == "TRUE",
+                "expires": int(expiration) if int(expiration) > 0 else None
+            }
+            cdp_cookie = zd.cdp.network.CookieParam.from_json(cookie_dict)
+            cookies.append(cdp_cookie)
+    return cookies
+
+async def screenshot_page(url: str, full: bool=False, force_dark:bool =True, low_quality: bool=False):
     """
     Generate screenshot from a url.
-    From https://github.com/AmanoTeam/EduuRobot/blob/df2cb53bc9453b08267c9885fabf6c61355a0fc3/eduu/plugins/prints.py#L81
     """
-    headers = {
-        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0",
-    }
-    data = {
-        "url": target_url,
-        # Sending a random CSS to make the API to generate a new screenshot.
-        "css": f"random-tag: {uuid.uuid4()}",
-        "render_when_ready": False,
-        "viewport_width": 1280,
-        "viewport_height": 720,
-        "device_scale": 2,
-    }
-    try:
-        resp = await http.post(
-            "https://htmlcsstoimage.com/demo_run", headers=headers, json=data
-        )
-        return resp.json()["url"]
-    except (JSONDecodeError, KeyError) as e:
-        raise Exception("Screenshot API returned an invalid response.") from e
-    except HTTPError as e:
-        raise Exception("Screenshot API seems offline. Try again later.") from e
-
+    b_args = [
+            "--window-size=1920,1080",
+            "--force-device-scale-factor=2",
+            "--force-dark-mode",
+        ]
+    if not force_dark:
+        b_args.pop(2)
+    async with await zd.start(
+        headless=True,
+        browser_args=b_args
+    ) as browser:
+        if os.path.exists(".cookies.txt"):
+            await browser.cookies.set_all(parse_netscape_cookies(".cookies.txt"))
+        page = await browser.get(url)
+        await asyncio.sleep(5)
+        path = tempfile.mktemp(suffix=".png", prefix="screenshot_")
+        if full:
+            try:
+                await full_page_screenshot(page, path)
+            except Exception:
+                _log_.error(traceback.format_exc())
+                await page.save_screenshot(path) 
+        else:
+            await page.save_screenshot(path)
+        output = await read_binary(path)
+        return await png_to_jpg(output) if low_quality else output
+        
 
 def video_timestamp_to_seconds(timestamp: str) -> int:
     parts = list(map(int, timestamp.split(":")))

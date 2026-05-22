@@ -399,15 +399,21 @@ async def screenshot(event, args, client):
             urls = extractor.find_urls(args)
             if not urls:
                 return await event.reply(f"*No link found in your message*")
+        arg, args = get_args(
+            ["-l", "store_false"],
+            ["-d", "store_true"],
+            ["-f", "store_false"],
+            to_parse=args or "",
+            get_unknown=True,
+        )
         for url in urls:
             try:
-                image_url = await screenshot_page(url)
+                image = await screenshot_page(url, arg.f, arg.d, arg.l)
             except Exception:
                 await logger(Exception)
                 await event.reply(f"Screenshot generation failed for: {url}")
             else:
-                await logger(e=image_url)
-                await event.reply_photo(image_url, caption="Screenshot from webpage")
+                await event.reply_photo(image, caption="Screenshot from webpage")
             await asyncio.sleep(3)
     except Exception:
         await logger(Exception)

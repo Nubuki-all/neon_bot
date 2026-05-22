@@ -206,6 +206,8 @@ async def parse_and_send_rss(data: dict, chat_ids: list = None):
         url = data.get("link")
         # auth_text = f" by {author}" if author else str()
         caption = f"*{title}*"
+        if not content:
+            caption += f"\n\n*Feed Link:* {url}\n"
         caption += f"\n> {summary}" if summary else ""
         if content:
             if len(content) > 65536:
