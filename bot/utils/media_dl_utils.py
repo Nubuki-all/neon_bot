@@ -348,20 +348,23 @@ class MediaHelper:
                 return
 
         self._listener.stop_progress = True
-        if self._listener.is_tiktok:
-            src = results[0].local_path
-            info = await probe_video(src)
-            issues = await needs_normalization(info, src)
-            if issues:
-                dst = f"temp/{message.chat.id}_{message.id}.mp4"
-                await message.edit("🛠️: fixing issues...")
-                needs_transcode = any(
-                    "moov" not in i and "container" not in i for i in issues
-                )
-                await normalize_for_whatsapp(src, dst, transcode=needs_transcode)
-                s_remove(src)
-                shutil.copy2(dst, src)
-                s_remove(dst)
+        if self._listener.is_tiktok and first_result.media_type == "video":
+            try:
+                src = first_result.local_path
+                info = await probe_video(src)
+                issues = await needs_normalization(info, src)
+                if issues:
+                    dst = f"temp/{message.chat.id}_{message.id}.mp4"
+                    await message.edit("🛠️: fixing issues...")
+                    needs_transcode = any(
+                        "moov" not in i and "container" not in i for i in issues
+                    )
+                    await normalize_for_whatsapp(src, dst, transcode=needs_transcode)
+                    s_remove(src)
+                    shutil.copy2(dst, src)
+                    s_remove(dst)
+            except Exception:
+                await logger(Exception)
         self._listener.completed = True
         await self.clean_up()
         return results
