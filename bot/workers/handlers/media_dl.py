@@ -262,6 +262,7 @@ async def media_reply(event, listener, t_args=None) -> bool:
         s_remove(media_dl.folder, folders=True)
         return listener.user_cancelled
     await status_msg.edit("Download completed, Now uploading…")
+    msg = event
     for file in downloads:
         file_name = file.local_path
         if not file_exists(file_name):
@@ -275,11 +276,11 @@ async def media_reply(event, listener, t_args=None) -> bool:
         log(e=f"Uploading {file_name}…")
 
         if file.media_type == "video":
-            await event.reply_video(file_name, wrap_lines_with_asterisks(file.caption))
+            msg = await msg.reply_video(file_name, wrap_lines_with_asterisks(file.caption))
         elif file.media_type == "image":
-            await event.reply_photo(file_name, wrap_lines_with_asterisks(file.caption))
+            msg = await msg.reply_photo(file_name, wrap_lines_with_asterisks(file.caption))
         elif file.media_type == "gif":
-            await event.reply_gif(
+            msg = await msg.reply_gif(
                 file_name, wrap_lines_with_asterisks(file.caption), as_gif=True
             )
         else:
