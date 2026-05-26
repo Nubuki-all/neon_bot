@@ -284,7 +284,7 @@ async def media_reply(event, listener, t_args=None) -> bool:
             )
         else:
             await logger(e=f"Unknown media type: {file.media_type}", error=True)
-        await asyncio.sleep(3) #avoid spam
+        await asyncio.sleep(3)  # avoid spam
     await media_dl.clean_up()
     s_remove(media_dl.folder, folders=True)
     await status_msg.delete() if not media_dl._listener.is_cancelled else None
