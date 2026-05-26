@@ -276,9 +276,13 @@ async def media_reply(event, listener, t_args=None) -> bool:
         log(e=f"Uploading {file_name}…")
 
         if file.media_type == "video":
-            msg = await msg.reply_video(file_name, wrap_lines_with_asterisks(file.caption))
+            msg = await msg.reply_video(
+                file_name, wrap_lines_with_asterisks(file.caption)
+            )
         elif file.media_type == "image":
-            msg = await msg.reply_photo(file_name, wrap_lines_with_asterisks(file.caption))
+            msg = await msg.reply_photo(
+                file_name, wrap_lines_with_asterisks(file.caption)
+            )
         elif file.media_type == "gif":
             msg = await msg.reply_gif(
                 file_name, wrap_lines_with_asterisks(file.caption), as_gif=True
