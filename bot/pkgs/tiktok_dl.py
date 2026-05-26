@@ -103,12 +103,14 @@ def _extract_challenge_data(html: str) -> dict:
         raise RuntimeError("No #cs element found on challenge page")
     cs_b64 = cs_match.group(1)
     try:
-        # Append padding — class attributes can't contain '=', so it's always stripped
+        # Append padding — class attributes can't contain '=', so it's always
+        # stripped
         padded = cs_b64 + "==="
         decoded = base64.b64decode(padded)
         return json.loads(decoded.decode())
     except Exception as e:
         raise RuntimeError(f"Failed to decode challenge data: {e}") from e
+
 
 def _solve_challenge_hash(challenge: dict) -> bytes:
     v = challenge.get("v")
