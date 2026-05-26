@@ -144,7 +144,12 @@ async def to_mp3(event, args, client):
         if not (replied := event.reply_to_message):
             return await event.reply("*Kindly reply to video.*")
         if not replied.video:
-            return await event.reply("*Replied message is not a video.*")
+            if replied.document:
+                if not (
+                    replied.document.mimetype.startswith("video")
+                    or is_video_file(replied.document.fileName)
+                ):
+                    return await event.reply("*Replied message is not a video.*")
         arg, args = get_args(
             "-s",
             "-t",
@@ -496,7 +501,12 @@ async def stickerize_image(event, args, client):
         if replied.short_name == "album":
             return await stickerize_album(event, args_, client)
         if not (replied.image or replied.video):
-            return await event.reply("*Replied message is not a gif/image/video.*")
+            if replied.document:
+                if not (
+                    replied.document.mimetype.startswith("video")
+                    or replied.document.mimetype.startswith("image")
+                ):
+                    return await event.reply("*Replied message is not a gif/image/video.*")
 
         async with event.react("📥"):
             file = await replied.download()
@@ -713,10 +723,12 @@ async def upscale_image(event, args, client):
             return await event.reply("*CPU heavy commands are currently disabled.*")
         replied = event.reply_to_message
         if not replied.image:
-            return await event.reply(
-                "*Command can only be used when replying to an image.*"
-            )
-        if replied.image.fileLength > 17939583:
+            if replied.document:
+                if not replied.document.mimetype.startswith("image"):
+                    return await event.reply(
+                        "*Command can only be used when replying to an image.*"
+                    )
+        if replied.media.fileLength > 17939583:
             return await sticker_reply(event, args, client, True)
         turn().append(turn_id)
         status_msg = await event.reply("*…*")
