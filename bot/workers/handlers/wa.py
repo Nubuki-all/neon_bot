@@ -506,7 +506,9 @@ async def stickerize_image(event, args, client):
                     replied.document.mimetype.startswith("video")
                     or replied.document.mimetype.startswith("image")
                 ):
-                    return await event.reply("*Replied message is not a gif/image/video.*")
+                    return await event.reply(
+                        "*Replied message is not a gif/image/video.*"
+                    )
 
         async with event.react("📥"):
             file = await replied.download()
