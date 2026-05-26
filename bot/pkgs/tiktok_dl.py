@@ -3,10 +3,13 @@ import json
 import logging
 import os
 import re
+import base64
+import json
+import hashlib
 import traceback
 from dataclasses import dataclass
 from http.cookiejar import Cookie, CookieJar
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
 import aiofiles
@@ -52,6 +55,8 @@ FULL_TIKTOK_RE = re.compile(
     r"(embed/|@[^/]+/)?(video|photo)/(?P<id>\d+)"
 )
 
+class ChallengePageError(RuntimeError):
+    """Raised when the response is a WAF challenge page instead of the real content."""
 
 @dataclass
 class DownloadResult:
@@ -83,6 +88,72 @@ def _traverse_json(obj, key: str):
                 return result
     return None
 
+def _is_challenge_page(html: str) -> bool:
+    """Heuristic: presence of WAF challenge elements."""
+    return bool(re.search(r'<p[^>]*id="cs"[^>]*class="[^"]+"', html)) or \
+           bool(re.search(r'<p[^>]*id="wci"[^>]*class="[^"]+"', html))
+
+def _extract_challenge_data(html: str) -> dict:
+    cs_match = re.search(r'<p[^>]*id="cs"[^>]*class="([^"]+)"', html)
+    if not cs_match:
+        raise RuntimeError("No #cs element found on challenge page")
+    cs_b64 = cs_match.group(1)
+    try:
+        return json.loads(base64.b64decode(cs_b64).decode())
+    except Exception as e:
+        raise RuntimeError(f"Failed to decode challenge data: {e}") from e
+
+def _solve_challenge_hash(challenge: dict) -> bytes:
+    v = challenge.get("v")
+    if not v:
+        raise RuntimeError("Challenge missing 'v' field")
+    try:
+        expected_digest = base64.b64decode(v["c"])
+        base_hash = base64.b64decode(v["a"])
+    except (KeyError, TypeError) as e:
+        raise RuntimeError(f"Invalid challenge structure: {e}") from e
+
+    for i in range(0, 1_000_001):
+        number = str(i).encode()
+        h = hashlib.sha256(base_hash)
+        h.update(number)
+        if h.digest() == expected_digest:
+            return base64.b64encode(number)
+    raise RuntimeError("No matching integer found in range 0..1,000,000")
+
+def _build_wci_cookie_value(challenge: dict, solution_b64: bytes) -> str:
+    challenge["d"] = solution_b64.decode()
+    return base64.b64encode(
+        json.dumps(challenge, separators=(',', ':')).encode()
+    ).decode()
+
+def _extract_challenge_cookie_names_and_rci(html: str):
+    wci_match = re.search(r'<p[^>]*id="wci"[^>]*class="([^"]+)"', html)
+    wci_name = wci_match.group(1) if wci_match else "_wafchallengeid"
+
+    rci_match = re.search(r'<p[^>]*id="rci"[^>]*class="([^"]+)"', html)
+    rci_name = rci_match.group(1) if rci_match else None
+
+    rs_match = re.search(r'<p[^>]*id="rs"[^>]*class="([^"]+)"', html)
+    rci_value = rs_match.group(1) if rs_match else None
+
+    return wci_name, rci_name, rci_value
+
+async def _solve_tiktok_challenge(client: httpx.AsyncClient, challenge_html: str) -> None:
+    """
+    Extract challenge data from the HTML, compute the solution, and set the
+    required cookies on the httpx client.
+    """
+    challenge = _extract_challenge_data(challenge_html)
+    solution_b64 = _solve_challenge_hash(challenge)
+    wci_value = _build_wci_cookie_value(challenge, solution_b64)
+    wci_name, rci_name, rci_value = _extract_challenge_cookie_names_and_rci(challenge_html)
+
+    # Set cookies (httpx.Cookies expects domain and path)
+    client.cookies.set(wci_name, wci_value, domain=".tiktok.com", path="/")
+    if rci_name and rci_value:
+        client.cookies.set(rci_name, rci_value, domain=".tiktok.com", path="/")
+    # Optionally, you could also remove the old wci/rci cookies if they exist, but not necessary
 
 def _load_netscape_cookies(filepath: str) -> CookieJar:
     """Load Netscape-format cookies into a CookieJar usable by httpx."""
@@ -226,6 +297,13 @@ async def _fetch_tiktok_page(
             # Convert httpx.Cookies to a plain dict for easy reuse
             response_cookies = dict(resp.cookies.items())
             return item_struct, response_cookies
+        except ChallengePageError as e:
+            last_exc = e
+            try:
+                await _solve_tiktok_challenge(client, body)
+                continue
+            except Exception:
+                _log_.error(traceback.format_exc())
         except Exception as e:
             last_exc = e
             await asyncio.sleep(1)
@@ -240,6 +318,8 @@ def _parse_universal_data(html: str) -> dict:
         re.DOTALL,
     )
     if not match:
+        if _is_challenge_page(html):
+            raise ChallengePageError("Universal data script not found")
         raise RuntimeError("Universal data script not found")
     data = json.loads(match.group(1))
     default_scope = _traverse_json(data, "__DEFAULT_SCOPE__")
