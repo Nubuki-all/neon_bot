@@ -1,15 +1,14 @@
 import asyncio
+import base64
+import hashlib
 import json
 import logging
 import os
 import re
-import base64
-import json
-import hashlib
 import traceback
 from dataclasses import dataclass
 from http.cookiejar import Cookie, CookieJar
-from typing import Awaitable, Callable, List, Optional, Tuple
+from typing import Awaitable, Callable, List, Optional
 from urllib.parse import parse_qs, urlparse
 
 import aiofiles
@@ -55,8 +54,10 @@ FULL_TIKTOK_RE = re.compile(
     r"(embed/|@[^/]+/)?(video|photo)/(?P<id>\d+)"
 )
 
+
 class ChallengePageError(RuntimeError):
     """Raised when the response is a WAF challenge page instead of the real content."""
+
 
 @dataclass
 class DownloadResult:
@@ -88,10 +89,13 @@ def _traverse_json(obj, key: str):
                 return result
     return None
 
+
 def _is_challenge_page(html: str) -> bool:
     """Heuristic: presence of WAF challenge elements."""
-    return bool(re.search(r'<p[^>]*id="cs"[^>]*class="[^"]+"', html)) or \
-           bool(re.search(r'<p[^>]*id="wci"[^>]*class="[^"]+"', html))
+    return bool(re.search(r'<p[^>]*id="cs"[^>]*class="[^"]+"', html)) or bool(
+        re.search(r'<p[^>]*id="wci"[^>]*class="[^"]+"', html)
+    )
+
 
 def _extract_challenge_data(html: str) -> dict:
     cs_match = re.search(r'<p[^>]*id="cs"[^>]*class="([^"]+)"', html)
@@ -102,6 +106,7 @@ def _extract_challenge_data(html: str) -> dict:
         return json.loads(base64.b64decode(cs_b64).decode())
     except Exception as e:
         raise RuntimeError(f"Failed to decode challenge data: {e}") from e
+
 
 def _solve_challenge_hash(challenge: dict) -> bytes:
     v = challenge.get("v")
@@ -121,11 +126,13 @@ def _solve_challenge_hash(challenge: dict) -> bytes:
             return base64.b64encode(number)
     raise RuntimeError("No matching integer found in range 0..1,000,000")
 
+
 def _build_wci_cookie_value(challenge: dict, solution_b64: bytes) -> str:
     challenge["d"] = solution_b64.decode()
     return base64.b64encode(
-        json.dumps(challenge, separators=(',', ':')).encode()
+        json.dumps(challenge, separators=(",", ":")).encode()
     ).decode()
+
 
 def _extract_challenge_cookie_names_and_rci(html: str):
     wci_match = re.search(r'<p[^>]*id="wci"[^>]*class="([^"]+)"', html)
@@ -139,7 +146,10 @@ def _extract_challenge_cookie_names_and_rci(html: str):
 
     return wci_name, rci_name, rci_value
 
-async def _solve_tiktok_challenge(client: httpx.AsyncClient, challenge_html: str) -> None:
+
+async def _solve_tiktok_challenge(
+    client: httpx.AsyncClient, challenge_html: str
+) -> None:
     """
     Extract challenge data from the HTML, compute the solution, and set the
     required cookies on the httpx client.
@@ -147,13 +157,17 @@ async def _solve_tiktok_challenge(client: httpx.AsyncClient, challenge_html: str
     challenge = _extract_challenge_data(challenge_html)
     solution_b64 = _solve_challenge_hash(challenge)
     wci_value = _build_wci_cookie_value(challenge, solution_b64)
-    wci_name, rci_name, rci_value = _extract_challenge_cookie_names_and_rci(challenge_html)
+    wci_name, rci_name, rci_value = _extract_challenge_cookie_names_and_rci(
+        challenge_html
+    )
 
     # Set cookies (httpx.Cookies expects domain and path)
     client.cookies.set(wci_name, wci_value, domain=".tiktok.com", path="/")
     if rci_name and rci_value:
         client.cookies.set(rci_name, rci_value, domain=".tiktok.com", path="/")
-    # Optionally, you could also remove the old wci/rci cookies if they exist, but not necessary
+    # Optionally, you could also remove the old wci/rci cookies if they exist,
+    # but not necessary
+
 
 def _load_netscape_cookies(filepath: str) -> CookieJar:
     """Load Netscape-format cookies into a CookieJar usable by httpx."""
