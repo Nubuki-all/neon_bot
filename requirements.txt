@@ -26,6 +26,7 @@ zendriver
 git+https://github.com/Nubuki-all/neonize@patch-1
 git+https://github.com/Nubuki-all/python-anilist
 git+https://github.com/Nubuki-all/Real-ESRGAN
+objection_engine[languages] @ git+https://github.com/Nubuki-all/objection_engine
 #Snyk pins 
 certifi>=2023.7.22 # not directly required, pinned by Snyk to avoid a vulnerability
 dnspython>=2.6.0rc1 # not directly required, pinned by Snyk to avoid a vulnerability
