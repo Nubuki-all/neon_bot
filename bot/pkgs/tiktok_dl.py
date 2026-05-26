@@ -103,10 +103,12 @@ def _extract_challenge_data(html: str) -> dict:
         raise RuntimeError("No #cs element found on challenge page")
     cs_b64 = cs_match.group(1)
     try:
-        return json.loads(base64.b64decode(cs_b64).decode())
+        # Append padding — class attributes can't contain '=', so it's always stripped
+        padded = cs_b64 + "==="
+        decoded = base64.b64decode(padded)
+        return json.loads(decoded.decode())
     except Exception as e:
         raise RuntimeError(f"Failed to decode challenge data: {e}") from e
-
 
 def _solve_challenge_hash(challenge: dict) -> bytes:
     v = challenge.get("v")
@@ -165,8 +167,8 @@ async def _solve_tiktok_challenge(
     client.cookies.set(wci_name, wci_value, domain=".tiktok.com", path="/")
     if rci_name and rci_value:
         client.cookies.set(rci_name, rci_value, domain=".tiktok.com", path="/")
-    # Optionally, you could also remove the old wci/rci cookies if they exist,
-    # but not necessary
+    # Optionally, remove the old wci/rci cookies after fetching the webpage again
+    # not necessary(?)
 
 
 def _load_netscape_cookies(filepath: str) -> CookieJar:
