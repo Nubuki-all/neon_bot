@@ -2,14 +2,16 @@ import asyncio
 import os
 import shutil
 import time
+
 from objection_engine.beans.comment import Comment
 from objection_engine.renderer import render_comment_list
 
-from bot import bot, heavy_proc_lock, conf
+from bot import conf, heavy_proc_lock
 from bot.utils.log_utils import logger
 from bot.utils.msg_store import get_messages_between
 
 objection_sessions = {}
+
 
 async def insession(event, args, client):
     """
@@ -19,16 +21,14 @@ async def insession(event, args, client):
     chat_id = event.chat.id
     start_msg_id = event.reply_to_message.id if event.reply_to_message else event.id
 
-    objection_sessions[chat_id] = {
-        "start_id": start_msg_id,
-        "time": time.time()
-    }
+    objection_sessions[chat_id] = {"start_id": start_msg_id, "time": time.time()}
 
     await event.reply(
         f"Objection session started from message ID: `{start_msg_id}`.\n"
         f"Reply to the ending message with `{conf.CMD_PREFIX}renderobj` to generate the video.\n"
         "Session expires in 300 seconds."
     )
+
 
 async def render_objection(event, args, client):
     """
@@ -39,11 +39,15 @@ async def render_objection(event, args, client):
     session = objection_sessions.get(chat_id)
 
     if not session:
-        return await event.reply(f"No active objection session in this chat. Start one with `{conf.CMD_PREFIX}insession`.")
+        return await event.reply(
+            f"No active objection session in this chat. Start one with `{conf.CMD_PREFIX}insession`."
+        )
 
     if time.time() - session["time"] > 300:
         del objection_sessions[chat_id]
-        return await event.reply(f"Objection session timed out. Start a new one with `{conf.CMD_PREFIX}insession`.")
+        return await event.reply(
+            f"Objection session timed out. Start a new one with `{conf.CMD_PREFIX}insession`."
+        )
 
     end_msg_id = event.reply_to_message.id if event.reply_to_message else event.id
     start_id = session["start_id"]
@@ -61,7 +65,9 @@ async def render_objection(event, args, client):
             os.makedirs(temp_dir, exist_ok=True)
 
             for msg in messages:
-                is_image = msg.image or (msg.document and msg.document.mimetype.startswith("image"))
+                is_image = msg.image or (
+                    msg.document and msg.document.mimetype.startswith("image")
+                )
                 if not (msg.text or is_image):
                     continue
 
@@ -75,15 +81,19 @@ async def render_objection(event, args, client):
                     await msg.download(img_path)
                     evidence_path = img_path
 
-                comments.append(Comment(
-                    user_id=user_id,
-                    user_name=user_name,
-                    text_content=text,
-                    evidence_path=evidence_path
-                ))
+                comments.append(
+                    Comment(
+                        user_id=user_id,
+                        user_name=user_name,
+                        text_content=text,
+                        evidence_path=evidence_path,
+                    )
+                )
 
             if not comments:
-                return await event.reply("No valid text or image messages found in the range.")
+                return await event.reply(
+                    "No valid text or image messages found in the range."
+                )
 
             output_file = os.path.join(temp_dir, "objection_video.mp4")
 
@@ -92,11 +102,13 @@ async def render_objection(event, args, client):
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(
                     None,
-                    lambda: render_comment_list(comments, output_filename=output_file)
+                    lambda: render_comment_list(comments, output_filename=output_file),
                 )
 
             if os.path.exists(output_file):
-                await event.reply_video(output_file, caption="Here is your objection video!")
+                await event.reply_video(
+                    output_file, caption="Here is your objection video!"
+                )
             else:
                 await event.reply("Failed to generate objection video.")
 
