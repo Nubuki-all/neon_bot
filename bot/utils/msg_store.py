@@ -194,6 +194,38 @@ async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100
         raise e
 
 
+async def get_messages_between(chat_id: str, start_id: str, end_id: str):
+    try:
+        async with async_session() as session:
+            stmt_start = select(Message.timestamp).where(
+                and_(Message.chat_id == chat_id, Message.id == start_id)
+            )
+            stmt_end = select(Message.timestamp).where(
+                and_(Message.chat_id == chat_id, Message.id == end_id)
+            )
+            ts_start = (await session.execute(stmt_start)).scalar()
+            ts_end = (await session.execute(stmt_end)).scalar()
+            if ts_start is None or ts_end is None:
+                return []
+            min_ts, max_ts = min(ts_start, ts_end), max(ts_start, ts_end)
+            stmt = (
+                select(Message)
+                .where(
+                    and_(
+                        Message.chat_id == chat_id,
+                        Message.visible,
+                        Message.timestamp >= min_ts,
+                        Message.timestamp <= max_ts,
+                    )
+                )
+                .order_by(Message.timestamp.asc())
+            )
+            results = (await session.scalars(stmt)).all()
+        return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
+    except Exception as e:
+        raise e
+
+
 async def auto_save_msg():
     bot.auto_save_msg_is_running = True
     while True:

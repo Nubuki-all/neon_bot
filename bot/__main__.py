@@ -45,6 +45,7 @@ from .workers.handlers.manage import (
     ytdl_enable,
 )
 from .workers.handlers.media_dl import youtube_reply
+from .workers.handlers.objection import insession, render_objection
 from .workers.handlers.role import roles
 from .workers.handlers.stuff import gc_info, getcmds, hello, up
 from .workers.handlers.wa import gc_handler, handle_self_join, sticker_reply
@@ -228,6 +229,16 @@ async def _(client: NewAClient, message: Event):
 @bot.register("update")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, update_handler)
+
+
+@bot.register("insession")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, insession)
+
+
+@bot.register("renderobj")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, render_objection)
 
 
 @bot.register("restart")
