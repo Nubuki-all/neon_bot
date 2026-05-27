@@ -98,11 +98,11 @@ async def render_objection(event, args, client):
             output_file = os.path.join(temp_dir, "objection_video.mp4")
 
             async with heavy_proc_lock:
-                # render_comment_list is likely synchronous and heavy
+                # render_comment_list is likely heavy (depending on the amount of comments)
                 loop = asyncio.get_event_loop()
                 await loop.run_in_executor(
                     None,
-                    lambda: render_comment_list(comments, output_filename=output_file),
+                    lambda: render_comment_list(comments, output_filename=output_file, resolution_scale=2.0),
                 )
 
             if os.path.exists(output_file):

@@ -45,6 +45,7 @@ async def getcmds(event, args, client):
 {pre}ytdl_* - *[Owner | Sudo] Disables/Enables Ytdl*
 {pre}amr_* - *[Owner | Sudo] Disables/Enables Auto msg ranking
 {pre}roles - *Get commands for roles*
+{pre}insession - *Starts an Ace attorney objection session*
 {pre}disable - *[Owner | Sudo] Disable bot in a GC*
 {pre}enable - *[Owner | Sudo] Enable bot in a GC*
 {pre}del - *[Owner | Sudo] Delete bot's messages*
