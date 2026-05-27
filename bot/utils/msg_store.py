@@ -213,7 +213,7 @@ async def get_messages_between(chat_id: str, start_id: str, end_id: str):
                 .where(
                     and_(
                         Message.chat_id == chat_id,
-                        Message.visible,
+                        Message.visible == True,
                         Message.timestamp >= min_ts,
                         Message.timestamp <= max_ts,
                     )
