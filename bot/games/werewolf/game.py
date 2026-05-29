@@ -1,5 +1,4 @@
 import random
-import asyncio
 from datetime import datetime
 
 from bot.config import bot
@@ -21,7 +20,7 @@ class Game:
         self.chat_jid = event.chat.jid
 
         self.requested_mode = mode
-        self.mode = mode or "default" # Placeholder until lobby starts
+        self.mode = mode or "default"  # Placeholder until lobby starts
 
         self.player_ids = [event.from_user.id]
         self.player_names = {event.from_user.id: event.from_user.name}
@@ -32,7 +31,7 @@ class Game:
         self.night = False
         self.waiting = True
         self.in_progress = False
-        self.restricted = False # Restricted mode flag
+        self.restricted = False  # Restricted mode flag
 
         self.start_time = None
         self.night_start_time = None
@@ -47,7 +46,7 @@ class Game:
 
     def select_mode_by_chance(self):
         if self.requested_mode:
-             return self.requested_mode
+            return self.requested_mode
 
         available_modes = []
         chances = []
@@ -130,7 +129,9 @@ class Game:
             self.players[user_id] = player
 
         for template in self.template_pool:
-            eligible_players = [p for p in self.players.values() if template not in p.templates]
+            eligible_players = [
+                p for p in self.players.values() if template not in p.templates
+            ]
             random.shuffle(eligible_players)
             for player in eligible_players:
                 if template == "cursed villager":
@@ -158,12 +159,14 @@ class Game:
             return await event.reply("The game has already started!")
         if event.from_user.id in self.player_ids:
             return await event.reply("You've already joined the game!")
-        if len(self.player_ids) >= 24: # Hard limit
+        if len(self.player_ids) >= 24:  # Hard limit
             return await event.reply("The game is full!")
 
         self.player_ids.append(event.from_user.id)
         self.player_names[event.from_user.id] = event.from_user.name
-        return await event.reply(f"{event.from_user.name} has joined the game. ({self.total_players}/24)")
+        return await event.reply(
+            f"{event.from_user.name} has joined the game. ({self.total_players}/24)"
+        )
 
     async def status(self, event):
         if self.waiting:

@@ -8,7 +8,8 @@ class Player:
         self.team = roles.get(role)[0]
         self.description = roles.get(role)[2]
         self.id = _id  # In-game ID (numeric 1, 2, 3...)
-        self.user_id = user_id  # WhatsApp user ID (e.g. "123456789@s.whatsapp.net")
+        # WhatsApp user ID (e.g. "123456789@s.whatsapp.net")
+        self.user_id = user_id
         self.name = name
 
         self.is_dead = False
@@ -16,13 +17,14 @@ class Player:
         self.is_lynched = False
 
         self.templates = []  # e.g. ["gunner", "cursed villager"]
-        self.other_data = []  # To store things like 'charmed', 'entranced', 'hexed', 'sick', etc.
+        # To store things like 'charmed', 'entranced', 'hexed', 'sick', etc.
+        self.other_data = []
         self.target = ""  # Night target (user_id)
         self.vote = ""  # Day vote target (user_id)
         self.totem = ""  # Shaman totem to give or received totem
         self.bullet_count = 0
 
-        self.last_target = "" # For shaman/GA restriction
+        self.last_target = ""  # For shaman/GA restriction
 
         # Special state variables
         self.loves = None  # user_id of lover
@@ -39,7 +41,21 @@ class Player:
         # Wolves, minions, cultists (in some modes), and entranced players
         if "entranced" in self.other_data:
             return True
-        if self.role in ["wolf", "werecrow", "wolf cub", "werekitten", "wolf shaman", "traitor", "sorcerer", "cultist", "minion", "doomsayer", "hag", "warlock", "wolf mystic"]:
+        if self.role in [
+            "wolf",
+            "werecrow",
+            "wolf cub",
+            "werekitten",
+            "wolf shaman",
+            "traitor",
+            "sorcerer",
+            "cultist",
+            "minion",
+            "doomsayer",
+            "hag",
+            "warlock",
+            "wolf mystic",
+        ]:
             return True
         return False
 
