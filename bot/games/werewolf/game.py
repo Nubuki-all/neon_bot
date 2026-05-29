@@ -1,4 +1,6 @@
 import random
+import asyncio
+import math
 from datetime import datetime
 
 from bot.config import bot
@@ -8,6 +10,9 @@ from .defaults import (
     DEFAULT_DAY_WARNING,
     DEFAULT_NIGHT_TIMEOUT,
     DEFAULT_NIGHT_WARNING,
+    WOLFCHAT_ROLES,
+    GUNNER_MULTIPLIER,
+    SHARPSHOOTER_MULTIPLIER,
 )
 from .player import Player
 from .roles import gamemodes, roles
@@ -15,12 +20,12 @@ from .roles import gamemodes, roles
 
 class Game:
     def __init__(self, event, mode=None):
-        self.game_id = 0  # Unique 4-digit ID
+        self.game_id = 0
         self.chat_id = event.chat.id
         self.chat_jid = event.chat.jid
 
         self.requested_mode = mode
-        self.mode = mode or "default"  # Placeholder until lobby starts
+        self.mode = mode or "default"
 
         self.player_ids = [event.from_user.id]
         self.player_names = {event.from_user.id: event.from_user.name}
@@ -31,13 +36,14 @@ class Game:
         self.night = False
         self.waiting = True
         self.in_progress = False
-        self.restricted = False  # Restricted mode flag
+        self.restricted = False
 
         self.start_time = None
         self.night_start_time = None
         self.day_start_time = None
 
         self.night_num = 0
+        self.detective_acted = False
 
         self.day_warning = DEFAULT_DAY_WARNING
         self.day_timeout = DEFAULT_DAY_TIMEOUT
@@ -46,19 +52,15 @@ class Game:
 
     def select_mode_by_chance(self):
         if self.requested_mode:
-            return self.requested_mode
-
+             return self.requested_mode
         available_modes = []
         chances = []
-
         for m, data in gamemodes.items():
             if data.get("chance", 0) > 0:
                 available_modes.append(m)
                 chances.append(data["chance"])
-
         if not available_modes:
             return "default"
-
         return random.choices(available_modes, weights=chances, k=1)[0]
 
     @property
@@ -85,14 +87,9 @@ class Game:
     def set_each_role_numbers_and_pool(self):
         self.mode = self.select_mode_by_chance()
         mode_data = gamemodes.get(self.mode)
-        self.min_players = mode_data["min_players"]
-        self.max_players = mode_data["max_players"]
-
         self.role_pool = []
         self.template_pool = []
-
         idx = self.total_players - 4
-
         for role_name, counts in mode_data.get("roles", {}).items():
             if idx < 0:
                 count = counts[0] if counts else 0
@@ -100,7 +97,6 @@ class Game:
                 count = counts[idx] if idx < len(counts) else counts[-1]
             if count <= 0:
                 continue
-
             if roles.get(role_name)[0] == "template":
                 for _ in range(count):
                     self.template_pool.append(role_name)
@@ -129,9 +125,7 @@ class Game:
             self.players[user_id] = player
 
         for template in self.template_pool:
-            eligible_players = [
-                p for p in self.players.values() if template not in p.templates
-            ]
+            eligible_players = [p for p in self.players.values() if template not in p.templates]
             random.shuffle(eligible_players)
             for player in eligible_players:
                 if template == "cursed villager":
@@ -145,6 +139,10 @@ class Game:
                         continue
 
                 player.templates.append(template)
+                if template == "gunner":
+                     player.bullet_count = math.ceil(self.total_players * GUNNER_MULTIPLIER)
+                elif template == "sharpshooter":
+                     player.bullet_count = math.ceil(self.total_players * SHARPSHOOTER_MULTIPLIER)
                 break
 
         self.in_progress = True
@@ -154,19 +152,24 @@ class Game:
     async def send_lobby(self, message):
         await bot.client.send_message(self.chat_jid, message)
 
+    async def wolfchat(self, message):
+        for p in self.players.values():
+            if p.is_alive and p.role in WOLFCHAT_ROLES:
+                try:
+                    await bot.client.send_message(p.user_id, f"[WOLFCHAT] {message}")
+                except Exception:
+                    pass
+
     async def join(self, event):
         if not self.waiting:
             return await event.reply("The game has already started!")
         if event.from_user.id in self.player_ids:
             return await event.reply("You've already joined the game!")
-        if len(self.player_ids) >= 24:  # Hard limit
+        if len(self.player_ids) >= 24:
             return await event.reply("The game is full!")
-
         self.player_ids.append(event.from_user.id)
         self.player_names[event.from_user.id] = event.from_user.name
-        return await event.reply(
-            f"{event.from_user.name} has joined the game. ({self.total_players}/24)"
-        )
+        return await event.reply(f"{event.from_user.name} has joined the game. ({self.total_players}/24)")
 
     async def status(self, event):
         if self.waiting:
@@ -185,6 +188,16 @@ class Game:
             msg += f"Restricted: {self.restricted}\n"
             msg += "*Players:*\n"
             for p in self.players.values():
-                status = "💀" if p.is_dead else "🟢"
+                status = "💀" if not p.is_alive else "🟢"
                 msg += f"{status} {p.name} (#{p.id})\n"
             await event.reply(msg)
+
+    async def check_traitor(self):
+        wolves = [p for p in self.players_alive_list if p.team == "wolf" and p.role != "traitor"]
+        if not wolves:
+             traitors = [p for p in self.players_alive_list if p.role == "traitor"]
+             for t in traitors:
+                  t.role = "wolf"
+                  t.team = "wolf"
+                  await bot.client.send_message(t.user_id, "All other wolves are dead! You have turned into a *wolf*!")
+                  await self.wolfchat(f"{t.name} has turned into a wolf!")
