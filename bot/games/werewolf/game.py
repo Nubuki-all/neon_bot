@@ -1,6 +1,5 @@
-import random
-import asyncio
 import math
+import random
 from datetime import datetime
 
 from bot.config import bot
@@ -10,9 +9,9 @@ from .defaults import (
     DEFAULT_DAY_WARNING,
     DEFAULT_NIGHT_TIMEOUT,
     DEFAULT_NIGHT_WARNING,
-    WOLFCHAT_ROLES,
     GUNNER_MULTIPLIER,
     SHARPSHOOTER_MULTIPLIER,
+    WOLFCHAT_ROLES,
 )
 from .player import Player
 from .roles import gamemodes, roles
@@ -52,7 +51,7 @@ class Game:
 
     def select_mode_by_chance(self):
         if self.requested_mode:
-             return self.requested_mode
+            return self.requested_mode
         available_modes = []
         chances = []
         for m, data in gamemodes.items():
@@ -125,7 +124,9 @@ class Game:
             self.players[user_id] = player
 
         for template in self.template_pool:
-            eligible_players = [p for p in self.players.values() if template not in p.templates]
+            eligible_players = [
+                p for p in self.players.values() if template not in p.templates
+            ]
             random.shuffle(eligible_players)
             for player in eligible_players:
                 if template == "cursed villager":
@@ -140,9 +141,13 @@ class Game:
 
                 player.templates.append(template)
                 if template == "gunner":
-                     player.bullet_count = math.ceil(self.total_players * GUNNER_MULTIPLIER)
+                    player.bullet_count = math.ceil(
+                        self.total_players * GUNNER_MULTIPLIER
+                    )
                 elif template == "sharpshooter":
-                     player.bullet_count = math.ceil(self.total_players * SHARPSHOOTER_MULTIPLIER)
+                    player.bullet_count = math.ceil(
+                        self.total_players * SHARPSHOOTER_MULTIPLIER
+                    )
                 break
 
         self.in_progress = True
@@ -169,7 +174,9 @@ class Game:
             return await event.reply("The game is full!")
         self.player_ids.append(event.from_user.id)
         self.player_names[event.from_user.id] = event.from_user.name
-        return await event.reply(f"{event.from_user.name} has joined the game. ({self.total_players}/24)")
+        return await event.reply(
+            f"{event.from_user.name} has joined the game. ({self.total_players}/24)"
+        )
 
     async def status(self, event):
         if self.waiting:
@@ -193,11 +200,18 @@ class Game:
             await event.reply(msg)
 
     async def check_traitor(self):
-        wolves = [p for p in self.players_alive_list if p.team == "wolf" and p.role != "traitor"]
+        wolves = [
+            p
+            for p in self.players_alive_list
+            if p.team == "wolf" and p.role != "traitor"
+        ]
         if not wolves:
-             traitors = [p for p in self.players_alive_list if p.role == "traitor"]
-             for t in traitors:
-                  t.role = "wolf"
-                  t.team = "wolf"
-                  await bot.client.send_message(t.user_id, "All other wolves are dead! You have turned into a *wolf*!")
-                  await self.wolfchat(f"{t.name} has turned into a wolf!")
+            traitors = [p for p in self.players_alive_list if p.role == "traitor"]
+            for t in traitors:
+                t.role = "wolf"
+                t.team = "wolf"
+                await bot.client.send_message(
+                    t.user_id,
+                    "All other wolves are dead! You have turned into a *wolf*!",
+                )
+                await self.wolfchat(f"{t.name} has turned into a wolf!")
