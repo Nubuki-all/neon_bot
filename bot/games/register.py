@@ -15,16 +15,15 @@ def register_for_a_game(game_name: str, event):
             if not game.waiting:
                 return "started"
         elif isinstance(game, dict) and game.get("started"):
-            return "started"
+             return "started"
 
     # If we are just checking if we can proceed with commands
     return True
 
-
 def add_player_to_game(game_name: str, event):
     # This matches the user's original intent for registration
     bot.current_games_dict.setdefault(game_name, {}).setdefault(
-        event.chat.id, {}  # This will be replaced by Game object later or used as info
+        event.chat.id, {} # This will be replaced by Game object later or used as info
     )
     # If Game object exists, it should handle its own player list,
     # but we can keep this for compatibility if needed.
