@@ -16,7 +16,9 @@ class Player:
         self.is_lynched = False
 
         self.templates = []  # e.g., ["gunner", "cursed"]
-        self.other = []  # List of strings for various states (compatibility with original logic)
+        # List of strings for various states (compatibility with original
+        # logic)
+        self.other = []
 
         self.target = ""  # Night target
         self.vote = ""  # Day vote
@@ -48,7 +50,7 @@ class Player:
     def actual_team(self):
         # logic for turncoat, etc.
         if self.role == "turncoat":
-             return "wolf" if "side:wolves" in self.other else "village"
+            return "wolf" if "side:wolves" in self.other else "village"
         return self.team
 
     def add_other(self, state):
