@@ -1128,6 +1128,7 @@ async def tag_all_admins(event, args, client):
             "reply",
             "_*Tagged all admins!*_" if mentions[0][1] else tags.split()[0],
             ghost_mentions=tags if mentions[0][1] else tags.split()[0],
+            mentions_are_lids=event.lid_address,
         )
     except Exception:
         await logger(Exception)
@@ -1223,6 +1224,7 @@ async def tag_everyone(event, args, client):
             "reply",
             "_*Tagged everyone!*_",
             ghost_mentions=tags,
+            mentions_are_lids=event.lid_address,
         )
     except Exception:
         await logger(Exception)
