@@ -27,6 +27,7 @@ from .workers.handlers.ani import airing, anime
 from .workers.handlers.chatbot import add_chatbot_handler
 from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.fun import getmeme
+from .workers.handlers.game import werewolf_handler, werewolf_restriction_handler
 from .workers.handlers.manage import (
     ban,
     delete,
@@ -139,6 +140,26 @@ async def _(client: NewAClient, message: Event):
 @bot.register("roles")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, roles, client)
+
+
+@bot.register("werewolf")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, werewolf_handler, client)
+
+
+@bot.register("lynch")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, werewolf_handler, client)
+
+
+@bot.register("id")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, werewolf_handler, client)
+
+
+@bot.register("shoot")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, werewolf_handler, client)
 
 
 @bot.register("cmds")
@@ -265,6 +286,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register(None)
 async def _(client: NewAClient, message: Event):
     await afk_helper(message, None, client)
+
+
+@bot.register(None)
+async def _(client: NewAClient, message: Event):
+    await werewolf_restriction_handler(client, message)
 
 
 @bot.register(POLL)
