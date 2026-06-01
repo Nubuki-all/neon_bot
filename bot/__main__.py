@@ -306,8 +306,8 @@ async def start_bot():
         if len(sys.argv) != 3:
             await restore_wa_db()
         await bot.client.connect()
-        if conf.PH_NUMBER:
-            await bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
+        # if conf.PH_NUMBER:
+        # await bot.client.PairPhone(conf.PH_NUMBER, show_push_notification=True)
         await on_startup()
         await bot.client.idle()
     except Exception:
