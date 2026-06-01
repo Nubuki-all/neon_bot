@@ -12,6 +12,7 @@ from . import (
     NewAClient,
     PairStatusEv,
     bot,
+    conf,
     sys,
     time,
     traceback,
@@ -304,10 +305,10 @@ async def start_bot():
     try:
         if len(sys.argv) != 3:
             await restore_wa_db()
-        await bot.client.connect()
-        # if conf.PH_NUMBER:
-        # await bot.client.PairPhone(conf.PH_NUMBER,
-        # show_push_notification=True)
+        payload = b""
+        if conf.PH_NUMBER:
+            payload = bot.client.prepare_pair_phone_payload(conf.PH_NUMBER, show_push_notification=True)
+        await bot.client.connect(payload)
         await on_startup()
         await bot.client.idle()
     except Exception:
