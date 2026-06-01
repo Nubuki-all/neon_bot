@@ -10,6 +10,7 @@ from .defaults import (
     DEFAULT_NIGHT_TIMEOUT,
     DEFAULT_NIGHT_WARNING,
     GUNNER_MULTIPLIER,
+    MIN_PLAYERS,
     SHARPSHOOTER_MULTIPLIER,
     WOLFCHAT_ROLES,
 )
@@ -55,12 +56,18 @@ class Game:
         available_modes = []
         chances = []
         for m, data in gamemodes.items():
-            if data.get("chance", 0) > 0:
+            if data.get("chance", 0) > 0 and self.total_players >= data.get("min_players", MIN_PLAYERS):
                 available_modes.append(m)
                 chances.append(data["chance"])
         if not available_modes:
             return "default"
         return random.choices(available_modes, weights=chances, k=1)[0]
+
+    @property
+    def min_players(self):
+        if self.requested_mode:
+            return gamemodes[self.requested_mode].get("min_players", MIN_PLAYERS)
+        return MIN_PLAYERS
 
     @property
     def total_players(self):

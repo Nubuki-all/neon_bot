@@ -267,17 +267,16 @@ async def auto_start_manager(event, game):
     e = asyncio.Event()
 
     async def btn_callback(event, poll_msg_key):
-        async with sudo_btn_lock:
-            selected = await bot.client.decrypt_poll_vote(event.message)
-            if not (poll_info := active_poll_dict.get(poll_msg_key.ID)):
-                return
-            actions = [poll_info.get(s.hex()) for s in selected.selectedOptions]
-            if "join" in actions:
-                e.set()
-                return await game.join(event, notify=True)
-            elif "leave" in actions:
-                e.set()
-                return await game.leave(event, notify=True)
+        selected = await bot.client.decrypt_poll_vote(event.message)
+        if not (poll_info := active_poll_dict.get(poll_msg_key.ID)):
+            return
+        actions = [poll_info.get(s.hex()) for s in selected.selectedOptions]
+        if "join" in actions:
+            e.set()
+            return await game.join(event, notify=True)
+        elif "leave" in actions:
+            e.set()
+            return await game.leave(event, notify=True)
 
     _, msg = await create_sudo_button(
         name="Werewolf Game Lobby",
