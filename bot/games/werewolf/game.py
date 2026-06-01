@@ -199,7 +199,7 @@ class Game:
             return await event.reply("The game has already started!")
         if event.from_user.id not in self.player_ids:
             return await event.reply("You've not joined the game!")
-        del self.player_ids[event.from_user.id]
+        self.player_ids.remove(event.from_user.id)
         self.player_names.pop(event.from_user.id)
         return (
             await event.reply(
