@@ -103,7 +103,7 @@ async def werewolf_handler(event, args, client):
             return await event.reply("Cannot change mode after game started.")
 
         mode_name = arg.mode
-        if not mode_name.casefold() == "all":
+        if mode_name.casefold() == "all":
             msg = "*Available Gamemodes:*\n"
             for m, data in gamemodes.items():
                 msg += f"- *{m}*: {data['description']}\n"
