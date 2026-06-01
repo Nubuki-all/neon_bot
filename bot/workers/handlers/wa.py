@@ -2153,9 +2153,10 @@ async def test_button(event, args, client):
         button_dict.update({uuid.uuid4(): ["Button 2", "Another information."]})
         button_dict.update({uuid.uuid4(): ["Button 3", "More information."]})
         title = "Poll message to test the usability of polls as buttons."
-        poll_msg_, msg_id = await create_sudo_button(
+        poll_msg_, msg_ = await create_sudo_button(
             title, button_dict, event.chat.jid, user
         )
+        msg_id = msg_
         poll_msg = construct_msg_and_evt(
             event.chat.id,
             bot.client.me.JID.User,

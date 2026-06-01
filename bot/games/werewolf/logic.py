@@ -340,9 +340,10 @@ async def request_night_action(game, player, is_night_zero):
         prompt = "Select up to 2 charmed:"
     try:
         selectable = 2 if player.role in ["matchmaker", "piper"] else 1
-        _, msg_id = await create_sudo_button(
+        _, msg_ = await create_sudo_button(
             prompt, options, player.user_id, player.user_id, selectable=selectable
         )
+        msg_id = msg_.ID
         response = await wait_for_button_response(msg_id)
         if response:
             player.target = ",".join(response)

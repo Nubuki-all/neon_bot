@@ -79,7 +79,7 @@ async def anime_search(event, args, client):
     )
     if i == 1:
         return f"{anime.id}"
-    poll_msg_, msg_id = await create_sudo_button(
+    poll_msg_, msg_ = await create_sudo_button(
         title,
         button_dict,
         event.chat.jid,
@@ -88,6 +88,7 @@ async def anime_search(event, args, client):
         None,
         event.message,
     )
+    msg_id = msg_
     poll_msg = construct_msg_and_evt(
         event.chat.id,
         bot.client.me.JID.User,

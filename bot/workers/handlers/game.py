@@ -23,13 +23,14 @@ async def werewolf_handler(event, args, client):
     -s : Game status
     --start : Start game
     --mode <mode> : Set game mode
-    --restricted : Enable restricted mode (when starting)
+    --restricted : Enable restricted mode
     """
     if not args:
         return await were_info(event, args, client)
     arg, args = get_args(
         "--mode",
         ["-j", "store_true"],
+        ["-l", "store_true"],
         ["-s", "store_true"],
         ["--start", "store_true"],
         ["-r", "store_true"],
@@ -57,6 +58,8 @@ async def werewolf_handler(event, args, client):
     if arg.j:
         if not game or isinstance(game, dict):
             game = Game(event)
+            if arg.restricted:
+                game.restricted = True
             current_games[event.chat.id] = game
             asyncio.create_task(auto_start_manager(event, game))
             return await event.reply("Game lobby created! Use `-j` to join.")
@@ -65,6 +68,10 @@ async def werewolf_handler(event, args, client):
         if not game or isinstance(game, dict):
             return await event.reply("No game found in chat! Use `-j` to start & join.")
         return await game.leave(event)
+
+    if arg.restricted and game and not isinstance(game, dict):
+        game.restricted = True
+        await event.reply("will restrict dead/non-players")
 
     if arg.s:
         if not game or isinstance(game, dict):
@@ -107,6 +114,8 @@ async def werewolf_handler(event, args, client):
 
         if not game or isinstance(game, dict):
             game = Game(event, mode=mode_name)
+            if arg.restricted:
+                game.restricted = True
             current_games[event.chat.id] = game
             asyncio.create_task(auto_start_manager(event, game))
             return await event.reply(
@@ -242,10 +251,11 @@ async def werewolf_restriction_handler(client, event):
 async def were_info(event, args, client):
     msg = "*Werewolf Game*\n\n"
     msg += f"To join/create: `{conf.CMD_PREFIX}werewolf -j`\n"
+    msg += f"To leave: `{conf.CMD_PREFIX}werewolf -l`\n"
     msg += f"To see status: `{conf.CMD_PREFIX}werewolf -s`\n"
-    msg += f"To start: `{conf.CMD_PREFIX}werewolf -start [-restricted]`\n"
-    msg += f"To set mode: `{conf.CMD_PREFIX}werewolf -mode <mode>`\n"
-    msg += f"To see modes: `{conf.CMD_PREFIX}werewolf -mode all`"
+    msg += f"To start: `{conf.CMD_PREFIX}werewolf --start [--restricted]`\n"
+    msg += f"To set mode: `{conf.CMD_PREFIX}werewolf --mode <mode>`\n"
+    msg += f"To see modes: `{conf.CMD_PREFIX}werewolf --mode all`"
     return await event.reply(msg)
 
 
@@ -269,7 +279,7 @@ async def auto_start_manager(event, game):
                 e.set()
                 return await game.leave(event, notify=True)
 
-    msg = await create_sudo_button(
+    _, msg = await create_sudo_button(
         name="Werewolf Game Lobby",
         options=options,
         chat_jid=event.chat.jid,
@@ -284,7 +294,7 @@ async def auto_start_manager(event, game):
             if len(game.player_ids) >= 24:
                 break
             try:
-                await asyncio.wait_for(e.wait, timeout=180)
+                await asyncio.wait_for(e.wait(), timeout=180)
             except asyncio.TimeoutError:
                 break
             e.clear()

@@ -59,7 +59,7 @@ async def create_sudo_button(
             if conf_btn and selectable > 1:
                 poll_info["conf_btn"] = get_sha256(trunc_string(conf_btn, 100))
             active_poll_dict[msg.ID] = poll_info
-            return msg
+            return poll_msg, msg
 
     except Exception as e:
         raise CreateSudoBtnError(e)
