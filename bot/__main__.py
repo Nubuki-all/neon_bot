@@ -307,7 +307,9 @@ async def start_bot():
             await restore_wa_db()
         payload = b""
         if conf.PH_NUMBER:
-            payload = bot.client.prepare_pair_phone_payload(conf.PH_NUMBER, show_push_notification=True)
+            payload = bot.client.prepare_pair_phone_payload(
+                conf.PH_NUMBER, show_push_notification=True
+            )
         await bot.client.connect(payload)
         await on_startup()
         await bot.client.idle()
