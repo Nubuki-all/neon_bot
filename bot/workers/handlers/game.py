@@ -23,7 +23,7 @@ async def werewolf_handler(event, args, client):
     -s : Game status
     --start : Start game
     --mode <mode> : Set game mode
-    --restricted : Enable restricted mode
+    -r : Enable restricted mode
     """
     if not args:
         return await were_info(event, args, client)
@@ -58,7 +58,7 @@ async def werewolf_handler(event, args, client):
     if arg.j:
         if not game or isinstance(game, dict):
             game = Game(event)
-            if arg.restricted:
+            if arg.r:
                 game.restricted = True
             current_games[event.chat.id] = game
             asyncio.create_task(auto_start_manager(event, game))
@@ -69,7 +69,7 @@ async def werewolf_handler(event, args, client):
             return await event.reply("No game found in chat! Use `-j` to start & join.")
         return await game.leave(event)
 
-    if arg.restricted and game and not isinstance(game, dict):
+    if arg.r and game and not isinstance(game, dict):
         game.restricted = True
         await event.reply("will restrict dead/non-players")
 
@@ -84,7 +84,7 @@ async def werewolf_handler(event, args, client):
         if not game.waiting:
             return await event.reply("Game is already in progress.")
 
-        if arg.restricted:
+        if arg.r:
             game.restricted = True
 
         game.set_each_role_numbers_and_pool()
@@ -114,7 +114,7 @@ async def werewolf_handler(event, args, client):
 
         if not game or isinstance(game, dict):
             game = Game(event, mode=mode_name)
-            if arg.restricted:
+            if arg.r:
                 game.restricted = True
             current_games[event.chat.id] = game
             asyncio.create_task(auto_start_manager(event, game))
@@ -253,7 +253,7 @@ async def were_info(event, args, client):
     msg += f"To join/create: `{conf.CMD_PREFIX}werewolf -j`\n"
     msg += f"To leave: `{conf.CMD_PREFIX}werewolf -l`\n"
     msg += f"To see status: `{conf.CMD_PREFIX}werewolf -s`\n"
-    msg += f"To start: `{conf.CMD_PREFIX}werewolf --start [--restricted]`\n"
+    msg += f"To start: `{conf.CMD_PREFIX}werewolf --start [-r]`\n"
     msg += f"To set mode: `{conf.CMD_PREFIX}werewolf --mode <mode>`\n"
     msg += f"To see modes: `{conf.CMD_PREFIX}werewolf --mode all`"
     return await event.reply(msg)
