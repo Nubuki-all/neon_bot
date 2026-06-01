@@ -318,4 +318,4 @@ async def start_bot():
         exit()
 
 
-bot.client.loop.run_until_complete(start_bot())
+asyncio.run(start_bot())
