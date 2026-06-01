@@ -1,7 +1,8 @@
 import asyncio
 import random
 
-from bot.config import bot, conf, sudo_btn_lock
+from bot import sudo_btn_lock
+from bot.config import bot, conf
 from bot.games.register import register_for_a_game
 from bot.games.werewolf.defaults import DETECTIVE_REVEAL_CHANCE
 from bot.games.werewolf.game import Game
