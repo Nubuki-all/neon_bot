@@ -56,7 +56,9 @@ class Game:
         available_modes = []
         chances = []
         for m, data in gamemodes.items():
-            if data.get("chance", 0) > 0 and self.total_players >= data.get("min_players", MIN_PLAYERS):
+            if data.get("chance", 0) > 0 and self.total_players >= data.get(
+                "min_players", MIN_PLAYERS
+            ):
                 available_modes.append(m)
                 chances.append(data["chance"])
         if not available_modes:
