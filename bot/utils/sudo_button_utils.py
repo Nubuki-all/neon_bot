@@ -1,5 +1,4 @@
 import asyncio
-import time
 
 from neonize.utils.message import get_poll_update_message
 
@@ -20,7 +19,7 @@ async def poll_as_button_handler(event):
             return
         if not (poll_info := active_poll_dict.get(poll_msg_key.ID)):
             return
-        if (f := poll_info.get("callback")):
+        if f := poll_info.get("callback"):
             return await f(event, poll_msg_key)
         if poll_info.get("user") != event.from_user.id:
             return
@@ -30,7 +29,7 @@ async def poll_as_button_handler(event):
         ]:
             return
         poll_info["selected"] = selected
-        poll_info["event"].set()          # ← wake up the waiter immediately
+        poll_info["event"].set()  # ← wake up the waiter immediately
 
 
 async def create_sudo_button(
@@ -52,7 +51,7 @@ async def create_sudo_button(
                 quoted,
             )
             msg = await bot.client.send_message(chat_jid, poll_msg)
-            poll_info = {"event": asyncio.Event()}   # ← one Event per poll
+            poll_info = {"event": asyncio.Event()}  # ← one Event per poll
             for key, value in options.items():
                 poll_info[get_sha256(trunc_string(value[0], 100))] = key
             poll_info["user"] = user_id

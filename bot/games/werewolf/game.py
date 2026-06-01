@@ -174,11 +174,15 @@ class Game:
             return await event.reply("The game is full!")
         self.player_ids.append(event.from_user.id)
         self.player_names[event.from_user.id] = event.from_user.name
-        return await event.reply(
-            f"{event.from_user.name} has joined the game. ({self.total_players}/24)"
-        ) if not notify else await event.reply(
-            f"@{event.user.id} has joined the game. ({self.total_players}/24)",
-            quote=False,
+        return (
+            await event.reply(
+                f"{event.from_user.name} has joined the game. ({self.total_players}/24)"
+            )
+            if not notify
+            else await event.reply(
+                f"@{event.user.id} has joined the game. ({self.total_players}/24)",
+                quote=False,
+            )
         )
 
     async def leave(self, event, notify=False):
@@ -188,11 +192,15 @@ class Game:
             return await event.reply("You've not joined the game!")
         del self.player_ids[event.from_user.id]
         self.player_names.pop(event.from_user.id)
-        return await event.reply(
-            f"{event.from_user.name} has left the game. ({self.total_players}/24)"
-        ) if not notify else await event.reply(
-            f"@{event.user.id} has left the game. ({self.total_players}/24)",
-            quote=False,
+        return (
+            await event.reply(
+                f"{event.from_user.name} has left the game. ({self.total_players}/24)"
+            )
+            if not notify
+            else await event.reply(
+                f"@{event.user.id} has left the game. ({self.total_players}/24)",
+                quote=False,
+            )
         )
 
     async def status(self, event):

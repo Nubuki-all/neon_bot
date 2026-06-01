@@ -11,13 +11,14 @@ from bot.utils.log_utils import logger
 from bot.utils.msg_utils import get_args
 from bot.utils.sudo_button_utils import active_poll_dict, create_sudo_button
 
+
 async def werewolf_handler(event, args, client):
     """
     Werewolf Game Handler
 
     Commands:
     -j : Join game
-    -l : Leave game 
+    -l : Leave game
     -s : Game status
     --start : Start game
     --mode <mode> : Set game mode
@@ -249,10 +250,11 @@ async def were_info(event, args, client):
 
 async def auto_start_manager(event, game):
     options = {
-        "join":  ("Join",),
+        "join": ("Join",),
         "leave": ("Leave",),
     }
     e = asyncio.Event()
+
     async def btn_callback(event, poll_msg_key):
         async with sudo_btn_lock:
             selected = await bot.client.decrypt_poll_vote(event.message)
@@ -265,6 +267,7 @@ async def auto_start_manager(event, game):
             elif "leave" in actions:
                 e.set()
                 return await game.leave(event, notify=True)
+
     msg = await create_sudo_button(
         name="Werewolf Game Lobby",
         options=options,
@@ -275,7 +278,7 @@ async def auto_start_manager(event, game):
     )
     try:
         while True:
-            if not game.waiting: # Already started elsewhere 
+            if not game.waiting:  # Already started elsewhere
                 return
             if len(game.player_ids) >= 24:
                 break
@@ -285,7 +288,7 @@ async def auto_start_manager(event, game):
                 break
             e.clear()
         await bot.client.revoke_message(event.chat.jid, bot.client.me.JID, msg.ID)
-        if not game.waiting: # Already started elsewhere 
+        if not game.waiting:  # Already started elsewhere
             return
         if game.total_players < game.min_players:
             return await event.reply(
@@ -300,4 +303,3 @@ async def auto_start_manager(event, game):
     finally:
         async with sudo_btn_lock:
             active_poll_dict.pop(msg.ID, None)
-    
