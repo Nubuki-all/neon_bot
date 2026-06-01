@@ -165,7 +165,7 @@ class Game:
                 except Exception:
                     pass
 
-    async def join(self, event):
+    async def join(self, event, notify=False):
         if not self.waiting:
             return await event.reply("The game has already started!")
         if event.from_user.id in self.player_ids:
@@ -176,6 +176,23 @@ class Game:
         self.player_names[event.from_user.id] = event.from_user.name
         return await event.reply(
             f"{event.from_user.name} has joined the game. ({self.total_players}/24)"
+        ) if not notify else await event.reply(
+            f"@{event.user.id} has joined the game. ({self.total_players}/24)",
+            quote=False,
+        )
+
+    async def leave(self, event, notify=False):
+        if not self.waiting:
+            return await event.reply("The game has already started!")
+        if event.from_user.id not in self.player_ids:
+            return await event.reply("You've not joined the game!")
+        del self.player_ids[event.from_user.id]
+        self.player_names.pop(event.from_user.id)
+        return await event.reply(
+            f"{event.from_user.name} has left the game. ({self.total_players}/24)"
+        ) if not notify else await event.reply(
+            f"@{event.user.id} has left the game. ({self.total_players}/24)",
+            quote=False,
         )
 
     async def status(self, event):

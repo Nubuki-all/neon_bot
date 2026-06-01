@@ -5,6 +5,7 @@ from neonize.utils.message import get_poll_update_message
 
 from bot import sudo_btn_lock
 from bot.config import bot
+from bot.others.exceptions import CreateSudoBtnError
 
 from .bot_utils import get_sha256, trunc_string
 
@@ -19,6 +20,8 @@ async def poll_as_button_handler(event):
             return
         if not (poll_info := active_poll_dict.get(poll_msg_key.ID)):
             return
+        if (f := poll_info.get("callback")):
+            return await f(event, poll_msg_key)
         if poll_info.get("user") != event.from_user.id:
             return
         selected = await bot.client.decrypt_poll_vote(event.message)
@@ -26,7 +29,8 @@ async def poll_as_button_handler(event):
             s.hex() for s in selected.selectedOptions
         ]:
             return
-        poll_info.update(selected=selected)
+        poll_info["selected"] = selected
+        poll_info["event"].set()          # ← wake up the waiter immediately
 
 
 async def create_sudo_button(
@@ -37,35 +41,46 @@ async def create_sudo_button(
     selectable: int = 1,
     conf_btn: str | None = None,
     quoted=None,
+    callback=None,
 ):
-    async with sudo_btn_lock:
-        poll_msg = await bot.client.build_poll_vote_creation(
-            trunc_string(name, 255),
-            [trunc_string(v[0], 100) for v in options.values()],
-            selectable,
-            quoted,
-        )
-        msg = await bot.client.send_message(chat_jid, poll_msg)
-        poll_info = {}
-        for key, value in options.items():
-            poll_info.update({get_sha256(trunc_string(value[0], 100)): key})
-        poll_info.update(user=user_id)
-        if conf_btn and selectable > 1:
-            poll_info.update({"conf_btn": get_sha256(trunc_string(conf_btn, 100))})
-        active_poll_dict.update({msg.ID: poll_info})
-        return poll_msg, msg.ID
-
-
-async def wait_for_button_response(msg_id: str, grace=0.1):
-    s_time = time.time()
-    while True:
-        await asyncio.sleep(grace)
-        if time.time() - s_time > 300:
-            return
+    try:
         async with sudo_btn_lock:
-            poll_info = active_poll_dict.get(msg_id)
-            if not poll_info:
-                return
-            if selected := poll_info.get("selected"):
-                active_poll_dict.pop(msg_id)
-                return [poll_info.get(s.hex()) for s in selected.selectedOptions]
+            poll_msg = await bot.client.build_poll_vote_creation(
+                trunc_string(name, 255),
+                [trunc_string(v[0], 100) for v in options.values()],
+                selectable,
+                quoted,
+            )
+            msg = await bot.client.send_message(chat_jid, poll_msg)
+            poll_info = {"event": asyncio.Event()}   # ← one Event per poll
+            for key, value in options.items():
+                poll_info[get_sha256(trunc_string(value[0], 100))] = key
+            poll_info["user"] = user_id
+            poll_info["callback"] = callback
+            if conf_btn and selectable > 1:
+                poll_info["conf_btn"] = get_sha256(trunc_string(conf_btn, 100))
+            active_poll_dict[msg.ID] = poll_info
+            return msg
+
+    except Exception as e:
+        raise CreateSudoBtnError(e)
+
+
+async def wait_for_button_response(msg_id: str, timeout: float = 300.0):
+    async with sudo_btn_lock:
+        poll_info = active_poll_dict.get(msg_id)
+    if not poll_info:
+        return None
+
+    try:
+        triggered = await asyncio.wait_for(poll_info["event"].wait(), timeout=timeout)
+    except asyncio.TimeoutError:
+        active_poll_dict.pop(msg_id, None)
+        return None
+    async with sudo_btn_lock:
+        poll_info = active_poll_dict.pop(msg_id, None)
+
+    if not poll_info or not (selected := poll_info.get("selected")):
+        return None
+
+    return [poll_info.get(s.hex()) for s in selected.selectedOptions]
