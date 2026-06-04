@@ -314,7 +314,7 @@ async def rss_editor(event, args, client):
         elif not scheduler.running:
             schedule_rss()
             scheduler.start()
-    data["pin_messages"] = arg.pin if not arg.unpin else False
+    data["pin_messages"] = arg.pin if not arg.nopin else False
     await save2db2(bot.rss_dict, "rss")
     await event.reply(
         f"Edited rss configurations for rss feed with title - {args} successfully!"
