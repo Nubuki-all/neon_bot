@@ -5,7 +5,6 @@ import aiohttp
 from bot import LOGS, Message, asyncio, bot, conf, jid, sys, version_file
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
-from bot.utils.runtime import shutdown_services
 from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger
 from bot.utils.msg_rank import scheduler2
@@ -13,6 +12,7 @@ from bot.utils.msg_store import Base as sql_base
 from bot.utils.msg_store import auto_save_msg, engine
 from bot.utils.msg_utils import send_presence
 from bot.utils.rss_utils import scheduler
+from bot.utils.runtime import shutdown_services
 from bot.workers.auto.reminder import reschedule_all
 from bot.workers.auto.reminder import scheduler as reminder_scheduler
 

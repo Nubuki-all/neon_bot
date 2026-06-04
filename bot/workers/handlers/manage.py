@@ -20,8 +20,9 @@ from bot.utils.msg_utils import (
     user_is_sudoer,
 )
 from bot.utils.os_utils import re_x, updater
-from bot.utils.runtime import shutdown_services
 from bot.utils.rss_utils import schedule_rss, scheduler
+from bot.utils.runtime import shutdown_services
+
 
 async def restart_handler(event, args, client):
     """Restarts bot. (To avoid issues use /update instead.)"""
@@ -159,7 +160,6 @@ async def rss_list(event, args, client):
             list_feed += f"*Exclude filter:* {parse_filter(data['exf'])}\n"
             list_feed += f"*Pin Messages:* {data.get('pin_messages', False)}"
             list_feed += f"*Paused:* {data['paused']}"
-            
 
     lmsg = split_text(list_feed.strip("\n"), "\n\n", True)
     for i, msg in zip(itertools.count(1), lmsg):

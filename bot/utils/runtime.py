@@ -12,4 +12,3 @@ async def shutdown_services():
             return
         bot.msg_leaderboard_counter = 100
         await flush_messages()
-

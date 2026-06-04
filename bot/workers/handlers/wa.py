@@ -76,6 +76,7 @@ from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
 compress_cache = LimitedDict()
 purge_sessions = {}
 
+
 async def tools(event, args, client):
     """Help Function for the wa module"""
     try:
@@ -1314,7 +1315,9 @@ async def purge_messages(event, args, client):
             return await event.reply("I need to be an admin to purge messages.")
 
         if not (replied := event.reply_to_message):
-            return await event.reply(f"Please reply to a message to mark a start point for purging.")
+            return await event.reply(
+                f"Please reply to a message to mark a start point for purging."
+            )
         arg, args = get_args(
             ["--start", "store_true"],
             ["--all", "store_true"],
@@ -1359,6 +1362,7 @@ async def purge_messages(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
 
 async def rec_msg_ranking(event, args, client):
     """
