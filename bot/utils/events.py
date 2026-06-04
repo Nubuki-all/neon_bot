@@ -222,8 +222,10 @@ class Event(BaseEvent):
         msg = self.gen_new_msg(response)
         return construct_event(msg)
 
-    async def pin(self, seconds: int=604800):
-        await self.client.pin_message(self.chat.jid, self.client.me.JID, self.id, seconds)
+    async def pin(self, seconds: int = 604800):
+        await self.client.pin_message(
+            self.chat.jid, self.client.me.JID, self.id, seconds
+        )
 
     async def unpin(self):
         await self.client.pin_message(self.chat.jid, self.client.me.JID, self.id, 1)

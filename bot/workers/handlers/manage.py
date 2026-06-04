@@ -159,7 +159,6 @@ async def rss_list(event, args, client):
             list_feed += f"*Exclude filter:* {parse_filter(data['exf'])}\n"
             list_feed += f"*Pin Messages:* {data.get('pin_messages', False)}"
             list_feed += f"*Paused:* {data['paused']}"
-            
 
     lmsg = split_text(list_feed.strip("\n"), "\n\n", True)
     for i, msg in zip(itertools.count(1), lmsg):
@@ -236,7 +235,7 @@ async def rss_editor(event, args, client):
             --exf (what_to_exclude): keyword of words to fiter out*
             --inf (what_to_include): keywords to include*
             --chat (chat_id) chat to send rss overides RSS_CHAT pass 'default' to reset.
-            --pin () to pin each feed msg as they are sent 
+            --pin () to pin each feed msg as they are sent
             -p () to pause the rss feed
             -r () to resume the rss feed
 

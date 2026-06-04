@@ -84,7 +84,7 @@ async def rss_monitor():
                     "content": content,
                     "summary": summary,
                     "title": item_title,
-                    "pin": data.get("pin_messages", False)
+                    "pin": data.get("pin_messages", False),
                 }
                 feed_list.append(feed_)
                 feed_count += 1

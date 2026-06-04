@@ -1232,6 +1232,7 @@ async def tag_everyone(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def pin_message(event, args, client):
     "Pin a replied message"
     if not event.chat.is_group:
@@ -1258,6 +1259,7 @@ async def pin_message(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
 
 async def unpin_message(event, args, client):
     "Unpin a replied message"

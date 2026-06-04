@@ -287,11 +287,13 @@ async def send_rss(caption: str, chat: str, pics, server: str, pin: bool = False
             )
             if pin:
                 try:
-                    await bot.client.pin_message(chat_jid, bot.client.me.JID, resp.ID, 86400)
+                    await bot.client.pin_message(
+                        chat_jid, bot.client.me.JID, resp.ID, 86400
+                    )
                 except Exception:
                     pass
         else:
-            chat_jid=jid.build_jid(chat, server)
+            chat_jid = jid.build_jid(chat, server)
             resp = await bot.client.send_message(
                 chat_jid,
                 caption,
@@ -299,7 +301,9 @@ async def send_rss(caption: str, chat: str, pics, server: str, pin: bool = False
             )
             if pin:
                 try:
-                    await bot.client.pin_message(chat_jid, bot.client.me.JID, resp.ID, 86400)
+                    await bot.client.pin_message(
+                        chat_jid, bot.client.me.JID, resp.ID, 86400
+                    )
                 except Exception:
                     pass
     except Exception:
