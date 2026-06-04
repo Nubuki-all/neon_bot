@@ -100,6 +100,7 @@ async def get_messages(
     chat_ids: list | str, msg_ids: list | str = None, limit: int = None, visible=True
 ):
     try:
+        await flush_messages()
         chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
         if msg_ids:
             msg_ids = [msg_ids] if isinstance(msg_ids, str) else [*msg_ids]
@@ -131,6 +132,7 @@ async def get_messages_by_type(
     chat_ids: list | str, types: list | str, limit: int = None
 ):
     try:
+        await flush_messages()
         chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
         types = [types] if isinstance(types, str) else [*types]
         async with async_session() as session:
@@ -148,6 +150,7 @@ async def get_messages_by_type(
 
 async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
     try:
+        await flush_messages()
         chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
         if user_ids:
             user_ids = [user_ids] if isinstance(user_ids, str) else [*user_ids]
@@ -177,6 +180,7 @@ async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
 
 async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100):
     try:
+        await flush_messages()
         chat_ids = [chat_id]
         album_ids = [album_id]
         async with async_session() as session:
@@ -196,6 +200,7 @@ async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100
 
 async def get_messages_between(chat_id: str, start_id: str, end_id: str):
     try:
+        await flush_messages()
         async with async_session() as session:
             stmt_start = select(Message.timestamp).where(
                 and_(Message.chat_id == chat_id, Message.id == start_id)
@@ -225,24 +230,54 @@ async def get_messages_between(chat_id: str, start_id: str, end_id: str):
     except Exception as e:
         raise e
 
-
 async def auto_save_msg():
     bot.auto_save_msg_is_running = True
+
     while True:
-        if messages := bot.pending_saved_messages:
-            async with msg_store_lock:
-                try:
-                    while len(messages) < 2 and not bot.force_save_messages:
-                        await asyncio.sleep(1)
-                    await save_messages(messages)
-                    if bot.msg_leaderboard_counter > 10:
-                        await save2db2(bot.group_dict, "groups")
-                        bot.msg_leaderboard_counter = 0
-                except Exception:
-                    await logger(Exception)
-                finally:
-                    messages.clear()
-                    if bot.force_save_messages:
-                        bot.force_save_messages = False
-            await asyncio.sleep(1)
-        await asyncio.sleep(3)
+        if not bot.pending_saved_messages:
+            try:
+                await asyncio.wait_for(bot.flush_event.wait(), timeout=3.0)
+            except asyncio.TimeoutError:
+                continue
+
+        if len(bot.pending_saved_messages) < 2 and not bot.flush_event.is_set():
+            try:
+                await asyncio.wait_for(bot.flush_event.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                pass
+
+        if not bot.pending_saved_messages:
+            bot.flush_event.clear()
+            waiters, bot.flush_waiters = bot.flush_waiters[:], []
+            for fut in waiters:
+                if not fut.done():
+                    fut.set_result(None)
+            continue
+
+        async with msg_store_lock:
+            snapshot = bot.pending_saved_messages[:]
+            bot.pending_saved_messages.clear()
+            waiters = bot.flush_waiters[:]
+            bot.flush_waiters.clear()
+            bot.flush_event.clear()
+
+            try:
+                await save_messages(snapshot)
+                if bot.msg_leaderboard_counter > 10:
+                    await save2db2(bot.group_dict, "groups")
+                    bot.msg_leaderboard_counter = 0
+            except Exception as e:
+                await logger(e)
+
+        for fut in waiters:
+            if not fut.done():
+                fut.set_result(None)
+
+
+async def flush_messages():
+    """Trigger an immediate save and wait until it completes."""
+    loop = asyncio.get_event_loop()
+    fut = loop.create_future()
+    bot.flush_waiters.append(fut)
+    bot.flush_event.set()
+    await fut

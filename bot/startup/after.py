@@ -5,7 +5,7 @@ import aiohttp
 from bot import LOGS, Message, asyncio, bot, conf, jid, sys, version_file
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
-from bot.utils.bot_utils import shutdown_services
+from bot.utils.runtime import shutdown_services
 from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger
 from bot.utils.msg_rank import scheduler2

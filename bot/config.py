@@ -12,6 +12,7 @@
 #
 # License can be found in <
 # https://github.com/Nubuki-all/neon_bot/blob/WA/License> .
+import asyncio
 import traceback
 
 from decouple import config
@@ -93,6 +94,8 @@ class Runtime_Config:
         self.paused = False
         self.p_queue = []
         self.pending_saved_messages = []
+        self.flush_event = asyncio.Event()
+        self.flush_waiters: list[asyncio.Future] = []
         self.pg_tools_are_installed = False
         self.notes_dict = {}
         self.remind_dict = {}

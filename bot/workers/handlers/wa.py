@@ -3,6 +3,7 @@ import copy
 import datetime
 import io
 import random
+import time
 import uuid
 from datetime import datetime as dt
 from os.path import splitext as split_ext
@@ -44,6 +45,7 @@ from bot.utils.log_utils import log, logger
 from bot.utils.msg_store import (
     get_deleted_message_ids,
     get_messages,
+    get_messages_between,
     get_messages_by_album_id,
 )
 from bot.utils.msg_utils import (
@@ -72,7 +74,7 @@ from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
 from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
 
 compress_cache = LimitedDict()
-
+purge_sessions = {}
 
 async def tools(event, args, client):
     """Help Function for the wa module"""
@@ -96,6 +98,7 @@ async def tools(event, args, client):
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}pin - *Pin a replied message*{s}"
             f"{pre}unpin - *Unpin a replied message*{s}"
+            f"{pre}purge - *Mass delete messages.*{s}"
             f"{pre}random - *Get a random choice*{s}"
             f"{pre}repeat - *Repeat a replied message*{s}"
             f"{pre}sanitize - *Sanitize link or message*{s}"
@@ -1286,6 +1289,76 @@ async def unpin_message(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
+async def purge_messages(event, args, client):
+    """
+    Purges messages:
+      Arguments:
+        --start: start point for purge (reply again without argument to mark endpoint)
+        --all: purge all messages from this point
+    """
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_owner(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Not allowed.",
+                    packname="N.",
+                )
+        if not user_is_admin(bot.client.me.JID.User, group_info.Participants):
+            return await event.reply("I need to be an admin to purge messages.")
+
+        if not (replied := event.reply_to_message):
+            return await event.reply(f"Please reply to a message to mark a start point for purging.")
+        arg, args = get_args(
+            ["--start", "store_true"],
+            ["--all", "store_true"],
+            to_parse=args,
+            get_unknown=True,
+        )
+        chat_id = event.chat.id
+        msg_id = event.reply_to_message.id if event.reply_to_message else event.id
+
+        if arg.start:
+            purge_sessions[(chat_id, user)] = {"start_id": msg_id, "time": time.time()}
+            return await event.reply(
+                f"Purge session started from message ID: `{msg_id}`.\n"
+                f"Reply to the ending message with `{conf.CMD_PREFIX}purge` to start purge.\n"
+                "Session expires in 300 seconds."
+            )
+        if arg.all:
+            messages = await get_messages_between(chat_id, msg_id, event.id)
+            if not messages:
+                return await event.reply("No messages found to purge.")
+        else:
+            session = purge_sessions.get((chat_id, user))
+            if not session:
+                return await event.reply(
+                    f"No starting point for purge supplied.\nFor help send {conf.CMD_PREFIX}purge -h"
+                )
+            if time.time() - session["time"] > 300:
+                del purge_sessions[(chat_id, user)]
+                return await event.reply(
+                    f"Purge session timed out. Start a new one with `{conf.CMD_PREFIX}purge --start`."
+                )
+            end_msg_id = event.reply_to_message.id
+            start_id = session["start_id"]
+            del purge_sessions[(chat_id, user)]
+            messages = await get_messages_between(chat_id, start_id, end_msg_id)
+            if not messages:
+                return await event.reply("No messages found to purge.")
+        await event.react("🚮")
+        for msg in messages:
+            await msg.delete()
+        await event.react("")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
 
 async def rec_msg_ranking(event, args, client):
     """

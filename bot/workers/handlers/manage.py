@@ -5,7 +5,7 @@ from inspect import getdoc
 from feedparser import parse as feedparse
 
 from bot import bot, jid, rss_dict_lock
-from bot.utils.bot_utils import list_to_str, shutdown_services, split_text
+from bot.utils.bot_utils import list_to_str, split_text
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
@@ -20,8 +20,8 @@ from bot.utils.msg_utils import (
     user_is_sudoer,
 )
 from bot.utils.os_utils import re_x, updater
+from bot.utils.runtime import shutdown_services
 from bot.utils.rss_utils import schedule_rss, scheduler
-
 
 async def restart_handler(event, args, client):
     """Restarts bot. (To avoid issues use /update instead.)"""
@@ -159,6 +159,7 @@ async def rss_list(event, args, client):
             list_feed += f"*Exclude filter:* {parse_filter(data['exf'])}\n"
             list_feed += f"*Pin Messages:* {data.get('pin_messages', False)}"
             list_feed += f"*Paused:* {data['paused']}"
+            
 
     lmsg = split_text(list_feed.strip("\n"), "\n\n", True)
     for i, msg in zip(itertools.count(1), lmsg):
@@ -236,6 +237,7 @@ async def rss_editor(event, args, client):
             --inf (what_to_include): keywords to include*
             --chat (chat_id) chat to send rss overides RSS_CHAT pass 'default' to reset.
             --pin () to pin each feed msg as they are sent
+            --nopin () disables pinning messages
             -p () to pause the rss feed
             -r () to resume the rss feed
 
@@ -259,7 +261,8 @@ async def rss_editor(event, args, client):
         ["-e", "store_true"],
         ["-p", "store_true"],
         ["-r", "store_true"],
-        ["--pin", "store_false"],
+        ["--pin", "store_true"],
+        ["--nopin", "store_true"],
         to_parse=args,
         get_unknown=True,
     )
@@ -311,7 +314,7 @@ async def rss_editor(event, args, client):
         elif not scheduler.running:
             schedule_rss()
             scheduler.start()
-    data["pin_messages"] = arg.pin
+    data["pin_messages"] = arg.pin if not arg.unpin else False
     await save2db2(bot.rss_dict, "rss")
     await event.reply(
         f"Edited rss configurations for rss feed with title - {args} successfully!"
@@ -373,7 +376,7 @@ async def rss_sub(event, args, client):
         "--chat",
         ["-p", "store_true"],
         ["-s", "store_true"],
-        ["--pin", "store_false"],
+        ["--pin", "store_true"],
         to_parse=args,
         get_unknown=True,
     )
@@ -415,6 +418,7 @@ async def rss_sub(event, args, client):
         msg += f"\nLink:- {last_link}"
         msg += f"\n*Chat:-* {arg.chat or 'Default'}"
         msg += f"\n*Filters:-*\ninf: {arg.inf}\nexf: {arg.exf}"
+        msg += f"\n*Pin Messages:-* {arg.pin}"
         msg += f"\n*Paused:-* {arg.p}"
         chat = []
         if arg.chat:
