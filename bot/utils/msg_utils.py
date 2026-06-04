@@ -208,7 +208,7 @@ async def parse_and_send_rss(data: dict, chat_ids: list = None):
         caption = f"*{title}*"
         if not content:
             caption += f"\n\n*Feed Link:* {url}\n"
-        caption += f"\n> {summary}" if summary else ""
+        caption += f"\n> {summary.strip()}" if summary else ""
         if content:
             if len(content) > 65536:
                 content = (
@@ -232,14 +232,14 @@ async def parse_and_send_rss(data: dict, chat_ids: list = None):
                 if len(top_chat) > 1
                 else (str(top_chat[0]), "s.whatsapp.net")
             )
-            func = send_rss(caption, chat, pics, server)
+            func = send_rss(caption, chat, pics, server, data["pin"])
             func_list.append(func)
         await asyncio.gather(*func_list)
     except Exception:
         await logger(Exception)
 
 
-async def send_rss(caption, chat, pics, server):
+async def send_rss(caption: str, chat: str, pics, server: str, pin: bool = False):
     try:
         len_pic = len(pics)
         if len_pic > 1:
@@ -260,36 +260,48 @@ async def send_rss(caption, chat, pics, server):
                 chat, bot.client.me.JID.User, rep.ID, "image", server=server
             )
             msg = construct_event(message)
-            for img in pics[1:]:
-                i += 1
-
-                reply_media = msg.reply_photo
-                if img.endswith(".jpg"):
+            if pin:
+                try:
+                    await msg.pin(86400)
+                except Exception:
                     pass
-                elif img.endswith(".gif"):
+            remaining_pics = pics[1:]
+            if remaining_pics == 1:
+                img = remaining_pics[0]
+                reply_media = msg.reply_photo
+                if img.endswith(".gif"):
                     reply_media = msg.reply_gif
-
-                caption = f"*({i} of {len_pic - 1})*"
-                msg = await reply_media(img, caption, quote=True)
+                return await reply_media(img)
+            for i in range(0, len(remaining_pics), 100):
+                chunk = remaining_pics[i : i + 100]
+                msg = await msg.reply_album(chunk)
         elif pics:
-
             send_media = bot.client.send_image
-            if pics[0].endswith(".jpg"):
-                pass
-            elif pics[0].endswith(".gif"):
+            if pics[0].endswith(".gif"):
                 send_media = bot.client.send_video
-
-            await send_media(
-                jid.build_jid(chat, server),
+            chat_jid = jid.build_jid(chat, server)
+            resp = await send_media(
+                chat_jid,
                 pics[0],
                 caption,
             )
+            if pin:
+                try:
+                    await bot.client.pin_message(chat_jid, bot.client.me.JID, resp.ID, 86400)
+                except Exception:
+                    pass
         else:
-            await bot.client.send_message(
-                jid.build_jid(chat, server),
+            chat_jid=jid.build_jid(chat, server)
+            resp = await bot.client.send_message(
+                chat_jid,
                 caption,
                 link_preview=True,
             )
+            if pin:
+                try:
+                    await bot.client.pin_message(chat_jid, bot.client.me.JID, resp.ID, 86400)
+                except Exception:
+                    pass
     except Exception:
         await logger(Exception)
 

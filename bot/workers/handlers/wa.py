@@ -94,6 +94,8 @@ async def tools(event, args, client):
             f"{s}"
             f"{pre}mp3 - *Convert Video to audio*{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
+            f"{pre}pin - *Pin a replied message*{s}"
+            f"{pre}unpin - *Unpin a replied message*{s}"
             f"{pre}random - *Get a random choice*{s}"
             f"{pre}repeat - *Repeat a replied message*{s}"
             f"{pre}sanitize - *Sanitize link or message*{s}"
@@ -1230,6 +1232,58 @@ async def tag_everyone(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+async def pin_message(event, args, client):
+    "Pin a replied message"
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Not allowed.",
+                    packname="N.",
+                )
+        if not (replied := event.reply_to_message):
+            return await event.reply(f"Please reply to a message to pin.")
+        if not (args and args.isdigit()):
+            await replied.pin()
+        else:
+            await replied.pin(int(args))
+        await replied.react("📌")
+        await event.react("✔️")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+async def unpin_message(event, args, client):
+    "Unpin a replied message"
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Not allowed.",
+                    packname="N.",
+                )
+        if not (replied := event.reply_to_message):
+            return await event.reply(f"Please reply to a message to unpin.")
+
+        await replied.unpin()
+        await replied.react("")
+        await event.react("✔️")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
 
 async def rec_msg_ranking(event, args, client):
     """
@@ -2190,10 +2244,12 @@ bot.add_handler(get_notes, "get")
 bot.add_handler(repeat, "repeat")
 bot.add_handler(undelete, "undel")
 bot.add_handler(get_rules, "rules")
+bot.add_handler(pin_message, "pin")
 bot.add_handler(compress, "compress")
 bot.add_handler(kang_sticker, "kang")
 bot.add_handler(pick_random, "random")
 bot.add_handler(set_rules, "setrules")
+bot.add_handler(unpin_message, "unpin")
 bot.add_handler(delete_rules, "delrules")
 bot.add_handler(list_filters, "filters")
 bot.add_handler(sanitize_url, "sanitize")

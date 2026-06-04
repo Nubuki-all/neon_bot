@@ -157,7 +157,9 @@ async def rss_list(event, args, client):
             list_feed += f"*Chat:* {list_to_str(data['chat']) or 'Default'}\n"
             list_feed += f"*Include filter:* {parse_filter(data['inf'])}\n"
             list_feed += f"*Exclude filter:* {parse_filter(data['exf'])}\n"
+            list_feed += f"*Pin Messages:* {data.get('pin_messages', False)}"
             list_feed += f"*Paused:* {data['paused']}"
+            
 
     lmsg = split_text(list_feed.strip("\n"), "\n\n", True)
     for i, msg in zip(itertools.count(1), lmsg):
@@ -234,6 +236,7 @@ async def rss_editor(event, args, client):
             --exf (what_to_exclude): keyword of words to fiter out*
             --inf (what_to_include): keywords to include*
             --chat (chat_id) chat to send rss overides RSS_CHAT pass 'default' to reset.
+            --pin () to pin each feed msg as they are sent 
             -p () to pause the rss feed
             -r () to resume the rss feed
 
@@ -257,6 +260,7 @@ async def rss_editor(event, args, client):
         ["-e", "store_true"],
         ["-p", "store_true"],
         ["-r", "store_true"],
+        ["--pin", "store_false"],
         to_parse=args,
         get_unknown=True,
     )
@@ -308,6 +312,7 @@ async def rss_editor(event, args, client):
         elif not scheduler.running:
             schedule_rss()
             scheduler.start()
+    data["pin_messages"] = arg.pin
     await save2db2(bot.rss_dict, "rss")
     await event.reply(
         f"Edited rss configurations for rss feed with title - {args} successfully!"
@@ -346,6 +351,7 @@ async def rss_sub(event, args, client):
             -t (TITLE): New Title of the subscribed rss feed [Required]
             --exf (what_to_exclude): keyword of words to fiter out*
             --inf (what_to_include): keywords to include*
+            --pin () to pin each feed msg as they are sent
             -p () to pause the rss feed
             -r () to resume the rss feed
             --chat (chat_id) chat to send feeds
@@ -368,6 +374,7 @@ async def rss_sub(event, args, client):
         "--chat",
         ["-p", "store_true"],
         ["-s", "store_true"],
+        ["--pin", "store_false"],
         to_parse=args,
         get_unknown=True,
     )
@@ -433,6 +440,7 @@ async def rss_sub(event, args, client):
                 "inf": inf_lists,
                 "exf": exf_lists,
                 "paused": arg.p,
+                "pin_messages": arg.pin,
             }
         await logger(
             e="Rss Feed Added:"
@@ -443,6 +451,7 @@ async def rss_sub(event, args, client):
             f"\ninclude filter:- {arg.inf}"
             f"\nexclude filter:- {arg.exf}"
             f"\npaused:- {arg.p}"
+            f"\npin_messages:- {arg.pin}"
         )
     except (IndexError, AttributeError) as e:
         emsg = f"The link: {feed_link} doesn't seem to be a RSS feed or it's region-blocked!"
