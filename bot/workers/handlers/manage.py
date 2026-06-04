@@ -158,7 +158,7 @@ async def rss_list(event, args, client):
             list_feed += f"*Chat:* {list_to_str(data['chat']) or 'Default'}\n"
             list_feed += f"*Include filter:* {parse_filter(data['inf'])}\n"
             list_feed += f"*Exclude filter:* {parse_filter(data['exf'])}\n"
-            list_feed += f"*Pin Messages:* {data.get('pin_messages', False)}"
+            list_feed += f"*Pin Messages:* {data.get('pin_messages', False)}\n"
             list_feed += f"*Paused:* {data['paused']}"
 
     lmsg = split_text(list_feed.strip("\n"), "\n\n", True)
