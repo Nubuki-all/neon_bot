@@ -1321,7 +1321,7 @@ async def purge_messages(event, args, client):
         arg, args = get_args(
             ["--start", "store_true"],
             ["--all", "store_true"],
-            to_parse=args,
+            to_parse=args or "",
             get_unknown=True,
         )
         chat_id = event.chat.id
