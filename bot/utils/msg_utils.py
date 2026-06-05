@@ -33,6 +33,7 @@ from .log_utils import logger
 
 _log_ = logging.getLogger(__name__)
 
+
 def chat_is_allowed(event: Event):
     if conf.ALLOWED_CHATS:
         return event.chat.id in conf.ALLOWED_CHATS
