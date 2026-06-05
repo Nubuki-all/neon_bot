@@ -1,6 +1,8 @@
 import argparse
 import asyncio
+import logging
 import re
+import traceback
 from functools import partial
 
 from bs4 import BeautifulSoup
@@ -29,6 +31,7 @@ from .events import (
 
 from .log_utils import logger
 
+_log_ = logging.getLogger(__name__)
 
 def chat_is_allowed(event: Event):
     if conf.ALLOWED_CHATS:
@@ -219,7 +222,7 @@ async def parse_and_send_rss(data: dict, chat_ids: list = None):
                 tgh_link = (await post_to_tgph(title, content, author, url))["url"]
                 caption += f"\n\n*Telegraph:* {tgh_link}\n*Feed Link:* {url}"
             except Exception:
-                await logger(Exception)
+                _log_.error(traceback.format_exc())
                 caption += f"\n\n*Feed Link:* {url}"
         expanded_chat = []
         for chat in chats:
