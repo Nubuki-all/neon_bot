@@ -220,6 +220,7 @@ async def parse_and_send_rss(data: dict, chat_ids: list = None):
                 caption += f"\n\n*Telegraph:* {tgh_link}\n*Feed Link:* {url}"
             except Exception:
                 await logger(Exception)
+                caption += f"\n\n*Feed Link:* {url}"
         expanded_chat = []
         for chat in chats:
             (
