@@ -241,7 +241,7 @@ async def auto_save_msg():
             except asyncio.TimeoutError:
                 continue
 
-        if len(bot.pending_saved_messages) < 2 and not bot.flush_event.is_set():
+        if len(bot.pending_saved_messages) < 10 and not bot.flush_event.is_set():
             try:
                 await asyncio.wait_for(bot.flush_event.wait(), timeout=5.0)
             except asyncio.TimeoutError:
@@ -264,7 +264,7 @@ async def auto_save_msg():
 
             try:
                 await save_messages(snapshot)
-                if bot.msg_leaderboard_counter > 10:
+                if bot.msg_leaderboard_counter > 50:
                     await save2db2(bot.group_dict, "groups")
                     bot.msg_leaderboard_counter = 0
             except Exception as e:
