@@ -85,7 +85,7 @@ async def save_messages(msgs):
                 user_id=event.user.id,
                 visible=(
                     True
-                    if ((event.media or event.text) and not event.protocol)
+                    if ((event.media or event.text) and not (event.album or event.protocol))
                     else False
                 ),
             )

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 
 from google.protobuf.json_format import MessageToDict
 from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
+    AlbumMessage,
     AudioMessage,
     DocumentMessage,
     ExtendedTextMessage,
@@ -84,6 +85,7 @@ class BaseEvent(ABC):
         self.from_user: BaseUser | None = None
 
         # Populated media/message-related attributes
+        self.album: AlbumMessage | None = None
         self.audio: AudioMessage | None = None
         self.document: DocumentMessage | None = None
         self.extendedText: ExtendedTextMessage | None = None
