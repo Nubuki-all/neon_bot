@@ -699,6 +699,8 @@ async def normalize_for_whatsapp(
     else:
         cmd = [
             "ffmpeg",
+            "-err_detect",
+            "ignore_err",
             "-y",
             "-i",
             input_path,

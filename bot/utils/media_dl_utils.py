@@ -24,7 +24,7 @@ from .bot_utils import (
     value_check,
     video_timestamp_to_seconds,
 )
-from .log_utils import log
+from .log_utils import log, logger
 from .msg_utils import user_is_admin, user_is_privileged
 from .os_utils import enshell, s_remove
 
