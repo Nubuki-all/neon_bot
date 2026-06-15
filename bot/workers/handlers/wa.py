@@ -149,13 +149,15 @@ async def to_mp3(event, args, client):
     try:
         if not (replied := event.reply_to_message):
             return await event.reply("*Kindly reply to video.*")
-        if not replied.video:
-            if replied.document:
-                if not (
-                    replied.document.mimetype.startswith("video")
-                    or is_video_file(replied.document.fileName)
-                ):
-                    return await event.reply("*Replied message is not a video.*")
+        if replied.document:
+            if not (
+                replied.document.mimetype.startswith("video")
+                or is_video_file(replied.document.fileName)
+            ):
+                return await event.reply("*Replied document is not a video.*")
+        elif not replied.video:
+            return await event.reply("*Replied message is not a video.*")
+
         arg, args = get_args(
             "-s",
             "-t",
