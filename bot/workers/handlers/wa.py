@@ -132,6 +132,40 @@ async def tools(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+async def to_doc(event, args, client):
+    """
+    Convert replied image, video or sticker to document.
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Kindly reply to a video/image/sticker.*")
+        if replied.document:
+            return await event.reply("*Replied message is a document.*")
+        ext = ""
+        if replied.video:
+            ext = "mp4"
+        elif replied.image:
+            ext = replied.image.mimetype.split("/")[1]
+        elif replied.sticker:
+            ext = "webp"
+        else:
+            return await event.reply("*Replied message is not a video/image/sticker.*")
+
+        async with event.react("📥"):
+            file = await replied.download()
+        file_name = f"{replied.short_name}_" + dt.now().isoformat("_", "seconds") + f".{ext}"
+        async with event.react("📤"):
+            await event.reply_document(file, file_name, replied.caption)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
 
 async def to_mp3(event, args, client):
     """
@@ -2319,6 +2353,7 @@ bot.add_handler(tag_all_owners)
 bot.add_handler(tag_all_sudoers)
 bot.add_handler(rec_msg_ranking)
 
+bot.add_handler(to_doc, "doc")
 bot.add_handler(to_mp3, "mp3")
 bot.add_handler(tools, "tools")
 bot.add_handler(get_notes, "get")
