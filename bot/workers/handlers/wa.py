@@ -132,6 +132,7 @@ async def tools(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def to_doc(event, args, client):
     """
     Convert replied image, video or sticker to document.
@@ -159,7 +160,9 @@ async def to_doc(event, args, client):
 
         async with event.react("📥"):
             file = await replied.download()
-        file_name = f"{replied.short_name}_" + dt.now().isoformat("_", "seconds") + f".{ext}"
+        file_name = (
+            f"{replied.short_name}_" + dt.now().isoformat("_", "seconds") + f".{ext}"
+        )
         async with event.react("📤"):
             await event.reply_document(file, file_name, replied.caption)
     except Exception:
