@@ -91,7 +91,7 @@ def ran_stick():
         "https://mystickermania.com/cdn/stickers/cartoons/dragon-ball-beerus-512x512.png",
         "https://mystickermania.com/cdn/stickers/cartoons/dragon-ball-goku-512x512.png",
         "https://mystickermania.com/cdn/stickers/161-512x512.png"
-            "https://mystickermania.com/cdn/stickers/spongebob/sb-patrick-cowboy-512x512.png",
+        "https://mystickermania.com/cdn/stickers/spongebob/sb-patrick-cowboy-512x512.png",
         "https://mystickermania.com/cdn/stickers/spongebob/sb-gary-ready-sleep-512x512.png",
         "https://mystickermania.com/cdn/stickers/spongebob/sb-squidward-king-512x512.png",
         "https://mystickermania.com/cdn/stickers/spongebob/sp-bubble-buddy-work-512x512.png",
