@@ -95,6 +95,7 @@ async def tools(event, args, client):
             f"{pre}get - *Get previously saved item*{s}"
             f"{pre}save - *Save a replied text/media*{s}"
             f"{s}"
+            f"{pre}doc - *Convert videos/images/stickers to document*{s}"
             f"{pre}mp3 - *Convert Video to audio*{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}pin - *Pin a replied message*{s}"
