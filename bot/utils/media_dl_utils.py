@@ -360,9 +360,11 @@ class MediaHelper:
                         "moov" not in i and "container" not in i for i in issues
                     )
                     try:
-                        await normalize_for_whatsapp(src, dst, transcode=needs_transcode)
+                        await normalize_for_whatsapp(
+                            src, dst, transcode=needs_transcode
+                        )
                     except Exception as e:
-                        ## ignore transcode error and use encode output as is.
+                        # ignore transcode error and use encode output as is.
                         if not str(e).startswith("ffmpeg failed:"):
                             raise
                     s_remove(src)
