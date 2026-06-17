@@ -20,8 +20,8 @@ import zendriver as zd
 from ffmpeg.asyncio import FFmpeg
 from PIL import Image
 
-from bot.others.exceptions import NormalizeVidError
 from bot import LOGS, bot, telegraph_errors, time
+from bot.others.exceptions import NormalizeVidError
 
 THREADPOOL = ThreadPoolExecutor(max_workers=1000)
 _log_ = logging.getLogger(__name__)
