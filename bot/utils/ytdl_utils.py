@@ -14,6 +14,7 @@ from yt_dlp.utils import download_range_func
 
 from bot.config import bot, conf
 from bot.fun.emojis import enhearts
+from bot.others.exceptions import NormalizeVidError
 
 from .bot_utils import (
     hbs,
@@ -699,10 +700,9 @@ class YoutubeDLHelper:
                         await normalize_for_whatsapp(
                             src, dst, transcode=needs_transcode
                         )
-                    except Exception as e:
+                    except NormalizeVidError:
                         # ignore transcode error and use encode output as is.
-                        if not str(e).startswith("ffmpeg failed:"):
-                            raise
+                        pass
                     s_remove(src)
                     shutil.copy2(dst, src)
                     s_remove(dst)

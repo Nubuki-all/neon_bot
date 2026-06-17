@@ -10,6 +10,7 @@ from typing import Optional
 
 from bot.config import bot, conf
 from bot.fun.emojis import enhearts
+from bot.others.exceptions import NormalizeVidError
 from bot.pkgs.insta_dl import download_instagram
 from bot.pkgs.pinterest_dl import download_pinterest
 from bot.pkgs.tiktok_dl import download_tiktok
@@ -363,10 +364,9 @@ class MediaHelper:
                         await normalize_for_whatsapp(
                             src, dst, transcode=needs_transcode
                         )
-                    except Exception as e:
+                    except NormalizeVidError:
                         # ignore transcode error and use encode output as is.
-                        if not str(e).startswith("ffmpeg failed:"):
-                            raise
+                        pass
                     s_remove(src)
                     shutil.copy2(dst, src)
                     s_remove(dst)

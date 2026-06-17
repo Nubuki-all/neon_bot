@@ -4,3 +4,6 @@ class ArgumentParserError(Exception):
 
 class CreateSudoBtnError(Exception):
     pass
+
+class NormalizeVidError(Exception):
+    pass

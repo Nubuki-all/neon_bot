@@ -20,6 +20,7 @@ import zendriver as zd
 from ffmpeg.asyncio import FFmpeg
 from PIL import Image
 
+from bot.others.exceptions import NormalizeVidError
 from bot import LOGS, bot, telegraph_errors, time
 
 THREADPOOL = ThreadPoolExecutor(max_workers=1000)
@@ -723,7 +724,7 @@ async def normalize_for_whatsapp(
 
     _, stderr, rc = await _run(*cmd)
     if rc != 0:
-        raise RuntimeError(f"ffmpeg failed: {stderr.decode()}")
+        raise NormalizeVidError(f"ffmpeg failed: {stderr.decode()}")
 
 
 class LimitedDict(OrderedDict):
