@@ -281,24 +281,18 @@ async def media_reply(event, listener, t_args=None) -> bool:
 
         if file.media_type == "video":
             if single_dl:
-                msg = await msg.reply_video(
-                    file_name, caption
-                )
+                msg = await msg.reply_video(file_name, caption)
                 await asyncio.sleep(3)  # avoid spam
             else:
                 album_files.append(file_name)
         elif file.media_type == "image":
             if single_dl:
-                msg = await msg.reply_photo(
-                    file_name, caption
-                )
+                msg = await msg.reply_photo(file_name, caption)
                 await asyncio.sleep(3)  # avoid spam
             else:
                 album_files.append(file_name)
         elif file.media_type == "gif":
-            msg = await msg.reply_gif(
-                file_name, caption, as_gif=True
-            )
+            msg = await msg.reply_gif(file_name, caption, as_gif=True)
             await asyncio.sleep(3)  # avoid spam
         else:
             await logger(e=f"Unknown media type: {file.media_type}", error=True)
