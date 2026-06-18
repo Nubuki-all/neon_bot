@@ -781,14 +781,12 @@ async def download_media(message: Message) -> bytes:
     enc_file_hash = item.fileEncSHA256
     file_hash = item.fileSHA256
     media_key = item.mediaKey
-    file_length = item.fileLength
     mms_type = media_type.to_mms()
     return await bot.client.download_media_with_path(
         direct_path,
         enc_file_hash,
         file_hash,
         media_key,
-        file_length,
         media_type,
         mms_type,
     )
@@ -799,14 +797,12 @@ async def dd_media(item, media_type):
     enc_file_hash = item.fileEncSHA256
     file_hash = item.fileSHA256
     media_key = item.mediaKey
-    file_length = item.fileLength
     mms_type = media_type.to_mms()
     return await bot.client.download_media_with_path(
         direct_path,
         enc_file_hash,
         file_hash,
         media_key,
-        file_length,
         media_type,
         mms_type,
     )
