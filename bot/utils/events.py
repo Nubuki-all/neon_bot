@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import inspect
+import logging
 import os
 import warnings
 from collections import deque
@@ -30,6 +31,7 @@ from bot.types.event import BaseEvent, Chat, User
 from .bot_utils import write_binary
 from .log_utils import logger
 
+_log_ = logging.getLogger(__name__)
 
 class Event(BaseEvent):
     def __init__(self):
@@ -465,7 +467,7 @@ class Event(BaseEvent):
     ) -> Event:
         quoted = self._get_quoted() if quote else None
         mentions_are_not_jids = False if mentions_are_jids else self.lid_address
-        response = await self.client.send_image(
+        send_image = self.client.send_image(
             self.chat.jid,
             photo,
             caption,
@@ -476,6 +478,14 @@ class Event(BaseEvent):
             mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
             add_msg_secret=add_msg_secret,
         )
+        try:
+            response = await send_image
+        except Exception as e:
+            if not "upload failed with status code 429" in str(e):
+                raise
+            _log_.warning("uploading image failed with error 429, sleeping for 10 seconds…")
+            await asyncio.sleep(10)
+            response = await send_image
         msg = self.gen_new_msg(response)
         return construct_event(msg)
 
