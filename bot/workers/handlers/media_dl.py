@@ -263,6 +263,9 @@ async def media_reply(event, listener, t_args=None) -> bool:
         return listener.user_cancelled
     await status_msg.edit("Download completed, Now uploading…")
     msg = event
+    album_files = []
+    caption = ""
+    single_dl = len(downloads) == 1
     for file in downloads:
         file_name = file.local_path
         if not file_exists(file_name):
@@ -273,23 +276,34 @@ async def media_reply(event, listener, t_args=None) -> bool:
                 "*Upload failed, Video is too large!*\nTry with lower quality."
             )
             continue
+        caption = wrap_lines_with_asterisks(file.caption)
         log(e=f"Uploading {file_name}…")
 
         if file.media_type == "video":
-            msg = await msg.reply_video(
-                file_name, wrap_lines_with_asterisks(file.caption)
-            )
+            if single_dl:
+                msg = await msg.reply_video(
+                    file_name, caption
+                )
+                await asyncio.sleep(3)  # avoid spam
+            else:
+                album_files.append(file_name)
         elif file.media_type == "image":
-            msg = await msg.reply_photo(
-                file_name, wrap_lines_with_asterisks(file.caption)
-            )
+            if single_dl:
+                msg = await msg.reply_photo(
+                    file_name, caption
+                )
+                await asyncio.sleep(3)  # avoid spam
+            else:
+                album_files.append(file_name)
         elif file.media_type == "gif":
             msg = await msg.reply_gif(
-                file_name, wrap_lines_with_asterisks(file.caption), as_gif=True
+                file_name, caption, as_gif=True
             )
+            await asyncio.sleep(3)  # avoid spam
         else:
             await logger(e=f"Unknown media type: {file.media_type}", error=True)
-        await asyncio.sleep(3)  # avoid spam
+    if len(album_files) > 0:
+        await msg.reply_album(album_files, caption)
     await media_dl.clean_up()
     s_remove(media_dl.folder, folders=True)
     await status_msg.delete() if not media_dl._listener.is_cancelled else None
