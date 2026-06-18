@@ -33,6 +33,7 @@ from .log_utils import logger
 
 _log_ = logging.getLogger(__name__)
 
+
 class Event(BaseEvent):
     def __init__(self):
         super().__init__()
@@ -481,9 +482,11 @@ class Event(BaseEvent):
         try:
             response = await send_image
         except Exception as e:
-            if not "upload failed with status code 429" in str(e):
+            if "upload failed with status code 429" not in str(e):
                 raise
-            _log_.warning("uploading image failed with error 429, sleeping for 10 seconds…")
+            _log_.warning(
+                "uploading image failed with error 429, sleeping for 10 seconds…"
+            )
             await asyncio.sleep(10)
             response = await send_image
         msg = self.gen_new_msg(response)
