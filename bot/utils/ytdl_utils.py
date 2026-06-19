@@ -428,7 +428,7 @@ class YoutubeDLHelper:
                 else:
                     h264_formats = [
                         fmt["format_id"]
-                        for fmt in result["formats"]
+                        for fmt in result.get("formats", [])
                         if (
                             (
                                 fmt.get("vcodec")
