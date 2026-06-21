@@ -194,6 +194,7 @@ async def youtube_reply(event, args, client):
                     f"ytdl/{event.chat.id}:{event.id}",
                     _format.format(quality),
                     playlist,
+                    event,
                     trim_args=t_args,
                     twi=twi,
                     is_tiktok=is_tiktok,
@@ -263,38 +264,39 @@ async def media_reply(event, listener, t_args=None) -> bool:
     album_files = []
     caption = ""
     single_dl = len(downloads) == 1
-    for file in downloads:
-        file_name = file.local_path
-        if not file_exists(file_name):
-            await logger(e=f"File: {file_name} not found!", error=True)
-            continue
-        if size_of(file_name) > 100000000:
-            await event.reply(
-                "*Upload failed, Video is too large!*\nTry with lower quality."
-            )
-            continue
-        caption = wrap_lines_with_asterisks(file.caption)
-        log(e=f"Uploading {file_name}…")
-
-        if file.media_type == "video":
-            if single_dl:
-                msg = await msg.reply_video(file_name, caption)
+    async with event.react("📤"):
+        for file in downloads:
+            file_name = file.local_path
+            if not file_exists(file_name):
+                await logger(e=f"File: {file_name} not found!", error=True)
+                continue
+            if size_of(file_name) > 100000000:
+                await event.reply(
+                    "*Upload failed, Video is too large!*\nTry with lower quality."
+                )
+                continue
+            caption = wrap_lines_with_asterisks(file.caption)
+            log(e=f"Uploading {file_name}…")
+    
+            if file.media_type == "video":
+                if single_dl:
+                    msg = await msg.reply_video(file_name, caption)
+                    await asyncio.sleep(3)  # avoid spam
+                else:
+                    album_files.append(file_name)
+            elif file.media_type == "image":
+                if single_dl:
+                    msg = await msg.reply_photo(file_name, caption)
+                    await asyncio.sleep(3)  # avoid spam
+                else:
+                    album_files.append(file_name)
+            elif file.media_type == "gif":
+                msg = await msg.reply_gif(file_name, caption, as_gif=True)
                 await asyncio.sleep(3)  # avoid spam
             else:
-                album_files.append(file_name)
-        elif file.media_type == "image":
-            if single_dl:
-                msg = await msg.reply_photo(file_name, caption)
-                await asyncio.sleep(3)  # avoid spam
-            else:
-                album_files.append(file_name)
-        elif file.media_type == "gif":
-            msg = await msg.reply_gif(file_name, caption, as_gif=True)
-            await asyncio.sleep(3)  # avoid spam
-        else:
-            await logger(e=f"Unknown media type: {file.media_type}", error=True)
-    if len(album_files) > 0:
-        await msg.reply_album(album_files, caption)
+                await logger(e=f"Unknown media type: {file.media_type}", error=True)
+        if len(album_files) > 0:
+            await msg.reply_album(album_files, caption)
     await media_dl.clean_up()
     s_remove(media_dl.folder, folders=True)
     return True
