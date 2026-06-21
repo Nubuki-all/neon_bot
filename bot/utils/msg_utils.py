@@ -193,6 +193,7 @@ def wrap_lines_with_asterisks(text: str) -> str:
         lines.append(f"*{stripped}*" if stripped else line)
     return "\n".join(lines)
 
+
 def sanitize_text(text: str, truncate=True) -> str:
     if not text:
         return text
