@@ -277,7 +277,7 @@ async def media_reply(event, listener, t_args=None) -> bool:
                 continue
             caption = wrap_lines_with_asterisks(file.caption)
             log(e=f"Uploading {file_name}…")
-    
+
             if file.media_type == "video":
                 if single_dl:
                     msg = await msg.reply_video(file_name, caption)
