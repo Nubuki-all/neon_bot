@@ -176,6 +176,7 @@ class DummyListener:
         self.completed = False
         self.error = None
         self.is_cancelled = False
+        self.user_cancelled = False
         self.link = link
         self.name = None
         self.size = 0
@@ -314,6 +315,7 @@ class YoutubeDLHelper:
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
                 return
+        self._listener.user_cancelled = True
         self._on_download_error(f"*Download with gid: {self._gid} has been cancelled!*")
         await self.clean_up()
 

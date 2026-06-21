@@ -200,9 +200,10 @@ async def youtube_reply(event, args, client):
                     is_tiktok=is_tiktok,
                 )
                 if not ytdl.download_is_complete:
-                    if listener.is_cancelled and listener.error:
+                    await event.react("")
+                    if not listener.user_cancelled and listener.is_cancelled and listener.error:
                         await event.reply(
-                            f"*Download Error:*\n\nLink: {listener.link}\nError:"
+                            f"*Download Error:*\n\nLink: {listener.link}\nError: "
                             + listener.error
                         )
                     job.pop(0)
