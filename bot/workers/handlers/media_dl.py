@@ -201,7 +201,11 @@ async def youtube_reply(event, args, client):
                 )
                 if not ytdl.download_is_complete:
                     await event.react("")
-                    if not listener.user_cancelled and listener.is_cancelled and listener.error:
+                    if (
+                        not listener.user_cancelled
+                        and listener.is_cancelled
+                        and listener.error
+                    ):
                         await event.reply(
                             f"*Download Error:*\n\nLink: {listener.link}\nError: "
                             + listener.error
