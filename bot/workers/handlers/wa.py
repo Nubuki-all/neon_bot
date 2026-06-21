@@ -440,7 +440,7 @@ async def screenshot(event, args, client):
         replied = event.reply_to_message
         if not (replied or args):
             return await event.reply(f"{screenshot.__doc__}")
-        status_msg = await event.reply("Please wait…")
+        await event.react("🌐")
         extractor = URLExtract()
         if replied:
             msg = replied.caption or replied.text or ""
@@ -474,8 +474,7 @@ async def screenshot(event, args, client):
         await logger(Exception)
         await event.react("❌")
     finally:
-        if status_msg:
-            await status_msg.delete()
+        await event.react("")
 
 
 async def kang_sticker(event, args, client):

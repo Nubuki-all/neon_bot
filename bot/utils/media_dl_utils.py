@@ -62,6 +62,7 @@ class MediaHelper:
         self.caption = ""
         self.ext = ""
         self.folder = ""
+        self.cancel_handler_key = None
         self._progress_task: Optional[asyncio.Task] = None
 
     @property
@@ -111,38 +112,22 @@ class MediaHelper:
     async def _progress_loop(self):
         while not self._listener.is_cancelled and not self._listener.stop_progress:
             if self.download_is_complete:
-                if self._message:
-                    await self._update_message()
                 break
-            if self._message:
-                await self._update_message()
-            await asyncio.sleep(5)
+            await asyncio.sleep(1)
 
-    async def _update_message(self):
-        fin_str = enhearts()
-        prog = math.floor(self.progress / 10)
-        bar = "".join([fin_str for _ in range(prog)]) + "".join(
-            ["🤍" for _ in range(10 - prog)]
-        )
-        progress_line = f"\n{bar}\n*Progress:* {round(self.progress, 2)}%\n"
-        info_line = (
-            f"*{value_check(hbs(self._downloaded_bytes))} of {value_check(hbs(self._listener.size))}*\n"
-            f"*Speed:* {value_check(hbs(self._download_speed))}/s\n"
-            f"*ETA:* {self._eta}\n"
-            f"*Elapsed:* {time_formatter(int(time.time() - self._start_time))}\n"
-        )
-        text = (
-            f"*Downloading:* {self._listener.name or '...'}" + progress_line + info_line
-        )
-        await self._message.edit(text)
 
     async def _cancel(self, event, __, client):
+        if not event.reaction:
+            return
+        if self._gid != f"{event.chat.id}:{event.reaction.key.ID}":
+            return
+        if event.reaction.text != "❌":
+            return
         user = event.from_user.id
         if not user_is_privileged(user):
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
-                return await event.react("🙅")
-        await event.react("✅")
+                return
         self._listener.is_cancelled = True
         self._listener.user_cancelled = True
         self._on_download_error(f"Download with gid: {
@@ -152,8 +137,7 @@ class MediaHelper:
     async def clean_up(self):
         if self.cleaned:
             return
-        if self.cancel_cmd:
-            bot.unregister(self.cancel_cmd)
+        bot.unregister(self.cancel_handler_key)
         if self._progress_task and not self._progress_task.done():
             self._progress_task.cancel()
             try:
@@ -264,6 +248,8 @@ class MediaHelper:
         s_remove(tmp1)
         s_remove(tmp2)
 
+    
+
     async def _download(self, url: str, path: str):
         """Call the appropriate downloader based on the platform."""
         if self._listener.is_insta:
@@ -292,7 +278,7 @@ class MediaHelper:
     async def add_download(
         self,
         path: str,
-        message=None,
+        event,
         trim_args: Optional[str] = None,
     ):
         """
@@ -300,17 +286,11 @@ class MediaHelper:
         Registers a cancel command, downloads media, optionally trims videos.
         """
         self.folder = path
-        self._message = message
-        self._gid = secrets.token_urlsafe(10)
-        self.cancel_cmd = f"cancel_{self._gid}"
+        self._gid = f"{event.chat.id}:{event.id}"
         self._start_time = time.time()
 
-        bot.add_handler(self._cancel, self.cancel_cmd)
+        self.cancel_handler_key = bot.add_handler(self._cancel)
 
-        if message:
-            self.c_message = await message.reply(
-                conf.CMD_PREFIX + self.cancel_cmd,
-            )
         self._progress_task = asyncio.create_task(self._progress_loop())
 
         try:
@@ -355,21 +335,21 @@ class MediaHelper:
                 info = await probe_video(src)
                 issues = await needs_normalization(info, src)
                 if issues:
-                    dst = f"temp/{message.chat.id}_{message.id}.mp4"
-                    await message.edit("🛠️: fixing issues...")
-                    needs_transcode = any(
-                        "moov" not in i and "container" not in i for i in issues
-                    )
-                    try:
-                        await normalize_for_whatsapp(
-                            src, dst, transcode=needs_transcode
+                    dst = f"temp/{event.chat.id}_{event.id}.mp4"
+                    async with await event.react("🛠️"):
+                        needs_transcode = any(
+                            "moov" not in i and "container" not in i for i in issues
                         )
-                    except NormalizeVidError:
-                        # ignore transcode error and use encode output as is.
-                        pass
-                    s_remove(src)
-                    shutil.copy2(dst, src)
-                    s_remove(dst)
+                        try:
+                            await normalize_for_whatsapp(
+                                src, dst, transcode=needs_transcode
+                            )
+                        except NormalizeVidError:
+                            # ignore transcode error and use encode output as is.
+                            pass
+                        s_remove(src)
+                        shutil.copy2(dst, src)
+                        s_remove(dst)
             except Exception:
                 await logger(Exception)
         self._listener.completed = True

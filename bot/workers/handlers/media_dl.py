@@ -28,10 +28,10 @@ from bot.utils.ytdl_utils import (
 )
 
 
-async def folder_upload(folder, event, status_msg, audio, listener):
+async def folder_upload(folder, event, audio, listener):
     if not dir_exists(folder):
         return
-
+    status_msg = await event.reply("Uploading folder...")
     for path, subdirs, files in os.walk(folder):
         subdirs.sort()
         if not files:
@@ -189,30 +189,29 @@ async def youtube_reply(event, args, client):
                     twi = True
                 elif result.get("extractor").casefold() == "tiktok":
                     is_tiktok = True
-                status_msg = await event.reply("*Downloading…*")
+                await event.react("📥")
                 await ytdl.add_download(
                     f"ytdl/{event.chat.id}:{event.id}",
                     _format.format(quality),
                     playlist,
-                    status_msg,
                     trim_args=t_args,
                     twi=twi,
                     is_tiktok=is_tiktok,
                 )
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled and listener.error:
-                        await status_msg.edit(listener.error)
+                        await event.reply(f"*Download Error:*\n\nLink: {listener.link}\nError:" +listener.error)
                     job.pop(0)
                     await ytdl.clean_up()
                     s_remove(ytdl.folder, folders=True)
                     continue
-                await status_msg.edit("Download completed, Now uploading…")
+                await event.react("📤")
                 file = f"{ytdl.folder}/{ytdl.name}"
                 if not playlist:
                     if not file_exists(file):
                         raise Exception(f"File: {file} not found!")
                     if size_of(file) > 100000000:
-                        await status_msg.edit(
+                        await event.reply(
                             "*Upload failed, Video is too large!*\nTry with lower quality."
                         )
                         await ytdl.clean_up()
@@ -232,11 +231,11 @@ async def youtube_reply(event, args, client):
                             await event.reply_audio(file)
                 else:
                     await folder_upload(
-                        ytdl.folder, event, status_msg, audio, ytdl._listener
+                        ytdl.folder, event, audio, ytdl._listener
                     )
                 await ytdl.clean_up()
                 s_remove(ytdl.folder, folders=True)
-                await status_msg.delete() if not ytdl._listener.is_cancelled else None
+                await event.react("")
                 job.pop(0)
             except Exception:
                 await logger(Exception)
@@ -249,19 +248,15 @@ async def youtube_reply(event, args, client):
 
 async def media_reply(event, listener, t_args=None) -> bool:
     media_dl = MediaDLHelper(listener)
-    status_msg = await event.reply("*Downloading…*")
-    downloads = await media_dl.add_download(
-        f"media_dl/{event.chat.id}:{event.id}",
-        message=status_msg,
-        trim_args=t_args,
-    )
-    if not (media_dl.download_is_complete or downloads):
-        if listener.is_cancelled and listener.error:
-            await status_msg.edit("*Download Failed;* Trying fallback...")
-        await media_dl.clean_up()
-        s_remove(media_dl.folder, folders=True)
-        return listener.user_cancelled
-    await status_msg.edit("Download completed, Now uploading…")
+    async with event.react("📥"):
+        downloads = await media_dl.add_download(
+            f"media_dl/{event.chat.id}:{event.id}", event,
+            trim_args=t_args,
+        )
+        if not (media_dl.download_is_complete or downloads):
+            await media_dl.clean_up()
+            s_remove(media_dl.folder, folders=True)
+            return listener.user_cancelled
     msg = event
     album_files = []
     caption = ""
@@ -300,5 +295,4 @@ async def media_reply(event, listener, t_args=None) -> bool:
         await msg.reply_album(album_files, caption)
     await media_dl.clean_up()
     s_remove(media_dl.folder, folders=True)
-    await status_msg.delete() if not media_dl._listener.is_cancelled else None
     return True

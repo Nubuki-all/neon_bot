@@ -226,6 +226,7 @@ class YoutubeDLHelper:
         self._gid = ""
         self._ext = ""
         self.cancel_cmd = None
+        self.cancel_handler_key = None
         self.c_message = None
         self.cleaned = False
         self.is_playlist = False
@@ -308,30 +309,29 @@ class YoutubeDLHelper:
                 pass
 
     async def _cancel(self, event, __, client):
-        "Cancel a ytdl download."
+        if not event.reaction:
+            return
+        if self._gid != f"{event.chat.id}:{event.reaction.key.ID}":
+            return
+        if event.reaction.text != "❌":
+            return
         user = event.from_user.id
         if not user_is_privileged(user):
             group_info = await client.get_group_info(event.chat.jid)
             if not user_is_admin(user, group_info.Participants):
-                return await event.react("🙅")
-        await event.react("✅")
+                return
         self._on_download_error(f"*Download with gid: {self._gid} has been cancelled!*")
         await self.clean_up()
 
     async def clean_up(self):
         if self.cleaned:
             return
-        if self.c_message:
-            await self.c_message.delete()
-        if self.cancel_cmd:
-            bot.unregister(self.cancel_cmd)
+        bot.unregister(self.cancel_handler_key)
         self.cleaned = True
 
     async def _on_download_start(self, from_queue=False):
-        self.cancel_cmd = "cancel_" + self._gid
         self.start = time.time()
-        bot.add_handler(self._cancel, self.cancel_cmd)
-        self.c_message = await self.message.reply(conf.CMD_PREFIX + self.cancel_cmd)
+        self.cancel_handler_key = bot.add_handler(self._cancel)
         asyncio.create_task(self.progress_monitor())
 
     async def progress_monitor(self):
@@ -340,54 +340,21 @@ class YoutubeDLHelper:
                 break
             if (diff := (time.time() - self.start)) > 1800:
                 self._listener.is_cancelled = True
-                await self.message.edit("*Download Timed out!*")
+                await self.message.reply("*Download Timed out!*")
                 continue
             if self.size > 5000000000 or self.downloaded_bytes > 5000000000:
                 self._listener.is_cancelled = True
-                await self.message.edit(
+                await self.message.reply(
                     f"*{self.name or 'Media'} is bigger than the preset max size limit.*"
                 )
                 continue
             if self.size >= 100000000 and not self.is_playlist:
                 self._listener.is_cancelled = True
-                await self.message.edit(
+                await self.message.reply(
                     f"*{self.name or 'Media'} too large to upload.*"
                 )
                 continue
-
-            ud_type = "*Downloading*"
-            ud_type += f":\n{self.name}" if self.name else "…"
-            remaining_size = self.size - self.downloaded_bytes
-            total = self.size
-            current = self.downloaded_bytes
-            speed = self.download_speed
-            time_to_completion = self.eta
-            fin_str = enhearts()
-
-            progress = "\n{0}{1}\n*Progress:* {2}%\n".format(
-                "".join([fin_str for i in range(math.floor(self.progress / 10))]),
-                "".join(
-                    [self.unfin_str for i in range(10 - math.floor(self.progress / 10))]
-                ),
-                round(self.progress, 2),
-            )
-            tmp = (
-                progress
-                + "*{0} of {1}*\n*Speed:* {2}/s\n*Remains:* {3}\n*ETA:* {4}\n*Elapsed:* {5}\n".format(
-                    value_check(hbs(current)),
-                    value_check(hbs(total)),
-                    value_check(hbs(speed)),
-                    value_check(hbs(remaining_size)),
-                    # elapsed_time if elapsed_time != '' else "0 s",
-                    # download.eta if len(str(download.eta)) < 30 else "0 s",
-                    time_to_completion if time_to_completion else "0 s",
-                    time_formatter(diff),
-                )
-            )
-            dsp = "{}\n{}".format(ud_type, tmp)
-            dsp += "\n*To cancel use the below command;*"
-            await self.message.edit(dsp)
-            await asyncio.sleep(5)
+            await asyncio.sleep(2)
 
     def _on_download_error(self, error):
         self._listener.is_cancelled = True
@@ -488,13 +455,12 @@ class YoutubeDLHelper:
         is_tiktok=False,
     ):
         self.folder = path
-        self.message = message
         if playlist:
             self.opts["ignoreerrors"] = True
             self.is_playlist = True
 
-        self._gid = token_urlsafe(10)
-
+        self._gid = f"{message.chat.id}:{message.id}"
+        self.message = message
         await self._on_download_start()
 
         self.opts["postprocessors"] = [
@@ -692,20 +658,20 @@ class YoutubeDLHelper:
                 issues = await needs_normalization(info, src)
                 if issues:
                     dst = f"temp/{message.chat.id}_{message.id}.mp4"
-                    await message.edit("🛠️: fixing issues...")
-                    needs_transcode = any(
-                        "moov" not in i and "container" not in i for i in issues
-                    )
-                    try:
-                        await normalize_for_whatsapp(
-                            src, dst, transcode=needs_transcode
+                    async with await message.react("🛠️"):
+                        needs_transcode = any(
+                            "moov" not in i and "container" not in i for i in issues
                         )
-                    except NormalizeVidError:
-                        # ignore transcode error and use encode output as is.
-                        pass
-                    s_remove(src)
-                    shutil.copy2(dst, src)
-                    s_remove(dst)
+                        try:
+                            await normalize_for_whatsapp(
+                                src, dst, transcode=needs_transcode
+                            )
+                        except NormalizeVidError:
+                            # ignore transcode error and use encode output as is.
+                            pass
+                        s_remove(src)
+                        shutil.copy2(dst, src)
+                        s_remove(dst)
             except Exception:
                 await logger(Exception)
 
