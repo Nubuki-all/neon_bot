@@ -187,9 +187,11 @@ async def send_presence(online=True):
 
 
 def wrap_lines_with_asterisks(text: str) -> str:
-    """Wrap each non-empty line of text with * at start and end."""
-    return "\n".join(f"*{line}*" if line.strip() else line for line in text.split("\n"))
-
+    lines = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        lines.append(f"*{stripped}*" if stripped else line)
+    return "\n".join(lines)
 
 def sanitize_text(text: str, truncate=True) -> str:
     if not text:
