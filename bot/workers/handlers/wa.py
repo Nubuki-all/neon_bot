@@ -429,7 +429,6 @@ async def screenshot(event, args, client):
       -d force darkmode (default True)
       -f Full screenshot of webpage (scrolling screenshot)
     """
-    status_msg = None
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):

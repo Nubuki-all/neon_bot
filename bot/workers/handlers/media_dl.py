@@ -200,7 +200,10 @@ async def youtube_reply(event, args, client):
                 )
                 if not ytdl.download_is_complete:
                     if listener.is_cancelled and listener.error:
-                        await event.reply(f"*Download Error:*\n\nLink: {listener.link}\nError:" +listener.error)
+                        await event.reply(
+                            f"*Download Error:*\n\nLink: {listener.link}\nError:"
+                            + listener.error
+                        )
                     job.pop(0)
                     await ytdl.clean_up()
                     s_remove(ytdl.folder, folders=True)
@@ -230,9 +233,7 @@ async def youtube_reply(event, args, client):
                         else:
                             await event.reply_audio(file)
                 else:
-                    await folder_upload(
-                        ytdl.folder, event, audio, ytdl._listener
-                    )
+                    await folder_upload(ytdl.folder, event, audio, ytdl._listener)
                 await ytdl.clean_up()
                 s_remove(ytdl.folder, folders=True)
                 await event.react("")
@@ -250,7 +251,8 @@ async def media_reply(event, listener, t_args=None) -> bool:
     media_dl = MediaDLHelper(listener)
     async with event.react("📥"):
         downloads = await media_dl.add_download(
-            f"media_dl/{event.chat.id}:{event.id}", event,
+            f"media_dl/{event.chat.id}:{event.id}",
+            event,
             trim_args=t_args,
         )
         if not (media_dl.download_is_complete or downloads):

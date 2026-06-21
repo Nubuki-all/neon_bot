@@ -1,28 +1,23 @@
 import asyncio
 import json
-import math
 import os
-import secrets
 import shutil
 import time
 from dataclasses import dataclass
 from typing import Optional
 
-from bot.config import bot, conf
-from bot.fun.emojis import enhearts
+from bot.config import bot
 from bot.others.exceptions import NormalizeVidError
 from bot.pkgs.insta_dl import download_instagram
 from bot.pkgs.pinterest_dl import download_pinterest
 from bot.pkgs.tiktok_dl import download_tiktok
 
 from .bot_utils import (
-    hbs,
     is_valid_video_timestamp,
     needs_normalization,
     normalize_for_whatsapp,
     probe_video,
     time_formatter,
-    value_check,
     video_timestamp_to_seconds,
 )
 from .log_utils import log, logger
@@ -114,7 +109,6 @@ class MediaHelper:
             if self.download_is_complete:
                 break
             await asyncio.sleep(1)
-
 
     async def _cancel(self, event, __, client):
         if not event.reaction:
@@ -248,8 +242,6 @@ class MediaHelper:
         s_remove(tmp1)
         s_remove(tmp2)
 
-    
-
     async def _download(self, url: str, path: str):
         """Call the appropriate downloader based on the platform."""
         if self._listener.is_insta:
@@ -345,7 +337,8 @@ class MediaHelper:
                                 src, dst, transcode=needs_transcode
                             )
                         except NormalizeVidError:
-                            # ignore transcode error and use encode output as is.
+                            # ignore transcode error and use encode output as
+                            # is.
                             pass
                         s_remove(src)
                         shutil.copy2(dst, src)

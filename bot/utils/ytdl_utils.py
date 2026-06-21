@@ -1,30 +1,24 @@
 import asyncio
 import json
-import math
 import shutil
 import time
 import uuid
 from os import listdir
 from os import path as ospath
 from re import search as re_search
-from secrets import token_urlsafe
 
 from yt_dlp import DownloadError, YoutubeDL, extractor
 from yt_dlp.utils import download_range_func
 
-from bot.config import bot, conf
-from bot.fun.emojis import enhearts
+from bot.config import bot
 from bot.others.exceptions import NormalizeVidError
 
 from .bot_utils import (
-    hbs,
     is_valid_video_timestamp,
     needs_normalization,
     normalize_for_whatsapp,
     probe_video,
     sync_to_async,
-    time_formatter,
-    value_check,
     video_timestamp_to_seconds,
 )
 from .log_utils import log, logger
@@ -667,7 +661,8 @@ class YoutubeDLHelper:
                                 src, dst, transcode=needs_transcode
                             )
                         except NormalizeVidError:
-                            # ignore transcode error and use encode output as is.
+                            # ignore transcode error and use encode output as
+                            # is.
                             pass
                         s_remove(src)
                         shutil.copy2(dst, src)
