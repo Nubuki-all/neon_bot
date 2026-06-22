@@ -406,7 +406,12 @@ def _parse_gql_media(data: dict) -> List[DownloadResult]:
     items = []
 
     if typename in ("GraphVideo", "XDTGraphVideo"):
-        video_url = data["video_url"]
+        try:
+            video_url = data["video_url"]
+        except KeyError:
+            _log_.info("Missing 'video_url' in data. Keys:", data.keys())
+            _log_.info("Full data:", json.dumps(data, indent=2, default=str))
+            raise
         display_url = data.get("display_url", "")
         items.append(
             DownloadResult(
