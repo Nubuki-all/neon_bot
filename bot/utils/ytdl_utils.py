@@ -654,7 +654,7 @@ class YoutubeDLHelper:
                 issues = await needs_normalization(info, src)
                 if issues:
                     dst = f"temp/{message.chat.id}_{message.id}.mp4"
-                    async with await message.react("🛠️"):
+                    async with message.react("🛠️"):
                         needs_transcode = any(
                             "moov" not in i and "container" not in i for i in issues
                         )

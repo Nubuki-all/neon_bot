@@ -328,7 +328,7 @@ class MediaHelper:
                 issues = await needs_normalization(info, src)
                 if issues:
                     dst = f"temp/{event.chat.id}_{event.id}.mp4"
-                    async with await event.react("🛠️"):
+                    async with event.react("🛠️"):
                         needs_transcode = any(
                             "moov" not in i and "container" not in i for i in issues
                         )
