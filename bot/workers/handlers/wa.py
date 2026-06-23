@@ -545,7 +545,8 @@ async def stickerize_image(event, args, client):
         if replied.short_name == "album":
             return await stickerize_album(event, args_, client)
         if not (replied.image or replied.video):
-            # Check if there's no document, or the document isn't an image/video
+            # Check if there's no document, or the document isn't an
+            # image/video
             if not replied.document or not (
                 replied.document.mimetype.startswith("video")
                 or replied.document.mimetype.startswith("image")
