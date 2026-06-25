@@ -1947,6 +1947,8 @@ async def repeat(event, args, client):
         -x (repeat a number of times, max 5)
         -uv (undo view once)
         -vo (force view once)
+        -cc (clean caption)
+        -C (custom caption)
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -1964,13 +1966,18 @@ async def repeat(event, args, client):
             ["-nq", "store_false"],
             ["-uv", "store_true"],
             ["-vo", "store_true"],
+            ["-cc", "store_true"],
             "-x",
+            "-C",
             to_parse=args,
             get_unknown=True,
         )
         if arg.uv or arg.vo:
             if replied.is_actual_media:
                 replied.media.viewOnce = True if arg.vo else False
+        if arg.cc or arg.C:
+            if replied.is_actual_media:
+                replied.media.caption = arg.C or ""
         if arg.x and not arg.x.isdigit():
             arg.x = ""
         if arg.x and not user_is_privileged(user):
