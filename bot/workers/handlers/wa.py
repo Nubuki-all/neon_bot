@@ -1949,6 +1949,9 @@ async def repeat(event, args, client):
         -vo (force view once)
         -cc (clean caption)
         -C (custom caption)
+        -f (add forwarded)
+        -rf (remove forwarded)
+        -ff (add forwarded many times)
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -1967,6 +1970,9 @@ async def repeat(event, args, client):
             ["-uv", "store_true"],
             ["-vo", "store_true"],
             ["-cc", "store_true"],
+            ["-f", "store_true"],
+            ["-ff", "store_true"],
+            ["-rf", "store_true"],
             "-x",
             "-C",
             to_parse=args,
@@ -1978,6 +1984,15 @@ async def repeat(event, args, client):
         if arg.cc or arg.C:
             if replied.is_actual_media:
                 replied.media.caption = arg.C or ""
+        if arg.f or arg.ff or arg.rf:
+            if hasattr(replied.media, "contextInfo"):
+                score = 0
+                if arg.f:
+                    score = 1
+                elif arg.ff:
+                    score = random.randint(127, 999)
+                replied.media.contextInfo.forwardingScore = score
+                replied.media.contextInfo.isForwarded = ((arg.f or arg.ff) and not arg.rf)
         if arg.x and not arg.x.isdigit():
             arg.x = ""
         if arg.x and not user_is_privileged(user):
