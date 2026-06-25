@@ -1992,7 +1992,7 @@ async def repeat(event, args, client):
                 elif arg.ff:
                     score = random.randint(127, 999)
                 replied.media.contextInfo.forwardingScore = score
-                replied.media.contextInfo.isForwarded = ((arg.f or arg.ff) and not arg.rf)
+                replied.media.contextInfo.isForwarded = (arg.f or arg.ff) and not arg.rf
         if arg.x and not arg.x.isdigit():
             arg.x = ""
         if arg.x and not user_is_privileged(user):
