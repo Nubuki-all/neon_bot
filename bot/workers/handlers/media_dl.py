@@ -134,9 +134,13 @@ async def youtube_reply(event, args, client):
                 elif is_valid_pinterest_url(listener.link):
                     tryAlt = listener.is_pintrest = True
                 if tryAlt:
-                    if await media_reply(event, listener, t_args):
-                        job.pop(0)
-                        continue
+                    try:
+                        if await media_reply(event, listener, t_args):
+                            job.pop(0)
+                            continue
+                    except Exception:
+                        await logger(Exception)
+                        await event.react("↩️")
                 audio = False
                 twi = False
                 is_tiktok = False
@@ -265,6 +269,7 @@ async def media_reply(event, listener, t_args=None) -> bool:
         if not (media_dl.download_is_complete or downloads):
             await media_dl.clean_up()
             s_remove(media_dl.folder, folders=True)
+            await event.react("💥")
             return listener.user_cancelled
     msg = event
     album_files = []
