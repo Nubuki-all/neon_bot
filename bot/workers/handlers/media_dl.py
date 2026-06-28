@@ -69,6 +69,7 @@ async def folder_upload(folder, event, audio, listener):
                 event = await event.reply_video(file, f"*{base_name}*")
             await asyncio.sleep(3)
             t += 1
+    await status_msg.delete()
 
 
 async def get_audio_thumbnail(file):
