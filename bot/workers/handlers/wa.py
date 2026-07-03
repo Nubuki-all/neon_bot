@@ -310,7 +310,7 @@ async def compress(event, args, client):
             if hevc
             else f'-preset 9 -g 240 -svtav1-params tune=1:film-grain=0 -crf {crf_quality.get(args, "42")}'
         )
-        
+
         cmd_str = f'''ffmpeg -i "{in_}" \
         -map 0:v? -map 0:a? -map 0:s? -map 0:t? \
         -metadata title="{title_} | MiNi" \
