@@ -269,6 +269,10 @@ async def compress(event, args, client):
             f_name, ext = split_ext(replied.document.fileName)
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
+        hevc = False
+        if "--hevc" in args:
+            args = args.replace("--hevc", "")
+            hevc = True
         args = args.casefold() if args else ""
         if args not in ["480p", "720p", "1080p"]:
             args = ""
@@ -300,16 +304,24 @@ async def compress(event, args, client):
         a_quality = {"480p": "32k", "720p": "64k", "1080p": "128k"}
         crf_quality = {"1080p": "35"}
         title_ = (replied.caption or "").split("\n")[-1]
-        cmd_str = f"""ffmpeg -i "{in_}" -map 0:v? -map 0:a? -map 0:s? -map 0:t? -metadata title="{title_} | MiNi" -c:v libsvtav1 -preset 9 -g 240 -s {
-            quality.get(
-                args,
-                "854x480")} -pix_fmt yuv420p -svtav1-params tune=1:film-grain=0 -crf {
-            crf_quality.get(
-                args,
-                "42")} -c:a libopus -ac 2 -vbr 2  -ab {
-                    a_quality.get(
-                        args,
-                        "32k")} -c:s copy -movflags +faststart {out_}"""
+        video_codec = "libx265" if hevc else "libsvtav1"
+        video_params = (
+            "-crf 30"
+            if hevc
+            else f'-preset 9 -g 240 -svtav1-params tune=1:film-grain=0 -crf {crf_quality.get(args, "42")}'
+        )
+        
+        cmd_str = f'''ffmpeg -i "{in_}" \
+        -map 0:v? -map 0:a? -map 0:s? -map 0:t? \
+        -metadata title="{title_} | MiNi" \
+        -c:v {video_codec} \
+        {video_params} \
+        -s {quality.get(args, "854x480")} \
+        -pix_fmt yuv420p \
+        -c:a libopus -ac 2 -vbr 2 -ab {a_quality.get(args, "32k")} \
+        -c:s copy \
+        -movflags +faststart \
+        "{out_}"'''
 
         with open(in_, "wb") as f:
             f.write(file)
