@@ -270,7 +270,7 @@ async def compress(event, args, client):
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         hevc = False
-        if "--hevc" in args:
+        if args and "--hevc" in args:
             args = args.replace("--hevc", "").strip()
             hevc = True
         args = args.casefold() if args else ""
