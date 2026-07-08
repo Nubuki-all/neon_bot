@@ -180,6 +180,7 @@ class DummyListener:
         self.link = link
         self.name = None
         self.size = 0
+        self.is_ytm = False
 
 
 class MyLogger:
@@ -211,7 +212,7 @@ class MyLogger:
 
 
 class YoutubeDLHelper:
-    def __init__(self, listener):
+    def __init__(self, listener: DummyListener):
         self._last_downloaded = 0
         self._progress = 0
         self._downloaded_bytes = 0
@@ -618,6 +619,8 @@ class YoutubeDLHelper:
         # await self._on_download_start(True)
 
         # if not add_to_queue:
+        if self._listener.is_ytm:
+            await asyncio.sleep(5)
         log(e=f"Downloading with YT_DLP: {
             self.file_name or self._listener.name}")
 
