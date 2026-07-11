@@ -9,7 +9,7 @@ ENV TZ=Africa/Lagos
 ENV TERM=xterm
 
 # 2. Install Dependencies
-RUN dnf -qq -y update && dnf -qq -y install git bash xz wget curl python3-pip psmisc procps-ng unzip ImageMagick-devel && python3 -m pip install --upgrade pip setuptools
+RUN dnf -qq -y update && dnf -qq -y install git bash xz wget curl mediainfo python3-pip psmisc procps-ng unzip ImageMagick-devel && python3 -m pip install --upgrade pip setuptools
 
 # 3. Install latest ffmpeg & other dependencies
 RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/64/) && \

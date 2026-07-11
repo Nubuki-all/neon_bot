@@ -5,6 +5,7 @@ import io
 import random
 import time
 import uuid
+from dataclasses import dataclass
 from datetime import datetime as dt
 from os.path import splitext as split_ext
 
@@ -27,9 +28,12 @@ from bot.fun.stickers import ran_stick
 from bot.utils.bot_utils import (
     LimitedDict,
     get_date_from_isostr,
+    get_fps,
+    get_mediainfo,
     human_format_num,
     is_video_file,
     list_to_str,
+    post_to_tgph,
     png_to_jpg,
     same_week,
     screenshot_page,
@@ -39,6 +43,7 @@ from bot.utils.bot_utils import (
     video_timestamp_to_seconds,
     wait_for_turn,
     waiting_for_turn,
+    write_binary,
 )
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import log, logger
@@ -74,6 +79,7 @@ from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
 from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
 
 compress_cache = LimitedDict()
+mediainfo_cache = LimitedDict()
 purge_sessions = {}
 
 
@@ -96,6 +102,8 @@ async def tools(event, args, client):
             f"{pre}save - *Save a replied text/media*{s}"
             f"{s}"
             f"{pre}doc - *Convert videos/images/stickers to document*{s}"
+            f"{pre}fps - *Get the fps of a replied video*{s}"
+            f"{pre}mediainfo - *Get the mediainfo of a replied video*{s}"
             f"{pre}mp3 - *Convert Video to audio*{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}pin - *Pin a replied message*{s}"
@@ -234,6 +242,117 @@ async def to_mp3(event, args, client):
 
         async with event.react("📤"):
             await event.reply_audio(audio)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def getfps(event, args, client):
+    "Gets the fps of a replied video."
+    return await vinfo(event, "fps", client)
+
+async def getminfo(event, args, client):
+    """
+    Get the mediainfo of a replied video
+    Argument:
+        -f: get mediainfo as document
+    """
+    if args == "-f":
+        return await vinfo(event, 'media_info', client)
+    return await vinfo(event, "media_info_link", client)
+
+async def vinfo(event, args, client):
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Kindly reply to video.*")
+        ext = ""
+        f_name = ""
+        if replied.document:
+            if not (
+                replied.document.mimetype.startswith("video")
+                or is_video_file(replied.document.fileName)
+            ):
+                return await event.reply("*Replied message is not a video.*")
+            f_name, ext = split_ext(replied.document.fileName)
+        elif not replied.video:
+            return await event.reply("*Replied message is not a video.*")
+        args = args or ""
+        @dataclass
+        class VideoInfo:
+            media_info: str = ""
+            media_info_link: str = ""
+            fps: float = 0.0
+        async def _send(info: VideoInfo) -> bool:
+            match args.casefold():
+                case "fps":
+                    await event.reply(f"FPS: {info.fps}")
+                case "media_info":
+                    await event.reply_document(info.media_info.encode("utf-8"), "mediainfo.txt", "mediainfo")
+                case "media_info_link":
+                    await event.reply(f"*Mediainfo:* {info.media_info_link}")
+                case _:
+                    return False
+            return True
+
+        async def _process(info: VideoInfo) -> bool:
+            x = _send(info)
+            if args == "fps" and info.fps:
+                return await x
+            elif args == "media_info" and info.media_info:
+                return await x
+            elif args == "media_info_link" and info.media_info_link:
+                return await x
+            else: return False
+
+        comp_sha = replied.media.fileSHA256
+        info = compress_cache.get(comp_sha)
+        if info:
+            if await _process(info):
+                return
+        else:
+            info = VideoInfo()
+        _id = f"{event.chat.id}:{event.id}"
+        fn = f"comp/{_id}{ext}"
+        async with event.react("📥"):
+            file = await replied.download()
+        await write_binary(fn, file)
+        fps_error = mi_error = mi_link_error = None
+        async def _populate(i: VideoInfo):
+            if not i.fps:
+                try:
+                    i.fps = await get_fps(fn)
+                except Exception as e:
+                    fps_error = e
+                    await logger(Exception)
+            if not i.media_info:
+                try:
+                    i.media_info = await get_mediainfo(fn, full=True)
+                except Exception as e:
+                    mi_error = e
+                    await logger(Exception)
+            if not i.media_info_link:
+                try:
+                    content = await get_mediainfo(fn, html=True)
+                    if len(content) > 65536:
+                        content = (
+                            content[:65430]
+                            + "<strong>...<strong><br><br><strong>(TRUNCATED DUE TO CONTENT EXCEEDING MAX LENGTH)<strong>"
+                        )
+                    i.media_info_link = (await post_to_tgph("Mediainfo", content, bot.client.me.PushName, "url"))["url"]
+                except Exception as e:
+                    mi_link_error = e
+                    await logger(Exception)
+        await _populate(info)
+        mediainfo_cache[comp_sha] = info
+        if await _process(info):
+            return
+        await event.react("😖")
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -2389,6 +2508,7 @@ bot.add_handler(tag_all_sudoers)
 bot.add_handler(rec_msg_ranking)
 
 bot.add_handler(to_doc, "doc")
+bot.add_handler(getfps, "fps")
 bot.add_handler(to_mp3, "mp3")
 bot.add_handler(tools, "tools")
 bot.add_handler(get_notes, "get")
@@ -2400,6 +2520,7 @@ bot.add_handler(compress, "compress")
 bot.add_handler(kang_sticker, "kang")
 bot.add_handler(pick_random, "random")
 bot.add_handler(set_rules, "setrules")
+bot.add_handler(getminfo, "mediainfo")
 bot.add_handler(unpin_message, "unpin")
 bot.add_handler(purge_messages, "purge")
 bot.add_handler(delete_rules, "delrules")

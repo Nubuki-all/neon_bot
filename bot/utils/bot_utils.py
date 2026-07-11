@@ -9,6 +9,7 @@ import tempfile
 import traceback
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
+from fractions import Fraction
 from functools import partial
 from hashlib import sha256
 from urllib.parse import urlparse, urlunparse
@@ -581,6 +582,38 @@ async def probe_video(path: str) -> dict:
     if rc != 0:
         raise RuntimeError(f"ffprobe failed on {path}")
     return json.loads(stdout)
+
+
+async def get_fps(video_path: str) -> Fraction:
+    stdout, stderr, rc = await _run(
+        "ffprobe",
+        "-v", "error",
+        "-select_streams", "v:0",
+        "-show_entries", "stream=avg_frame_rate",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        video_path,
+    )
+
+    if rc != 0:
+        raise RuntimeError(stderr.decode().strip())
+
+    return Fraction(stdout.decode().strip())
+
+async def get_mediainfo(video_path: str, full=False, html=False) -> str:
+    args = ["mediainfo"]
+    if full:
+        args.append("--Full")
+    if html:
+        args.append("--Output=HTML")
+    stdout, stderr, rc = await _run(
+        *args,
+        video_path,
+    )
+
+    if rc != 0:
+        raise RuntimeError(stderr.decode().strip())
+
+    return stdout.decode().strip()
 
 
 async def check_moov_position(path: str) -> bool:
