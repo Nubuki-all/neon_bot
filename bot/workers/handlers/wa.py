@@ -318,7 +318,7 @@ async def vinfo(event, args, client):
                 return False
 
         comp_sha = replied.media.fileSHA256
-        info = compress_cache.get(comp_sha)
+        info = mediainfo_cache.get(comp_sha)
         if info:
             if await _process(info):
                 return
@@ -334,7 +334,7 @@ async def vinfo(event, args, client):
         async def _populate(i: VideoInfo):
             if not i.fps:
                 try:
-                    i.fps = float(await get_fps(fn))
+                    i.fps = round(float(await get_fps(fn)), 2)
                 except Exception:
                     await logger(Exception)
             if not i.media_info:
