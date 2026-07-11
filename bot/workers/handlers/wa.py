@@ -33,8 +33,8 @@ from bot.utils.bot_utils import (
     human_format_num,
     is_video_file,
     list_to_str,
-    post_to_tgph,
     png_to_jpg,
+    post_to_tgph,
     same_week,
     screenshot_page,
     split_text,
@@ -251,6 +251,7 @@ async def getfps(event, args, client):
     "Gets the fps of a replied video."
     return await vinfo(event, "fps", client)
 
+
 async def getminfo(event, args, client):
     """
     Get the mediainfo of a replied video
@@ -258,8 +259,9 @@ async def getminfo(event, args, client):
         -f: get mediainfo as document
     """
     if args == "-f":
-        return await vinfo(event, 'media_info', client)
+        return await vinfo(event, "media_info", client)
     return await vinfo(event, "media_info_link", client)
+
 
 async def vinfo(event, args, client):
     user = event.from_user.id
@@ -283,17 +285,21 @@ async def vinfo(event, args, client):
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         args = args or ""
+
         @dataclass
         class VideoInfo:
             media_info: str = ""
             media_info_link: str = ""
             fps: float = 0.0
+
         async def _send(info: VideoInfo) -> bool:
             match args.casefold():
                 case "fps":
                     await event.reply(f"FPS: {info.fps}")
                 case "media_info":
-                    await event.reply_document(info.media_info.encode("utf-8"), "mediainfo.txt", "mediainfo")
+                    await event.reply_document(
+                        info.media_info.encode("utf-8"), "mediainfo.txt", "mediainfo"
+                    )
                 case "media_info_link":
                     await event.reply(f"*Mediainfo:* {info.media_info_link}")
                 case _:
@@ -308,7 +314,8 @@ async def vinfo(event, args, client):
                 return await x
             elif args == "media_info_link" and info.media_info_link:
                 return await x
-            else: return False
+            else:
+                return False
 
         comp_sha = replied.media.fileSHA256
         info = compress_cache.get(comp_sha)
@@ -323,18 +330,17 @@ async def vinfo(event, args, client):
             file = await replied.download()
         await write_binary(fn, file)
         fps_error = mi_error = mi_link_error = None
+
         async def _populate(i: VideoInfo):
             if not i.fps:
                 try:
                     i.fps = await get_fps(fn)
-                except Exception as e:
-                    fps_error = e
+                except Exception:
                     await logger(Exception)
             if not i.media_info:
                 try:
                     i.media_info = await get_mediainfo(fn, full=True)
-                except Exception as e:
-                    mi_error = e
+                except Exception:
                     await logger(Exception)
             if not i.media_info_link:
                 try:
@@ -344,10 +350,14 @@ async def vinfo(event, args, client):
                             content[:65430]
                             + "<strong>...<strong><br><br><strong>(TRUNCATED DUE TO CONTENT EXCEEDING MAX LENGTH)<strong>"
                         )
-                    i.media_info_link = (await post_to_tgph("Mediainfo", content, bot.client.me.PushName, "url"))["url"]
-                except Exception as e:
-                    mi_link_error = e
+                    i.media_info_link = (
+                        await post_to_tgph(
+                            "Mediainfo", content, bot.client.me.PushName, "url"
+                        )
+                    )["url"]
+                except Exception:
                     await logger(Exception)
+
         await _populate(info)
         mediainfo_cache[comp_sha] = info
         if await _process(info):
