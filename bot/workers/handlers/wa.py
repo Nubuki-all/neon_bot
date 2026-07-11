@@ -352,7 +352,7 @@ async def vinfo(event, args, client):
                         )
                     i.media_info_link = (
                         await post_to_tgph(
-                            "Mediainfo", content, bot.client.me.PushName, "url"
+                            "Mediainfo", content, bot.client.me.PushName, ""
                         )
                     )["url"]
                 except Exception:
