@@ -334,7 +334,7 @@ async def vinfo(event, args, client):
         async def _populate(i: VideoInfo):
             if not i.fps:
                 try:
-                    i.fps = await get_fps(fn)
+                    i.fps = await float(get_fps(fn))
                 except Exception:
                     await logger(Exception)
             if not i.media_info:
