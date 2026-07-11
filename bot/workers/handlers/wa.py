@@ -273,15 +273,14 @@ async def vinfo(event, args, client):
     try:
         if not (replied := event.reply_to_message):
             return await event.reply("*Kindly reply to video.*")
-        ext = ""
-        f_name = ""
+        ext = ".mp4"
         if replied.document:
             if not (
                 replied.document.mimetype.startswith("video")
                 or is_video_file(replied.document.fileName)
             ):
                 return await event.reply("*Replied message is not a video.*")
-            f_name, ext = split_ext(replied.document.fileName)
+            _, ext = split_ext(replied.document.fileName)
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         args = args or ""
