@@ -54,9 +54,8 @@ class Event(BaseEvent):
 
     def _construct_media(self, message=None):
         for msg, v in (message or self._message).ListFields():
-            if not msg.name.endswith("ContextInfo"):
-                if not message:
-                    self.name = self.short_name = msg.name
+            if not msg.name.endswith("ContextInfo") and not message:
+                self.name = self.short_name = msg.name
             if msg.name.startswith("viewOnce"):
                 self.short_name = "viewOnce"
                 self.view_once = v
@@ -181,7 +180,7 @@ class Event(BaseEvent):
         chat,
         message,
         link_preview: bool = True,
-        ghost_mentions: str = None,
+        ghost_mentions: str | None = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
@@ -207,9 +206,8 @@ class Event(BaseEvent):
 
     async def delete(self):
         await self.client.revoke_message(self.chat.jid, self.from_user.jid, self.id)
-        return
 
-    async def download(self, path: str = None) -> bytes | None:
+    async def download(self, path: str | None = None) -> bytes | None:
         if not (
             self.audio or self.document or self.image or self.sticker or self.video
         ):
@@ -219,7 +217,7 @@ class Event(BaseEvent):
             return bytes_
         await write_binary(path, bytes_)
 
-    async def edit(self, text: str = None, message=None) -> Event:
+    async def edit(self, text: str | None = None, message=None) -> Event:
         msg = Message(conversation=text) if text else message
         response = await self.client.edit_message(self.chat.jid, self.id, msg)
         msg = self.gen_new_msg(response)
@@ -285,15 +283,15 @@ class Event(BaseEvent):
 
     async def reply(
         self,
-        text: str = None,
+        text: str | None = None,
         to: JID = None,
-        file: str | bytes = None,
-        file_name: str = None,
-        image: str = None,
+        file: str | bytes | None = None,
+        file_name: str | None = None,
+        image: str | None = None,
         quote: bool = True,
         link_preview: bool = True,
         reply_privately: bool = False,
-        ghost_mentions: str = None,
+        ghost_mentions: str | None = None,
         message: MessageWithContextInfo = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
@@ -356,9 +354,9 @@ class Event(BaseEvent):
     async def reply_album(
         self,
         files: list,
-        caption: str = None,
+        caption: str | None = None,
         quote: bool = True,
-        ghost_mentions: str = None,
+        ghost_mentions: str | None = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
@@ -395,10 +393,10 @@ class Event(BaseEvent):
     async def reply_document(
         self,
         document: str | bytes,
-        file_name: str = None,
-        caption: str = None,
+        file_name: str | None = None,
+        caption: str | None = None,
         quote: bool = True,
-        ghost_mentions: str = None,
+        ghost_mentions: str | None = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
@@ -426,12 +424,12 @@ class Event(BaseEvent):
     async def reply_gif(
         self,
         gif: str | bytes,
-        caption: str = None,
+        caption: str | None = None,
         quote: bool = True,
         viewonce: bool = False,
         as_gif: bool = True,
         spoiler: bool = False,
-        ghost_mentions: str = None,
+        ghost_mentions: str | None = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
@@ -457,11 +455,11 @@ class Event(BaseEvent):
     async def reply_photo(
         self,
         photo: str | bytes,
-        caption: str = None,
+        caption: str | None = None,
         quote: bool = True,
         viewonce: bool = False,
         spoiler: bool = False,
-        ghost_mentions: str = None,
+        ghost_mentions: str | None = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
@@ -549,12 +547,12 @@ class Event(BaseEvent):
     async def reply_video(
         self,
         video: str | bytes,
-        caption: str = None,
+        caption: str | None = None,
         quote: bool = True,
         viewonce: bool = False,
         as_gif: bool = False,
         spoiler: bool = False,
-        ghost_mentions: str = None,
+        ghost_mentions: str | None = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
         add_msg_secret: bool = False,
@@ -610,7 +608,7 @@ class Event(BaseEvent):
             patch_msg_sender(msg, bot.client.me.JID, bot.client.me.LID)
         return msg
 
-    def get_replied_msg(self) -> Event:
+    def get_replied_msg(self) -> Event | None:
         if not (self._context_info and self._context_info.stanzaID):
             return
         if self._context_info.remoteJID:
@@ -618,13 +616,19 @@ class Event(BaseEvent):
         else:
             chat_id = self.chat.id
             server = self.chat.server
+        participant = participant_server = ""
+        if (participant := self._context_info.participant) and "@" in participant:
+            participant, participant_server = self._context_info.participant.split("@", maxsplit=1)
+        elif participant:
+            _log_.warning("unknown participant format: " + str(participant))
+            
         msg = construct_message(
             chat_id,
-            (self._context_info.participant.split("@"))[0],
+            participant,
             self._context_info.stanzaID,
             None,
             server,
-            (self._context_info.participant.split("@"))[1],
+            participant_server,
             self._context_info.quotedMessage,
         )
         return construct_event(msg, False)
@@ -699,7 +703,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         anti_duplicate.append(_id)
         bot.pending_saved_messages.append(event)
         if event.type == "text" and event.text:
-            command, args = (
+            command, _ = (
                 event.text.split(maxsplit=1)
                 if len(event.text.split()) > 1
                 else (event.text, None)
@@ -711,7 +715,7 @@ async def on_message(client: NewAClient, message: MessageEv):
             return
         funcs = [func(client, event) for func in function_dict[None]]
         await asyncio.gather(*funcs)
-    except Exception:
+    except Exception:  # noqa: BLE001
         await logger(e="Unhandled Exception(s):", error=True)
         await logger(Exception)
 
