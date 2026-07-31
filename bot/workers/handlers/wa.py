@@ -308,7 +308,14 @@ async def vinfo(event, args, client):
 
         async def _process(info: VideoInfo) -> bool:
             x = _send(info)
-            if args == "fps" and info.fps or args == "media_info" and info.media_info or args == "media_info_link" and info.media_info_link:
+            if (
+                args == "fps"
+                and info.fps
+                or args == "media_info"
+                and info.media_info
+                or args == "media_info_link"
+                and info.media_info_link
+            ):
                 return await x
             else:
                 return False
@@ -2397,9 +2404,7 @@ async def save_reminder(event, args, client):
         await save2db2(bot.remind_dict, "reminders")
         await schedule_reminder_async(_id, store, chat, user)
         await event.reply(
-            "Reminder set for "
-            + get_date_from_isostr(parsed_time)
-            + f"\n*ID:* _{_id}_"
+            "Reminder set for " + get_date_from_isostr(parsed_time) + f"\n*ID:* _{_id}_"
         )
     except Exception:
         await logger(Exception)
