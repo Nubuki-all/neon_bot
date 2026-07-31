@@ -233,6 +233,7 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await event_handler(message, enable_auto_delete_all_tags, bot.client)
 
+
 @bot.register("amr_enable")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, enable_amr, bot.client)
