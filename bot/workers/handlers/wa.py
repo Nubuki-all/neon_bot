@@ -46,6 +46,7 @@ from bot.utils.bot_utils import (
     write_binary,
 )
 from bot.utils.db_utils import save2db2
+from bot.utils.events import Event
 from bot.utils.log_utils import log, logger
 from bot.utils.msg_store import (
     get_deleted_message_ids,
@@ -307,11 +308,7 @@ async def vinfo(event, args, client):
 
         async def _process(info: VideoInfo) -> bool:
             x = _send(info)
-            if args == "fps" and info.fps:
-                return await x
-            elif args == "media_info" and info.media_info:
-                return await x
-            elif args == "media_info_link" and info.media_info_link:
+            if args == "fps" and info.fps or args == "media_info" and info.media_info or args == "media_info_link" and info.media_info_link:
                 return await x
             else:
                 return False
@@ -328,7 +325,6 @@ async def vinfo(event, args, client):
         async with event.react("📥"):
             file = await replied.download()
         await write_binary(fn, file)
-        fps_error = mi_error = mi_link_error = None
 
         async def _populate(i: VideoInfo):
             if not i.fps:
@@ -454,9 +450,8 @@ async def compress(event, args, client):
         with open(in_, "wb") as f:
             f.write(file)
 
-        async with event.react("⏲️"):
-            async with comp_sem:
-                process, stdout, stderr = await enshell(cmd_str)
+        async with event.react("⏲️"), comp_sem:
+            process, _stdout, stderr = await enshell(cmd_str)
         if process.returncode != 0:
             raise RuntimeError(
                 # type: ignore
@@ -546,7 +541,7 @@ async def sanitize_url(event, args, client):
             return await clean_reply(event, replied, "reply", new_msg)
         urls = extractor.find_urls(args)
         if not urls:
-            return await event.reply(f"*No link found in your message to sanitize*")
+            return await event.reply("*No link found in your message to sanitize*")
         msg = "*Sanitized link(s):*"
         for url in urls:
             msg += f"\n\n{url}"
@@ -592,7 +587,7 @@ async def screenshot(event, args, client):
         else:
             urls = extractor.find_urls(args)
             if not urls:
-                return await event.reply(f"*No link found in your message*")
+                return await event.reply("*No link found in your message*")
         arg, args = get_args(
             ["-l", "store_true"],
             ["-d", "store_false"],
@@ -829,7 +824,7 @@ async def undelete(event, args, client):
             elif arg.a:
                 amount = int(arg.a)
                 if amount < 1:
-                    await event.reply(f"-a: Sometimes i wonder…, reseting value…")
+                    await event.reply("-a: Sometimes i wonder…, reseting value…")
                     amount = None
         amount = 1 if not amount else amount
         mentioned = get_mentioned(args or "")
@@ -942,7 +937,7 @@ async def upscale_image(event, args, client):
         sr_image = await sync_to_async(model.predict, image)
         output = io.BytesIO()
         sr_image.save(output, format="png")
-        output.name = f"upscaled_image.png"
+        output.name = "upscaled_image.png"
         raw = output.getvalue()
         msg = await event.reply_photo(raw, "Upscaled image: Raw")
         raw = await png_to_jpg(raw)
@@ -988,7 +983,7 @@ async def pick_random(event, args, client):
             to_parse=(args or ""),
             get_unknown=True,
         )
-        items = replied.text.split((arg.s or "\n"))
+        items = replied.text.split(arg.s or "\n")
         if len(items) < 2:
             return await event.reply("I need more options to choose from.")
         if arg.a:
@@ -1062,7 +1057,7 @@ async def list_notes(event, args, client):
         await event.react("❌")
 
 
-async def save_notes(event, args, client, silent=False):
+async def save_notes(event: Event, args: str | None, client, silent=False):
     """
     Saves a replied Text/media message to bot database;
     Can be retrieved with get {note_name}
@@ -1087,6 +1082,8 @@ async def save_notes(event, args, client, silent=False):
             return await event.reply(f"{save_notes.__doc__}")
         if not (replied := event.reply_to_message):
             return await event.reply("Can only save replied text or media.")
+        if replied.is_actual_media and replied.media.viewOnce:
+            return await event.reply("Saving view once is blocked.")
         if args.casefold() in ("all", "notes", "my notes", "me"):
             return await event.reply(f"Given note_name *{args}* is blocked.")
         if not bot.notes_dict.get(chat):
@@ -1197,7 +1194,7 @@ async def get_notes(event, args, client):
             )
         elif note_type == Message:
             note = copy.deepcopy(note)
-            newlines = "\n\n"
+            # newlines = "\n\n"
             # note.caption += f"{ newlines if note.caption else str()}By: @{user}"
             # note.contextInfo.mentionedJID.append(f"{user}@s.whatsapp.net")
             if hasattr(note, "viewOnce"):
@@ -1238,7 +1235,7 @@ async def delete_notes(event, args, client):
             return await event.reply(f"_No notes found for chat:_ *{chat_name}*!")
         if args.casefold() == "all":
             if not (user_is_owner(user) or admin_user) and event.chat.is_group:
-                return await event.reply(f"*Permission denied.*")
+                return await event.reply("*Permission denied.*")
             bot.notes_dict.pop(chat)
             await save2db2(bot.notes_dict, "note")
             return await event.reply(
@@ -1278,7 +1275,7 @@ async def get_notes2(event, args, client):
             return await get_notes(event, None, None)
         if event.text[1:].casefold() == "my notes":
             return await list_notes(event, event.text[1:], None)
-        if note := notes.get(event.text[1:]):
+        if notes.get(event.text[1:]):
             return await get_notes(event, event.text[1:], None)
         await event.react("❓")
     except Exception:
@@ -1391,7 +1388,7 @@ async def tag_everyone(event, args, client):
             return
         if not event.chat.is_group:
             return
-        if not (mentions := find_role_mentions(text, ["all", "everyone"])):
+        if not (find_role_mentions(text, ["all", "everyone"])):
             return
         user = event.from_user.id
         group_info = await client.get_group_info(event.chat.jid)
@@ -1430,7 +1427,7 @@ async def pin_message(event, args, client):
                     packname="N.",
                 )
         if not (replied := event.reply_to_message):
-            return await event.reply(f"Please reply to a message to pin.")
+            return await event.reply("Please reply to a message to pin.")
         if not (args and args.isdigit()):
             await replied.pin()
         else:
@@ -1458,7 +1455,7 @@ async def unpin_message(event, args, client):
                     packname="N.",
                 )
         if not (replied := event.reply_to_message):
-            return await event.reply(f"Please reply to a message to unpin.")
+            return await event.reply("Please reply to a message to unpin.")
 
         await replied.unpin()
         await replied.react("")
@@ -1493,7 +1490,7 @@ async def purge_messages(event, args, client):
 
         if not (replied := event.reply_to_message):
             return await event.reply(
-                f"Please reply to a message to mark a start point for purging."
+                "Please reply to a message to mark a start point for purging."
             )
         arg, args = get_args(
             ["--start", "store_true"],
@@ -1787,7 +1784,7 @@ def s_welcome_msg(gc_event, group_info):
         if msg not in ("notes", "topic"):
             return msg, None
         elif msg == "topic":
-            topic = gc_info.GroupTopic.Topic
+            topic = group_info.GroupTopic.Topic
             return topic, None
         notes = bot.notes_dict[chat]
         if not (u_note := notes.get("welcome")):
@@ -1979,7 +1976,7 @@ async def delete_filters(event, args, client):
         args = args.casefold()
         if args == "all":
             if not (user_is_owner(user) or admin_user):
-                return await event.reply(f"*Permission denied.*")
+                return await event.reply("*Permission denied.*")
             bot.filters_dict.pop(chat)
             await save2db2(bot.filters_dict, "filter")
             return await event.reply(
@@ -2140,7 +2137,7 @@ async def repeat(event, args, client):
             if not user_is_admin(user, group_info.Participants):
                 arg.x = ""
         no = int(arg.x) if arg.x and not arg.x == "0" else 1
-        no = 5 if no > 5 else no
+        no = min(no, 5)
         for _ in range(no):
             await event.reply(message=(replied.text or replied.media), quote=arg.nq)
             arg.nq = False
@@ -2400,7 +2397,7 @@ async def save_reminder(event, args, client):
         await save2db2(bot.remind_dict, "reminders")
         await schedule_reminder_async(_id, store, chat, user)
         await event.reply(
-            f"Reminder set for "
+            "Reminder set for "
             + get_date_from_isostr(parsed_time)
             + f"\n*ID:* _{_id}_"
         )
