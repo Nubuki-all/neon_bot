@@ -33,8 +33,10 @@ from .workers.handlers.manage import (
     delete,
     disable,
     disable_amr,
+    disable_auto_delete_all_tags,
     enable,
     enable_amr,
+    enable_auto_delete_all_tags,
     grt_toggle,
     pause_handler,
     restart_handler,
@@ -221,6 +223,15 @@ async def _(client: NewAClient, message: Event):
 async def _(client: NewAClient, message: Event):
     await event_handler(message, enable, bot.client)
 
+
+@bot.register("disable_at")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, disable_auto_delete_all_tags, bot.client)
+
+
+@bot.register("enable_at")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, enable_auto_delete_all_tags, bot.client)
 
 @bot.register("amr_enable")
 async def _(client: NewAClient, message: Event):

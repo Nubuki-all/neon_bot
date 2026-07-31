@@ -12,7 +12,6 @@ from os.path import splitext as split_ext
 import torch
 from clean_links.clean import clean_url
 from neonize.exc import DownloadError
-from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import Message
 from neonize.utils.enum import MediaType
 from neonize.utils.ffmpeg import AFFmpeg
 from neonize.utils.jid import Jid2String
@@ -1386,7 +1385,7 @@ async def tag_all_owners(event, args, client):
         await event.react("❌")
 
 
-async def tag_everyone(event, args, client):
+async def tag_everyone(event:Event, args, client):
     """
     Tags everyone in a group
     """
@@ -1403,6 +1402,8 @@ async def tag_everyone(event, args, client):
             if not user_is_admin(user, group_info.Participants):
                 return
         if event.media and event.media.contextInfo.nonJIDMentions:
+            if bot.group_dict.get(event.chat.id, {}).get("auto_del_all_tags") and user_is_admin(bot.client.me.JID.User, group_info.Participants):
+                 return await event.delete()
             return await event.react("👀")
         tags = tag_users(group_info.Participants)
         await clean_reply(
