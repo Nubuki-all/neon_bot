@@ -224,12 +224,12 @@ async def _(client: NewAClient, message: Event):
     await event_handler(message, enable, bot.client)
 
 
-@bot.register("disable_at")
+@bot.register("disable_atd")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, disable_auto_delete_all_tags, bot.client)
 
 
-@bot.register("enable_at")
+@bot.register("enable_atd")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, enable_auto_delete_all_tags, bot.client)
 
