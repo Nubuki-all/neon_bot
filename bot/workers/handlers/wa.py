@@ -1398,15 +1398,15 @@ async def tag_everyone(event: Event, args, client):
             return
         user = event.from_user.id
         group_info = await client.get_group_info(event.chat.jid)
-        if not user_is_privileged(user):
-            if not user_is_admin(user, group_info.Participants):
-                return
+        privileged = user_is_privileged(user) or user_is_admin(user, group_info.Participants)
         if event.media and event.media.contextInfo.nonJIDMentions:
             if bot.group_dict.get(event.chat.id, {}).get(
                 "auto_del_all_tags"
-            ) and user_is_admin(bot.client.me.JID.User, group_info.Participants):
+            ) and not privileged and user_is_admin(bot.client.me.JID.User, group_info.Participants):
                 return await event.delete()
             return await event.react("👀")
+        if not privileged:
+            return
         tags = tag_users(group_info.Participants)
         await clean_reply(
             event,
