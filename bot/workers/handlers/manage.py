@@ -943,3 +943,73 @@ async def grt_toggle(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
+async def enable_auto_delete_all_tags(event, args, client):
+    """
+    Enables auto deletion of all tags in group chat.
+    """
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Seriously though, No.",
+                    packname="N.",
+                )
+        chat_id = event.chat.id
+        chat_name = group_info.GroupName.Name
+        group_info = bot.group_dict.get(chat_id, {})
+        if group_info.get("auto_del_all_tags"):
+            return await event.reply(
+                "This Group chat already has auto @all deletion enabled."
+            )
+        group_info = bot.group_dict.setdefault(chat_id, {})
+        group_info.update(auto_del_all_tags=True)
+
+        await save2db2(bot.group_dict, "groups")
+        await event.reply(
+            f"Successfully enabled auto @all deletion in group: *{chat_name}*"
+        )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+async def disable_auto_delete_all_tags(event, args, client):
+    """
+    Disables auto deletion of all tags in group chat.
+    """
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    try:
+        no = "https://media1.tenor.com/m/DUHB3rClTaUAAAAd/no-pernalonga.gif"
+        user = event.from_user.id
+        group_info = await client.get_group_info(event.chat.jid)
+        if not user_is_privileged(user):
+            if not user_is_admin(user, group_info.Participants):
+                return await event.reply_sticker(
+                    no,
+                    name="Seriously though, No.",
+                    packname="N.",
+                )
+        chat_id = event.chat.id
+        chat_name = group_info.GroupName.Name
+        group_info = bot.group_dict.get(chat_id, {})
+        if not group_info.get("auto_del_all_tags"):
+            return await event.reply(
+                "This Group chat already has auto @all deletion disabled."
+            )
+        group_info = bot.group_dict.setdefault(chat_id, {})
+        group_info.update(auto_del_all_tags=False)
+
+        await save2db2(bot.group_dict, "groups")
+        await event.reply(
+            f"Successfully disabled auto @all deletion in group: *{chat_name}*"
+        )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")

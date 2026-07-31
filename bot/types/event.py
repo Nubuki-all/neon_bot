@@ -18,7 +18,7 @@ from neonize.proto.waE2E.WAWebProtobufsE2E_pb2 import (
 )
 from neonize.types import MessageWithContextInfo
 
-from bot import JID, NewAClient, base_msg_info, base_msg_source
+from bot import JID, MessageEv, NewAClient, base_msg_info, base_msg_source
 
 # --- Base Interfaces with default __init__ ---
 
@@ -83,6 +83,7 @@ class BaseEvent(ABC):
         self.user: BaseUser | None = None
         self.alt_user: BaseUser | None = None
         self.from_user: BaseUser | None = None
+        self.user_has_ph: bool = False
 
         # Populated media/message-related attributes
         self.album: AlbumMessage | None = None
@@ -112,9 +113,9 @@ class BaseEvent(ABC):
             elif hasattr(obj, "__dict__"):
                 # Redact .jid if present
                 d = obj.__dict__.copy()
-                if "jid" in d and d["jid"]:
+                if d.get("jid"):
                     d["jid"] = "…"
-                if "lid" in d and d["lid"]:
+                if d.get("lid"):
                     d["lid"] = "…"
                 return {k: serialize(v) for k, v in d.items()}
             elif isinstance(obj, (list, tuple)):
@@ -144,7 +145,6 @@ class BaseEvent(ABC):
             "document",
             "extendedText",
             "image",
-            "media",
             "protocol",
             "ptv",
             "reaction",
