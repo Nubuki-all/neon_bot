@@ -131,9 +131,17 @@ class Event(BaseEvent):
                         else None
                     )
 
-        self.from_user = copy.deepcopy(self.alt_user if self.lid_address and not self.alt_user.is_empty else self.user)
-        self.from_user.hid = self.user.id if self.user.server == "lid" else self.alt_user.id
-        self.from_user.lid = self.user.jid if self.user.server == "lid" else self.alt_user.jid
+        self.from_user = copy.deepcopy(
+            self.alt_user
+            if self.lid_address and not self.alt_user.is_empty
+            else self.user
+        )
+        self.from_user.hid = (
+            self.user.id if self.user.server == "lid" else self.alt_user.id
+        )
+        self.from_user.lid = (
+            self.user.jid if self.user.server == "lid" else self.alt_user.jid
+        )
         self.user_has_ph = self.from_user.server != "lid"
         # override lid_address
         if not self.user_has_ph:

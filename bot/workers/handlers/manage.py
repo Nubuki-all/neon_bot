@@ -944,6 +944,7 @@ async def grt_toggle(event, args, client):
         await logger(Exception)
         await event.react("❌")
 
+
 async def enable_auto_delete_all_tags(event, args, client):
     """
     Enables auto deletion of all tags in group chat.
@@ -978,6 +979,7 @@ async def enable_auto_delete_all_tags(event, args, client):
     except Exception:
         await logger(Exception)
         await event.react("❌")
+
 
 async def disable_auto_delete_all_tags(event, args, client):
     """
