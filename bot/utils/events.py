@@ -618,10 +618,12 @@ class Event(BaseEvent):
             server = self.chat.server
         participant = participant_server = ""
         if (participant := self._context_info.participant) and "@" in participant:
-            participant, participant_server = self._context_info.participant.split("@", maxsplit=1)
+            participant, participant_server = self._context_info.participant.split(
+                "@", maxsplit=1
+            )
         elif participant:
             _log_.warning("unknown participant format: " + str(participant))
-            
+
         msg = construct_message(
             chat_id,
             participant,
