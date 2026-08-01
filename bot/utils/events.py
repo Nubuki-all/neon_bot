@@ -654,7 +654,7 @@ class Event(BaseEvent):
 POLL = None
 SEQUENTIAL_AUTO = 0
 CONCURRENT_AUTO = 1
-function_dict = {None: []}
+function_dict = {CONCURRENT_AUTO: [], SEQUENTIAL_AUTO: []}
 anti_duplicate = deque(maxlen=10000)
 
 
