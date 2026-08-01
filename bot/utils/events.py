@@ -146,7 +146,7 @@ class Event(BaseEvent):
         # override id & lid_address
         if self.user_has_ph:
             self.from_user.ph = self.from_user.id
-            self.from_user.id = self.from_user.lid
+            self.from_user.id = self.from_user.hid
             self.lid_address = True
         self.caption = (
             (extract_text(self._message) or None)
