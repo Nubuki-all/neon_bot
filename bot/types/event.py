@@ -28,6 +28,8 @@ class BaseUser(ABC):
         self.name: str = ""
         self.jid: JID | None = None
         self.id: str = ""
+        self.hid: str
+        self.ph: str
         self.server: str = ""
         self.is_empty: bool = False
         self.is_hidden: bool = False

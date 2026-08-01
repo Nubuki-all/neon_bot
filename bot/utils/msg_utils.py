@@ -74,22 +74,22 @@ def find_role_mentions(text, roles):
     return results
 
 
-def get_afk_status(user: str):
-    return bot.user_dict.get(user, {}).get("afk", False)
+def get_afk_status(user: str) -> dict:
+    return bot.user_dict.get(user, {}).get("afk", {})
 
 
 def get_mentioned(text: str):
     return [jid.group(1) for jid in re.finditer(r"@([0-9]{5,16}|0)", text)]
 
 
-def tag_all_users_in_role(members: list):
+def tag_all_users_in_role(members: list) -> str:
     tags = ""
     for member in members:
         tags += f"@{member} "
     return tags.rstrip()
 
 
-def tag_admins(members: list):
+def tag_admins(members: list) -> str:
     tags = ""
     for member in members:
         if member.IsAdmin:
@@ -97,40 +97,38 @@ def tag_admins(members: list):
     return tags.rstrip()
 
 
-def tag_owners():
+def tag_owners() -> str:
     tags = ""
-    for user in conf.OWNER.split():
+    for user in conf.OWNER:
         tags += f"@{user} "
     return tags.rstrip()
 
 
-def tag_sudoers():
+def tag_sudoers() -> str:
     tags = ""
-    for user in bot.user_dict.keys():
-        if not bot.user_dict.get(user, {}).get("sudoer", False):
-            continue
+    for user in bot.user_dict.get("sudoers", set()):
         tags += f"@{user} "
     return tags.rstrip()
 
 
-def tag_users(members: list):
+def tag_users(members: list) -> str:
     tags = ""
     for member in members:
         tags += f"@{member.JID.User} "
     return tags.rstrip()
 
 
-def user_is_admin(user: str, members: list):
+def user_is_admin(user: str, members: list) -> bool:
     for member in members:
         if user == member.JID.User or user == member.PhoneNumber.User:
             return member.IsAdmin
 
 
-def user_is_afk(user: str):
+def user_is_afk(user: str) -> bool:
     return bool(get_afk_status(user))
 
 
-def user_is_allowed(user: str | int):
+def user_is_allowed(user: str | int) -> bool:
     user = str(user)
     return not (
         bot.user_dict.get(user, {}).get("banned", False)
@@ -139,28 +137,28 @@ def user_is_allowed(user: str | int):
     )
 
 
-def user_is_banned_by_ownr(user: str | int):
+def user_is_banned_by_ownr(user: str | int) -> bool:
     user = str(user)
     return (
         bot.user_dict.get(user, {}).get("fbanned", False) or user in conf.BANNED_USERS
     )
 
 
-def user_is_dev(user: str):
+def user_is_dev(user: str) -> bool:
     user = int(user)
-    return user == conf.DEV
+    return user in conf.DEV
 
 
-def user_is_owner(user: str | int):
+def user_is_owner(user: str | int) -> bool:
     user = str(user)
     return user in conf.OWNER
 
 
-def user_is_privileged(user):
+def user_is_privileged(user) -> bool:
     return user_is_owner(user) or user_is_sudoer(user)
 
 
-def user_is_sudoer(user: str | int):
+def user_is_sudoer(user: str | int) -> bool:
     user = str(user)
     return bot.user_dict.get(user, {}).get("sudoer", False)
 

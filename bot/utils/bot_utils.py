@@ -30,7 +30,7 @@ _log_ = logging.getLogger(__name__)
 
 def gfn(fn):
     "gets module path"
-    return ".".join([fn.__module__, fn.__qualname__])
+    return f"{fn.__module__}.{fn.__qualname__}"
 
 
 async def sync_to_async(func, *args, wait=True, **kwargs):
@@ -46,7 +46,7 @@ def create_api_token(retries=10):
         try:
             bot.tgp_client.create_api_token("Rss")
             break
-        except (requests.exceptions.ConnectionError, ConnectionError) as e:
+        except (requests.exceptions.ConnectionError, ConnectionError):
             retries -= 1
             if not retries:
                 LOGS.info(telgrph_tkn_err_msg)
@@ -68,18 +68,18 @@ async def post_to_tgph(title, text, author: str = None, author_url: str = None):
                 text=text,
             )
             return page
-        except telegraph_errors.APITokenRequiredError as e:
+        except telegraph_errors.APITokenRequiredError:
             result = await sync_to_async(create_api_token)
             if not result:
-                raise e
-        except (requests.exceptions.ConnectionError, ConnectionError) as e:
+                raise
+        except (requests.exceptions.ConnectionError, ConnectionError):
             retries -= 1
             if not retries:
-                raise e
+                raise
             await asyncio.sleep(1)
 
 
-def list_to_str(lst: list, sep=" ", start: int = None, md=True):
+def list_to_str(lst: list, sep=" ", start: int | None = None, md=True):
     string = ""
     t_start = start if isinstance(start, int) else 1
     for i, count in zip(lst, itertools.count(t_start)):
@@ -185,13 +185,13 @@ def hbs(size: int):
 
 
 def human_format_num(num):
-    num = float("{:.3g}".format(num))
+    num = float(f"{num:.3g}")
     magnitude = 0
     while abs(num) >= 1000:
         magnitude += 1
         num /= 1000.0
     return "{}{}".format(
-        "{:f}".format(num).rstrip("0").rstrip("."), ["", "K", "M", "B", "T"][magnitude]
+        f"{num:f}".rstrip("0").rstrip("."), ["", "K", "M", "B", "T"][magnitude]
     )
 
 
@@ -226,12 +226,12 @@ def is_video_file(filename: str):
         ".mpg2",
         ".xvid",
     )
-    if filename.endswith((video_file_extensions)):
+    if filename.endswith(video_file_extensions):
         return True
 
 
 async def png_to_jpg(png: bytes | str):
-    raw = False if isinstance(png, str) else True
+    raw = not isinstance(png, str)
     ffmpeg = (
         FFmpeg()
         .option("y")
@@ -245,7 +245,7 @@ async def png_to_jpg(png: bytes | str):
     return await ffmpeg.execute(input_)
 
 
-def turn(turn_id: str = None):
+def turn(turn_id: str | None = None):
     if turn_id:
         return turn_id in bot.p_queue
     return bot.p_queue
@@ -355,7 +355,7 @@ def parse_netscape_cookies(file_path):
             if len(fields) < 7:
                 continue
 
-            domain, flag, path, secure, expiration, name, value = fields[:7]
+            domain, _flag, path, secure, expiration, name, value = fields[:7]
 
             # Skip cookies with invalid names (e.g. starting with dot)
             if not name or name.startswith("."):
@@ -422,8 +422,6 @@ async def screenshot_page(
             await save_cookies_txt(browser)
         except Exception:
             _log_.error(traceback.format_exc())
-    except Exception as e:
-        raise e
     finally:
         if browser:
             try:
@@ -474,10 +472,8 @@ def is_valid_video_timestamp(s: str) -> bool:
     if not re.fullmatch(r"^\d{1,2}(:\d{1,2}){0,2}$", s):
         return False
 
-    # Step 2: Split into parts and convert to integers
     parts = list(map(int, s.split(":")))
 
-    # Step 3: Validate numeric ranges
     # Seconds (last part) must be 0-59
     if parts[-1] < 0 or parts[-1] > 59:
         return False
@@ -487,26 +483,23 @@ def is_valid_video_timestamp(s: str) -> bool:
         return False
 
     # Hours (if present) must be >=0 (no upper limit)
-    if len(parts) == 3 and parts[0] < 0:
-        return False
-
-    return True
+    return not (len(parts) == 3 and parts[0] < 0)
 
 
-async def read_binary(file):
+async def read_binary(path: str):
     def stdlib_read(file):
         with open(file, "rb") as f:
             return f.read()
 
-    return await sync_to_async(stdlib_read, file)
+    return await sync_to_async(stdlib_read, path)
 
 
-async def write_binary(file, bytes_):
+async def write_binary(path: str, bytes_: bytes):
     def stdlib_write(file, bytes_):
         with open(file, "wb") as f:
             f.write(bytes_)
 
-    return await sync_to_async(stdlib_write, file, bytes_)
+    return await sync_to_async(stdlib_write, path, bytes_)
 
 
 def ensure_default_db(uri: str, default_db: str) -> str:

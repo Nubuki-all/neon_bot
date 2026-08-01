@@ -7,11 +7,13 @@ from feedparser import parse as feedparse
 from bot import bot, jid, rss_dict_lock
 from bot.utils.bot_utils import list_to_str, split_text
 from bot.utils.db_utils import save2db2
+from bot.utils.events import Event
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import (
     chat_is_allowed,
     event_handler,
     get_args,
+    get_user_info,
     user_is_admin,
     user_is_allowed,
     user_is_banned_by_ownr,
@@ -475,14 +477,14 @@ async def rss_sub(event, args, client):
         scheduler.start()
 
 
-async def ban(event, args, client):
+async def ban(event: Event, args, client):
     """
     Ban the user from using the bot:
     Argument:
         *user_id/@mentions
         or reply to the user's message
 
-    *user_id: user's phone number with country code without spaces or the initial '+'
+    *user_id: user's phone number with country code and the initial '+' without spaces or lid if known
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -495,23 +497,20 @@ async def ban(event, args, client):
                 "*Reply to a message or supply an id to ban the user from using the bot.*"
             )
         _id = ban_id = args or event.reply_to_message.from_user.id
-        mentions_are_jids = True
-        if args and args.startswith("+"):
-            _id = ban_id = args.lstrip("+")
-        elif event.lid_address:
-            mentions_are_jids = False
-            ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
-            ban_id = ph.User
+        if (args and args.startswith("+")) or not event.lid_address:
+            _id = args.lstrip("+")
+            lid = await bot.client.get_lid_from_pn(jid.build_jid(_id, "s.whatsapp.net"))
+            ban_id = lid.User
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
             return await event.reply(
-                f"@{_id} *is a Sudoer.*", mentions_are_jids=mentions_are_jids
+                f"@{ban_id} *is a Sudoer.*", mentions_are_lids=True
             )
         if not user_is_allowed(ban_id):
             return await event.reply(
-                f"@{_id} *has already been banned from using the bot.*",
-                mentions_are_jids=mentions_are_jids,
+                f"@{ban_id} *has already been banned from using the bot.*",
+                mentions_are_lids=True,
             )
         if user_is_owner(user):
             bot.user_dict.setdefault(ban_id, {}).update(fbanned=True, bannedby=user)
@@ -519,22 +518,22 @@ async def ban(event, args, client):
             bot.user_dict.setdefault(ban_id, {}).update(banned=True, bannedby=user)
         await save2db2(bot.user_dict, "users")
         return await event.reply(
-            f"@{_id} *has been banned from using the bot.*",
-            mentions_are_jids=mentions_are_jids,
+            f"@{ban_id} *has been banned from using the bot.*",
+            mentions_are_lids=True,
         )
     except Exception:
         await logger(Exception)
         await event.react("❌")
 
 
-async def unban(event, args, client):
+async def unban(event: Event, args, client):
     """
     Unban previously banned user:
     Argument:
         *user_id/@mentions
         or reply to the user's message
 
-    *user_id: user's phone number with country code without spaces or the initial '+'
+    *user_id: user's phone number with country code and the initial '+' without spaces or lid if known
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -546,30 +545,27 @@ async def unban(event, args, client):
             return await event.reply(
                 "*Reply to a message or supply an id to unban the user from using the bot.*"
             )
-        _id = ban_id = args or event.reply_to_message.from_user.id
-        mentions_are_jids = True
-        if args and args.startswith("+"):
-            _id = ban_id = args.lstrip("+")
-        elif event.lid_address:
-            mentions_are_jids = False
-            ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
-            ban_id = ph.User
+        _id = ban_id = args or event.reply_to_message.from_user.hid
+        if (args and args.startswith("+")) or not event.lid_address:
+            _id = _id.lstrip("+")
+            lid = await bot.client.get_lid_from_pn(jid.build_jid(_id, "s.whatsapp.net"))
+            ban_id = lid.User
         if user_is_owner(ban_id):
             return await event.reply("*Why?*")
         if user_is_sudoer(ban_id):
             return await event.reply(
-                f"@{_id} *is a Sudoer.*",
-                mentions_are_jids=mentions_are_jids,
+                f"@{ban_id} *is a Sudoer.*",
+                mentions_are_lids=True,
             )
         if user_is_allowed(ban_id):
             return await event.reply(
-                f"@{_id} *was never banned from using the bot.*",
-                mentions_are_jids=mentions_are_jids,
+                f"@{ban_id} *was never banned from using the bot.*",
+                mentions_are_lids=True,
             )
-        if user_is_banned_by_ownr(_id) and not user_is_owner(user):
+        if user_is_banned_by_ownr(ban_id) and not user_is_owner(user):
             return await event.reply(
-                f"*You're currently not allowed to unban users banned by owner.*",
-                mentions_are_jids=mentions_are_jids,
+                "*You're currently not allowed to unban users banned by owner.*",
+                mentions_are_lids=True,
             )
         if user_is_banned_by_ownr(ban_id):
             bot.user_dict.setdefault(ban_id, {}).update(fbanned=False, bannedby="")
@@ -578,7 +574,7 @@ async def unban(event, args, client):
         await save2db2(bot.user_dict, "users")
         return await event.reply(
             f"@{_id} *ban has been lifted.*",
-            mentions_are_jids=mentions_are_jids,
+                mentions_are_lids=True,
         )
     except Exception:
         await logger(Exception)
@@ -644,10 +640,8 @@ async def enable(event, args, client):
 async def list_sudoers(event, args, client):
     "Lists the sudoers."
     msg = ""
-    for user in bot.user_dict.keys():
-        if not bot.user_dict.get(user, {}).get("sudoer", False):
-            continue
-        info = await client.contact.get_contact(jid.build_jid(user))
+    for user in bot.user_dict.get("sudoers", set()):
+        info = await get_user_info(user, "lid")
         name = info.FullName or info.PushName
         msg += f"\n- {name}"
     if not msg:
@@ -663,11 +657,12 @@ async def sudoers(event, args, client):
     """
     Modify sudoers
     Arguments:
-        -a: Add user to sudoers
-        -rm Remove user from sudoers
+        -a:  Add user to sudoers
+        -rm: Remove user from sudoers
+        -c:  clear all sudoers
         {user_id}: ID* of user of user to add to sudoers (can also be specified through a tag); Replying the user message also works
 
-    *ID: user's phone number with country code without spaces or the initial '+'
+    *ID: user's phone number with country code and initial '+' without spaces or lid if known
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -678,6 +673,7 @@ async def sudoers(event, args, client):
         arg, args = get_args(
             ["-a", "store_true"],
             ["-rm", "store_true"],
+            ["-c", "store_true"],
             to_parse=args,
             get_unknown=True,
         )
@@ -689,6 +685,14 @@ async def sudoers(event, args, client):
             msg2 = (
                 "*Reply to a message or supply an id to remove the user from sudoers.*"
             )
+        elif arg.c:
+            if not (s := bot.user_dict.get("sudoers")):
+                return event.reply("No sudoers found.")
+            for user in s:
+                bot.user_dict.setdefault(user, {}).update(sudoer=False)
+            s.clear()
+            await save2db2(bot.user_dict, "users")
+            return await event.reply("*Cleared all sudoers*")
         else:
             return await event.reply(getdoc(sudoers))
         if args and not (args := args.lstrip("@")).lstrip("+").isdigit():
@@ -696,33 +700,32 @@ async def sudoers(event, args, client):
         elif not (args or event.reply_to_message):
             return await event.reply(msg2)
         _id = su_id = args or event.reply_to_message.from_user.id
-        mentions_are_jids = True
-        if args.startswith("+"):
-            _id = su_id = args.lstrip("+")
-        elif event.lid_address:
-            mentions_are_jids = False
-            ph = await bot.client.get_pn_from_lid(jid.build_jid(_id, "lid"))
-            su_id = ph.User
+        if (args and args.startswith("+")) or not event.lid_address:
+            _id = _id.lstrip("+")
+            lid = await bot.client.get_lid_from_pn(jid.build_jid(_id, "s.whatsapp.net"))
+            su_id = lid.User
         if user_is_owner(su_id):
             return await event.reply("*Why?*")
         if arg.a:
             if user_is_sudoer(su_id):
                 return await event.reply(
-                    f"@{_id} *is already a Sudoer.*",
-                    mentions_are_jids=mentions_are_jids,
+                    f"@{su_id} *is already a Sudoer.*",
+                    mentions_are_lids=True,
                 )
             bot.user_dict.setdefault(su_id, {}).update(sudoer=True)
+            bot.user_dict.setdefault("sudoers", set()).add(su_id)
         if arg.rm:
             if not user_is_sudoer(su_id):
                 return await event.reply(
-                    f"@{_id} *is not a Sudoer.*",
-                    mentions_are_jids=mentions_are_jids,
+                    f"@{su_id} *is not a Sudoer.*",
+                    mentions_are_lids=True,
                 )
             bot.user_dict.setdefault(su_id, {}).update(sudoer=False)
+            bot.user_dict.setdefault("sudoers", set()).discard(su_id)
         await save2db2(bot.user_dict, "users")
         await event.reply(
-            f"@{_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*",
-            mentions_are_jids=mentions_are_jids,
+            f"@{su_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*",
+                    mentions_are_lids=True,
         )
     except Exception:
         await logger(Exception)
@@ -731,7 +734,7 @@ async def sudoers(event, args, client):
 
 async def delete(event, args, client):
     """
-    Delete bot's message in group
+    Delete (bot's) message in group
     Arguments: Reply to message to delete
     """
     if not event.chat.is_group:
@@ -745,7 +748,7 @@ async def delete(event, args, client):
         if not (reply := event.reply_to_message):
             return await event.reply("Reply to a  message to delete.")
         me = bot.client.me = await client.get_me()
-        if reply.from_user.id not in (me.JID.User, me.LID.User):
+        if not user_is_admin(me.JID.User, group_info.Participants)and reply.from_user.id not in {me.JID.User, me.LID.User}:
             return await event.reply("Reply to one of *my* messages to delete.")
         # patch in the correct jid
         reply.from_user.jid = me.JID
@@ -962,6 +965,9 @@ async def enable_auto_delete_all_tags(event, args, client):
                     name="Seriously though, No.",
                     packname="N.",
                 )
+        
+        if not user_is_admin(bot.client.me.JID.User, group_info.Participants):
+            return await event.reply("*I need to be admin for that to work*")
         chat_id = event.chat.id
         chat_name = group_info.GroupName.Name
         group_info = bot.group_dict.get(chat_id, {})
@@ -1012,6 +1018,134 @@ async def disable_auto_delete_all_tags(event, args, client):
         await event.reply(
             f"Successfully disabled auto @all deletion in group: *{chat_name}*"
         )
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+def members_to_set(members) -> set:
+    s = set() 
+    for member in members:
+        s.add(member.JID.User)
+    return s
+        
+
+async def auto_del_as_mute(event: Event, args: str, client):
+    """
+    Modify the ADAM (Auto Delete As Mute) list
+    Arguments:
+        -a:  Add user to the muted list
+        -rm: Remove user from the muted list
+        -c:  Clear muted list
+        {user_id}: ID* of user of user to add to the muted list (can also be specified through a tag); Replying the user message also works
+
+    *ID: user's phone number with country code and initial '+' without spaces or lid if known
+    """
+    if not event.chat.is_group:
+        return await event.react("🚫")
+    
+    user = event.from_user.id
+    group_info = await client.get_group_info(event.chat.jid)
+    if not user_is_privileged(user) and not user_is_admin(user, group_info.Participants):
+        return await event.react("🚫")
+    if not args:
+        return await list_muted(event, args, client)
+    arg, args = get_args(
+        ["-a", "store_true"],
+        ["-rm", "store_true"],
+        ["-c", "store_true"],
+        to_parse=args,
+        get_unknown=True,
+    )
+    if arg.a:
+        if not user_is_admin(bot.client.me.JID.User, group_info.Participants):
+            return await event.reply("*I need to be admin for that to work*")
+        msg1 = "*Please supply a valid id to add to the muted list*"
+        msg2 = "*Reply to a message or supply an id to add the user to to the muted list.*"
+    elif arg.rm:
+        msg1 = "*Please supply a valid id to remove from the muted list*"
+        msg2 = (
+            "*Reply to a message or supply an id to remove the user from the muted list.*"
+        )
+    elif arg.c:
+        pass
+    else:
+        return await event.reply(getdoc(auto_del_as_mute))
+    try:
+        if not arg.c and args and not (args := args.lstrip("@")).lstrip("+").isdigit():
+            return await event.reply(msg1)
+        elif not (arg.c or args or event.reply_to_message):
+            return await event.reply(msg2)
+        chat_id = event.chat.id
+        group_info: dict = bot.group_dict.setdefault(chat_id, {})
+        muted: set = group_info.setdefault("muted", set())
+        members = members_to_set(group_info.Participants)
+        modified = []
+
+        async def process(args: str):
+            mu_id = args
+            if (args and args.startswith("+")) or not event.lid_address:
+                mu_id = args.lstrip("+")
+                lid = await bot.client.get_lid_from_pn(jid.build_jid(mu_id, "s.whatsapp.net"))
+                mu_id = lid.User
+            if not mu_id in members:
+                return await event.reply(f"@{mu_id} in not a member of this group")
+            if user_is_privileged(mu_id) or user_is_admin(mu_id, group_info.Participants):
+                return await event.reply("*Why?*")
+            if arg.a:
+                if mu_id in muted:
+                    return await event.reply(
+                        f"@{mu_id} *is already muted.*",
+                        mentions_are_lids=True,
+                    )
+                muted.add(mu_id)
+            elif arg.rm:
+                if not mu_id in muted:
+                    return await event.reply(
+                        f"@{mu_id} *is not muted.*",
+                        mentions_are_lids=True,
+                    )
+                muted.remove(mu_id)
+
+            modified.append(0)
+            await event.reply(
+                f"@{mu_id} *has been successfully {'added to' if arg.a else 'removed from'} muted_list.*",
+                mentions_are_lids=True,
+            )
+        if arg.c:
+            muted.clear()
+            modified.append(0)
+            await event.reply("*Cleared the muted list*")
+        for user in args.split() or [event.reply_to_message.from_user.id]:
+            try:
+                user = user.lstrip("@")
+                await process(user)
+            except Exception:
+                await event.reply(f"Could not handle user with id: {user}")
+        if modified:
+            await save2db2(bot.group_dict, "groups")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def list_muted(event: Event, args: str | None, client):
+    try:
+        chat_id = event.chat.id
+        group_info: dict = bot.group_dict.setdefault(chat_id, {})
+        muted: set = group_info.setdefault("muted", set())
+        msg = ""
+        for user in muted:
+            info = await get_user_info(user, "lid")
+            name = info.FullName or info.PushName
+            msg += f"\n- {name}"
+        if not msg:
+            resp = "*No members were muted.*"
+        else:
+            resp = f"*List of muted members:*{msg}"
+
+        for text in split_text(resp):
+            event = await event.reply(text)    
     except Exception:
         await logger(Exception)
         await event.react("❌")

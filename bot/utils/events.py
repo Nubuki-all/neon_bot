@@ -143,8 +143,10 @@ class Event(BaseEvent):
             self.user.jid if self.user.server == "lid" else self.alt_user.jid
         )
         self.user_has_ph = self.from_user.server != "lid"
-        # override lid_address
-        if not self.user_has_ph:
+        # override id & lid_address
+        if self.user_has_ph:
+            self.from_user.ph = self.from_user.id
+            self.from_user.id = self.from_user.lid
             self.lid_address = True
         self.caption = (
             (extract_text(self._message) or None)
@@ -679,7 +681,7 @@ def add_handler(function, command: str | None = None, **kwargs):
     else:
 
         async def _(client: NewAClient, event: Event):
-            await function(event, None, client)
+            await function(event, "", client)
 
     register(command)(_)
     return _
@@ -840,7 +842,7 @@ async def event_handler(
     args = (
         event.text.split(split_args, maxsplit=1)[1].strip()
         if len(event.text.split()) > 1
-        else None
+        else ""
     )
     args = default_args if use_default_args and default_args is not False else args
     help_tuple = ("--help", "-h")
@@ -853,5 +855,5 @@ async def event_handler(
         if disable_help:
             return
         return await event.reply(f"{inspect.getdoc(function)}")
-    args = replace_args or args
+    args = replace_args or args or "" # prevent sending None
     await function(event, args, client)

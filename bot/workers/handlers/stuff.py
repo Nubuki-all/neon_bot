@@ -44,6 +44,7 @@ async def getcmds(event, args, client):
 {pre}restart - *[Owner | Sudo] Restarts bot*
 {pre}ytdl_* - *[Owner | Sudo] Disables/Enables Ytdl*
 {pre}amr_* - *[Owner | Sudo] Disables/Enables Auto msg ranking
+{pre}mute - *[Owner | Admin | Sudo] Enables Auto deletion of a user's message
 {pre}enable_atd - *[Owner | Admin | Sudo] Enables Auto deletion of @all tags
 {pre}disable_atd - *[Owner | Admin | Sudo] Disables Auto deletion of @all tags
 {pre}roles - *Get commands for roles*

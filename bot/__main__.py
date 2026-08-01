@@ -1,5 +1,3 @@
-from bot.utils.os_utils import re_x
-
 from . import asyncio  # noqa  # pylint: disable=unused-import
 from . import (
     LOGS,
@@ -29,6 +27,7 @@ from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.fun import getmeme
 from .workers.handlers.game import werewolf_handler, werewolf_restriction_handler
 from .workers.handlers.manage import (
+    auto_del_as_mute,
     ban,
     delete,
     disable,
@@ -207,6 +206,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("greetings")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, grt_toggle, bot.client, require_args=True)
+
+
+@bot.register("mute")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, auto_del_as_mute, bot.client)
 
 
 @bot.register("sudo")

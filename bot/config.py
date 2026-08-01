@@ -13,6 +13,7 @@
 # License can be found in <
 # https://github.com/Nubuki-all/neon_bot/blob/WA/License> .
 import asyncio
+import sys
 import traceback
 
 from decouple import config
@@ -39,8 +40,8 @@ class Config:
             self.DBNAME = config("DBNAME", default="Neon")
             self.DB_ID = config("DB_ID", default="0000")
             self.DEBUG = config("DEBUG", default=False, cast=bool)
-            self.DEV = config("DEV", default="")
-            self.DYNO = config("DYNO", default=None)
+            dev: str = config("DEV", default="")
+            self.DEV = set(dev.split())
             self.IGNORE_PM = config("IGNORE_PM", default=True, cast=bool)
             self.LOG_GROUP = config("LOG_GROUP", default="")
             self.MSG_STORE = config(
@@ -52,10 +53,11 @@ class Config:
                 default="",
             )
             self.RSS_DELAY = config("RSS_DELAY", default=60, cast=int)
-            self.OWNER = config(
+            owner: str = config(
                 "OWNER",
                 default="",
             )
+            self.OWNER = set(owner.split())
             self.TELEGRAPH_API = config(
                 "TELEGRAPH_API", default="https://api.telegra.ph"
             )
@@ -68,7 +70,7 @@ class Config:
             print("Environment vars Missing; or")
             print("Something went wrong:")
             print(traceback.format_exc())
-            exit()
+            sys.exit()
 
 
 class Runtime_Config:

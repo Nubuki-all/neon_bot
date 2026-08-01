@@ -1346,7 +1346,7 @@ async def tag_all_sudoers(event, args, client):
             "reply",
             "_*Tagged all Sudoers!*_" if mentions[0][1] else tags.split()[0],
             ghost_mentions=tags if mentions[0][1] else tags.split()[0],
-            mentions_are_jids=True,
+            mentions_are_lids=True,
         )
     except Exception:
         await logger(Exception)
@@ -1378,7 +1378,7 @@ async def tag_all_owners(event, args, client):
             "reply",
             "_*Tagged all Owners!*_" if mentions[0][1] else tags.split()[0],
             ghost_mentions=tags if mentions[0][1] else tags.split()[0],
-            mentions_are_jids=True,
+            mentions_are_lids=True,
         )
     except Exception:
         await logger(Exception)
@@ -2481,6 +2481,20 @@ async def delete_reminders(event, args, client):
         await logger(Exception)
 
 
+async def auto_del_msg(event: Event, _, __):
+    user = event.from_user.id
+    if user_is_privileged(user):
+        return
+    chat_id = event.chat.id
+    group_info: dict = bot.group_dict.setdefault(chat_id, {})
+    muted: set = group_info.setdefault("muted", set())
+    if user in muted:
+        try:
+            await event.delete()
+        except Exception:
+            pass
+
+
 async def test_button(event, args, client):
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -2518,6 +2532,7 @@ async def test_button(event, args, client):
 
 # Add command handlers
 bot.add_handler(get_notes2)
+bot.add_handler(auto_del_msg)
 bot.add_handler(tag_everyone)
 bot.add_handler(detect_filters)
 bot.add_handler(tag_all_admins)

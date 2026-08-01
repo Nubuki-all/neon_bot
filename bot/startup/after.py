@@ -5,6 +5,7 @@ import aiohttp
 from bot import LOGS, Message, asyncio, bot, conf, jid, sys, version_file
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
+from bot.utils.bot_utils import read_binary
 from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger
 from bot.utils.msg_rank import scheduler2
@@ -24,8 +25,7 @@ async def onrestart():
         elif sys.argv[1].startswith("update"):
             s = sys.argv[1].split()[1]
             if s == "True":
-                with open(version_file, "r") as file:
-                    v = file.read()
+                v = read_binary(version_file)
                 msg = f"*Updated to >>>* {v}"
             else:
                 msg = "*No major update found!*\n" f"Bot restarted! {enmoji()}"
@@ -72,6 +72,17 @@ async def update_presence():
             pass
         await asyncio.sleep(600)
 
+async def update_owner_lid():
+    lids = set()
+    for u in conf.OWNER.split():
+        jid_ = jid.build_jid(u, "s.whatsapp.net")
+        try:
+            lid = await bot.client.get_lid_from_pn(jid_)
+        except Exception:
+            logger(Exception)
+            continue
+        lids.add(lid.User)
+    conf.OWNER = lids
 
 async def backup_database():
     if not conf.BACKUP_WA_DB:
@@ -97,7 +108,7 @@ async def on_startup():
     try:
         loop = asyncio.get_running_loop()
         bot.requests = aiohttp.ClientSession(loop=loop)
-        for signame in {"SIGINT", "SIGTERM", "SIGABRT"}:
+        for signame in ("SIGINT", "SIGTERM", "SIGABRT"):
             loop.add_signal_handler(
                 getattr(signal, signame),
                 lambda: asyncio.create_task(on_termination()),
@@ -106,6 +117,7 @@ async def on_startup():
             await conn.run_sync(sql_base.metadata.create_all)
         while not bot.is_connected:
             await asyncio.sleep(1)
+        await update_owner_lid()
         scheduler.start()
         scheduler2.start()
         reminder_scheduler.start()

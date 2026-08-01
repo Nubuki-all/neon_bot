@@ -11,6 +11,7 @@ from bot.utils.msg_utils import (
     get_args,
     get_mentioned,
     tag_all_users_in_role,
+    user_is_admin,
     user_is_allowed,
     user_is_owner,
     user_is_privileged,
