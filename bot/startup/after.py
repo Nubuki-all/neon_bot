@@ -75,7 +75,7 @@ async def update_presence():
 
 async def update_owner_lid():
     lids = set()
-    for u in conf.OWNER.split():
+    for u in conf.OWNER:
         jid_ = jid.build_jid(u, "s.whatsapp.net")
         try:
             lid = await bot.client.get_lid_from_pn(jid_)
