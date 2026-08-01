@@ -676,7 +676,7 @@ def register(key: str | int | None = 1):
 
 def add_handler(function, command: str | int | None = 1, **kwargs):
     """Adds an handler using the register decorator"""
-    if command:
+    if isinstance(command, str):
 
         async def _(client: NewAClient, event: Event):
             await event_handler(event, function, client, **kwargs)
