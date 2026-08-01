@@ -17,7 +17,7 @@ from . import (
 )
 from .startup.after import on_startup
 from .utils.db_utils import restore_wa_db
-from .utils.events import POLL, Event, event_handler, on_message
+from .utils.events import POLL, CONCURRENT_AUTO, Event, event_handler, on_message
 from .utils.os_utils import re_x
 from .utils.sudo_button_utils import poll_as_button_handler
 from .workers.handlers.afk import activate_afk, afk_helper
@@ -289,22 +289,22 @@ async def _(client: NewAClient, message: Event):
 add_chatbot_handler()
 
 
-@bot.register(None)
+@bot.register(CONCURRENT_AUTO)
 async def _(client: NewAClient, message: Event):
     await sticker_reply(message, None, client)
 
 
-@bot.register(None)
+@bot.register(CONCURRENT_AUTO)
 async def _(client: NewAClient, message: Event):
     await youtube_reply(message, None, client)
 
 
-@bot.register(None)
+@bot.register(CONCURRENT_AUTO)
 async def _(client: NewAClient, message: Event):
     await afk_helper(message, None, client)
 
 
-@bot.register(None)
+@bot.register(CONCURRENT_AUTO)
 async def _(client: NewAClient, message: Event):
     await werewolf_restriction_handler(client, message)
 

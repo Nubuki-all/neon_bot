@@ -1117,7 +1117,7 @@ async def auto_del_as_mute(event: Event, args: str, client):
 
             modified.append(0)
             await event.reply(
-                f"@{mu_id} *has been successfully {'added to' if arg.a else 'removed from'} muted_list.*",
+                f"@{mu_id} *has been successfully {'added to' if arg.a else 'removed from'} the mute list.*",
                 mentions_are_lids=True,
             )
 

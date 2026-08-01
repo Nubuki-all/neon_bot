@@ -26,6 +26,7 @@ from bot import (
     jid,
 )
 from bot.config import bot, conf
+from bot.others.exceptions import StopAutoHandlers
 from bot.types.event import BaseEvent, Chat, User
 
 from .bot_utils import write_binary
@@ -650,20 +651,22 @@ class Event(BaseEvent):
         return construct_event(msg, False)
 
 
-POLL = 1
+POLL = None
+SEQUENTIAL_AUTO = 0
+CONCURRENT_AUTO = 1
 function_dict = {None: []}
 anti_duplicate = deque(maxlen=10000)
 
 
-def register(key: str | None = None):
+def register(key: str | int | None = 1):
     """A decorator to register event handlers"""
 
     def dec(fn):
         nonlocal key
         if isinstance(key, int):
-            function_dict.update({key: fn})
-        elif not key:
             function_dict[key].append(fn)
+        elif not key:
+            function_dict.update({key: fn})
         else:
             key = conf.CMD_PREFIX + key
             function_dict.update({key: fn})
@@ -671,7 +674,7 @@ def register(key: str | None = None):
     return dec
 
 
-def add_handler(function, command: str | None = None, **kwargs):
+def add_handler(function, command: str | int | None = 1, **kwargs):
     """Adds an handler using the register decorator"""
     if command:
 
@@ -693,7 +696,7 @@ def unregister(key: str | Callable):
         key = conf.CMD_PREFIX + key
         function_dict.pop(key)
     else:
-        function_dict[None].remove(key)
+        function_dict[CONCURRENT_AUTO].remove(key)
 
 
 bot.add_handler = add_handler
@@ -718,6 +721,12 @@ async def on_message(client: NewAClient, message: MessageEv):
             return
         anti_duplicate.append(_id)
         bot.pending_saved_messages.append(event)
+        if seq_auto := function_dict[SEQUENTIAL_AUTO]:
+            for func in seq_auto:
+                try:
+                    await func(client, event)
+                except StopAutoHandlers:
+                    return
         if event.type == "text" and event.text:
             command, _ = (
                 event.text.split(maxsplit=1)
@@ -727,9 +736,9 @@ async def on_message(client: NewAClient, message: MessageEv):
             func = function_dict.get(command)
             if func:
                 await func(client, event)
-        if not function_dict[None]:
+        if not (concurrent_autos := function_dict[CONCURRENT_AUTO]):
             return
-        funcs = [func(client, event) for func in function_dict[None]]
+        funcs = [func(client, event) for func in concurrent_autos]
         await asyncio.gather(*funcs)
     except Exception:  # noqa: BLE001
         await logger(e="Unhandled Exception(s):", error=True)

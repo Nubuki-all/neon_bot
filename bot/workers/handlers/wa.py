@@ -24,6 +24,7 @@ from bot import Message
 from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
+from bot.others.exceptions import StopAutoHandlers
 from bot.utils.bot_utils import (
     LimitedDict,
     get_date_from_isostr,
@@ -45,7 +46,7 @@ from bot.utils.bot_utils import (
     write_binary,
 )
 from bot.utils.db_utils import save2db2
-from bot.utils.events import Event
+from bot.utils.events import SEQUENTIAL_AUTO, Event
 from bot.utils.log_utils import log, logger
 from bot.utils.msg_store import (
     get_deleted_message_ids,
@@ -2491,6 +2492,7 @@ async def auto_del_msg(event: Event, _, __):
     if user in muted:
         try:
             await event.delete()
+            raise StopAutoHandlers("user is muted")
         except Exception:
             pass
 
@@ -2532,7 +2534,6 @@ async def test_button(event, args, client):
 
 # Add command handlers
 bot.add_handler(get_notes2)
-bot.add_handler(auto_del_msg)
 bot.add_handler(tag_everyone)
 bot.add_handler(detect_filters)
 bot.add_handler(tag_all_admins)
@@ -2602,6 +2603,8 @@ bot.add_handler(
     require_args=True,
 )
 
+# sequential autos
+bot.add_handler(auto_del_msg, SEQUENTIAL_AUTO)
 
 # test
 bot.add_handler(test_button, "button")
