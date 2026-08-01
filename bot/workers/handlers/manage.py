@@ -1080,10 +1080,10 @@ async def auto_del_as_mute(event: Event, args: str, client):
             return await event.reply(msg1)
         elif not (arg.c or args or event.reply_to_message):
             return await event.reply(msg2)
+        members = members_to_set(group_info.Participants)
         chat_id = event.chat.id
         group_info: dict = bot.group_dict.setdefault(chat_id, {})
         muted: set = group_info.setdefault("muted", set())
-        members = members_to_set(group_info.Participants)
         modified = []
 
         async def process(args: str):
