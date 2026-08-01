@@ -42,7 +42,7 @@ async def onrestart():
 async def onstart(text="*Please restart me.*"):
     i = next(iter(conf.OWNER))
     await bot.client.send_message(
-        jid.build_jid(i),
+        jid.build_jid(i, "lid"),
         text,
     )
 
@@ -52,7 +52,7 @@ async def on_termination():
         dead_msg = f"*I'm* {enquip2()} {enmoji2()}"
         i = next(iter(conf.OWNER))
         await bot.client.send_message(
-            jid.build_jid(i),
+            jid.build_jid(i, "lid"),
             dead_msg,
         )
     except Exception:
@@ -76,7 +76,7 @@ async def update_presence():
 async def update_owner_lid():
     lids = set()
     for u in conf.OWNER:
-        jid_ = jid.build_jid(u, "s.whatsapp.net")
+        jid_ = jid.build_jid(u)
         try:
             lid = await bot.client.get_lid_from_pn(jid_)
         except Exception:
