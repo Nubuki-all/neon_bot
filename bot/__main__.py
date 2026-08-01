@@ -17,7 +17,7 @@ from . import (
 )
 from .startup.after import on_startup
 from .utils.db_utils import restore_wa_db
-from .utils.events import POLL, CONCURRENT_AUTO, Event, event_handler, on_message
+from .utils.events import CONCURRENT_AUTO, POLL, Event, event_handler, on_message
 from .utils.os_utils import re_x
 from .utils.sudo_button_utils import poll_as_button_handler
 from .workers.handlers.afk import activate_afk, afk_helper

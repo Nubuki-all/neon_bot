@@ -9,5 +9,6 @@ class CreateSudoBtnError(Exception):
 class NormalizeVidError(Exception):
     pass
 
+
 class StopAutoHandlers(Exception):
     pass
