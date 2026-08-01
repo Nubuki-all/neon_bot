@@ -40,7 +40,7 @@ async def onrestart():
 
 
 async def onstart(text="*Please restart me.*"):
-    i = conf.OWNER.split()[0]
+    i = conf.OWNER[0]
     await bot.client.send_message(
         jid.build_jid(i),
         text,
@@ -50,7 +50,7 @@ async def onstart(text="*Please restart me.*"):
 async def on_termination():
     try:
         dead_msg = f"*I'm* {enquip2()} {enmoji2()}"
-        i = conf.OWNER.split()[0]
+        i = conf.OWNER[0]
         await bot.client.send_message(
             jid.build_jid(i),
             dead_msg,

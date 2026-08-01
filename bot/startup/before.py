@@ -43,7 +43,7 @@ def load_db(_db, _key, var, var_type=None):
 
     if var_type == "list":
         for item in out.split():
-            if item in conf.OWNER.split():
+            if item in conf.OWNER:
                 continue
             if item not in var:
                 var.append(item)
