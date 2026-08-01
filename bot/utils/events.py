@@ -855,5 +855,5 @@ async def event_handler(
         if disable_help:
             return
         return await event.reply(f"{inspect.getdoc(function)}")
-    args = replace_args or args or "" # prevent sending None
+    args = replace_args or args or ""  # prevent sending None
     await function(event, args, client)

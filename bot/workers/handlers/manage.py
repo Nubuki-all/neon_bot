@@ -574,7 +574,7 @@ async def unban(event: Event, args, client):
         await save2db2(bot.user_dict, "users")
         return await event.reply(
             f"@{_id} *ban has been lifted.*",
-                mentions_are_lids=True,
+            mentions_are_lids=True,
         )
     except Exception:
         await logger(Exception)
@@ -725,7 +725,7 @@ async def sudoers(event, args, client):
         await save2db2(bot.user_dict, "users")
         await event.reply(
             f"@{su_id} *has been successfully {'added to' if arg.a else 'removed from'} sudoers.*",
-                    mentions_are_lids=True,
+            mentions_are_lids=True,
         )
     except Exception:
         await logger(Exception)
@@ -748,7 +748,9 @@ async def delete(event, args, client):
         if not (reply := event.reply_to_message):
             return await event.reply("Reply to a  message to delete.")
         me = bot.client.me = await client.get_me()
-        if not user_is_admin(me.JID.User, group_info.Participants)and reply.from_user.id not in {me.JID.User, me.LID.User}:
+        if not user_is_admin(
+            me.JID.User, group_info.Participants
+        ) and reply.from_user.id not in {me.JID.User, me.LID.User}:
             return await event.reply("Reply to one of *my* messages to delete.")
         # patch in the correct jid
         reply.from_user.jid = me.JID
@@ -965,7 +967,7 @@ async def enable_auto_delete_all_tags(event, args, client):
                     name="Seriously though, No.",
                     packname="N.",
                 )
-        
+
         if not user_is_admin(bot.client.me.JID.User, group_info.Participants):
             return await event.reply("*I need to be admin for that to work*")
         chat_id = event.chat.id
@@ -1024,11 +1026,11 @@ async def disable_auto_delete_all_tags(event, args, client):
 
 
 def members_to_set(members) -> set:
-    s = set() 
+    s = set()
     for member in members:
         s.add(member.JID.User)
     return s
-        
+
 
 async def auto_del_as_mute(event: Event, args: str, client):
     """
@@ -1043,10 +1045,12 @@ async def auto_del_as_mute(event: Event, args: str, client):
     """
     if not event.chat.is_group:
         return await event.react("🚫")
-    
+
     user = event.from_user.id
     group_info = await client.get_group_info(event.chat.jid)
-    if not user_is_privileged(user) and not user_is_admin(user, group_info.Participants):
+    if not user_is_privileged(user) and not user_is_admin(
+        user, group_info.Participants
+    ):
         return await event.react("🚫")
     if not args:
         return await list_muted(event, args, client)
@@ -1061,12 +1065,12 @@ async def auto_del_as_mute(event: Event, args: str, client):
         if not user_is_admin(bot.client.me.JID.User, group_info.Participants):
             return await event.reply("*I need to be admin for that to work*")
         msg1 = "*Please supply a valid id to add to the muted list*"
-        msg2 = "*Reply to a message or supply an id to add the user to to the muted list.*"
+        msg2 = (
+            "*Reply to a message or supply an id to add the user to to the muted list.*"
+        )
     elif arg.rm:
         msg1 = "*Please supply a valid id to remove from the muted list*"
-        msg2 = (
-            "*Reply to a message or supply an id to remove the user from the muted list.*"
-        )
+        msg2 = "*Reply to a message or supply an id to remove the user from the muted list.*"
     elif arg.c:
         pass
     else:
@@ -1086,11 +1090,15 @@ async def auto_del_as_mute(event: Event, args: str, client):
             mu_id = args
             if (args and args.startswith("+")) or not event.lid_address:
                 mu_id = args.lstrip("+")
-                lid = await bot.client.get_lid_from_pn(jid.build_jid(mu_id, "s.whatsapp.net"))
+                lid = await bot.client.get_lid_from_pn(
+                    jid.build_jid(mu_id, "s.whatsapp.net")
+                )
                 mu_id = lid.User
-            if not mu_id in members:
+            if mu_id not in members:
                 return await event.reply(f"@{mu_id} in not a member of this group")
-            if user_is_privileged(mu_id) or user_is_admin(mu_id, group_info.Participants):
+            if user_is_privileged(mu_id) or user_is_admin(
+                mu_id, group_info.Participants
+            ):
                 return await event.reply("*Why?*")
             if arg.a:
                 if mu_id in muted:
@@ -1100,7 +1108,7 @@ async def auto_del_as_mute(event: Event, args: str, client):
                     )
                 muted.add(mu_id)
             elif arg.rm:
-                if not mu_id in muted:
+                if mu_id not in muted:
                     return await event.reply(
                         f"@{mu_id} *is not muted.*",
                         mentions_are_lids=True,
@@ -1112,6 +1120,7 @@ async def auto_del_as_mute(event: Event, args: str, client):
                 f"@{mu_id} *has been successfully {'added to' if arg.a else 'removed from'} muted_list.*",
                 mentions_are_lids=True,
             )
+
         if arg.c:
             muted.clear()
             modified.append(0)
@@ -1145,7 +1154,7 @@ async def list_muted(event: Event, args: str | None, client):
             resp = f"*List of muted members:*{msg}"
 
         for text in split_text(resp):
-            event = await event.reply(text)    
+            event = await event.reply(text)
     except Exception:
         await logger(Exception)
         await event.react("❌")

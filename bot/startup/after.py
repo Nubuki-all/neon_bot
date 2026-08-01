@@ -72,6 +72,7 @@ async def update_presence():
             pass
         await asyncio.sleep(600)
 
+
 async def update_owner_lid():
     lids = set()
     for u in conf.OWNER.split():
@@ -83,6 +84,7 @@ async def update_owner_lid():
             continue
         lids.add(lid.User)
     conf.OWNER = lids
+
 
 async def backup_database():
     if not conf.BACKUP_WA_DB:
