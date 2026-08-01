@@ -2493,6 +2493,8 @@ async def auto_del_msg(event: Event, _, __):
         try:
             await event.delete()
             raise StopAutoHandlers("user is muted")
+        except StopAutoHandlers:
+            raise
         except Exception:
             pass
 
