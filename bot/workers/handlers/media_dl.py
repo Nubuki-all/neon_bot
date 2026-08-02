@@ -293,7 +293,7 @@ async def media_reply(event, listener, t_args=None) -> bool:
             if not file_exists(file_name):
                 await logger(e=f"File: {file_name} not found!", error=True)
                 continue
-            file_sz = size_of(file)
+            file_sz = size_of(file_name)
             if file_sz > 2 << 30:
                 await event.reply(
                     "*Upload failed, Video is too large!*\nTry with lower quality."

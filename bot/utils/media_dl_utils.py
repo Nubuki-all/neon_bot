@@ -4,7 +4,6 @@ import os
 import shutil
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 from bot.config import bot
 from bot.others.exceptions import NormalizeVidError
@@ -29,9 +28,9 @@ from .os_utils import enshell, s_remove
 class Listener:
     link: str = ""
     completed: bool = False
-    error: Optional[str] = None
+    error: str | None = None
     is_cancelled: bool = False
-    name: Optional[str] = None
+    name: str | None = None
     size: int = 0
     user_cancelled: bool = False
     stop_progress: bool = False
@@ -39,6 +38,16 @@ class Listener:
     is_pintrest: bool = False
     is_tiktok: bool = False
 
+
+@dataclass
+class DownloadResult:
+    local_path: str
+    caption: str
+    media_type: str  # "video" or "image"
+    source_url: str
+    thumbnail_url: str
+    width: int | None = None
+    height: int | None = None
 
 class MediaHelper:
     """Handles download progress, cancellation, and trimming for Instagram & Pinterest."""
@@ -58,7 +67,7 @@ class MediaHelper:
         self.ext = ""
         self.folder = ""
         self.cancel_handler_key = None
-        self._progress_task: Optional[asyncio.Task] = None
+        self._progress_task: asyncio.Task | None = None
 
     @property
     def download_speed(self):
@@ -271,8 +280,8 @@ class MediaHelper:
         self,
         path: str,
         event,
-        trim_args: Optional[str] = None,
-    ):
+        trim_args: str | None = None,
+    ) -> DownloadResult | None:
         """
         Start an Instagram or Pinterest download.
         Registers a cancel command, downloads media, optionally trims videos.

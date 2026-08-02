@@ -10,8 +10,8 @@ import secrets
 import time
 import traceback
 import urllib.parse
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Awaitable, Callable, List, Optional
 
 import aiofiles
 import httpx
@@ -70,8 +70,8 @@ class DownloadResult:
     media_type: str  # "video" or "image"
     source_url: str
     thumbnail_url: str
-    width: Optional[int] = None
-    height: Optional[int] = None
+    width: int | None = None
+    height: int | None = None
 
 
 def random_base64(n_bytes: int) -> str:
@@ -396,7 +396,7 @@ async def _get_igram_story(
 
 
 # Media parsing
-def _parse_gql_media(data: dict) -> List[DownloadResult]:
+def _parse_gql_media(data: dict) -> list[DownloadResult]:
     caption = ""
     for edge in data.get("edge_media_to_caption", {}).get("edges", []):
         caption = edge.get("node", {}).get("text", "")
@@ -462,7 +462,7 @@ def _parse_gql_media(data: dict) -> List[DownloadResult]:
     return items
 
 
-def _parse_igram_items(raw_items: list) -> List[DownloadResult]:
+def _parse_igram_items(raw_items: list) -> list[DownloadResult]:
     results = []
     for obj in raw_items:
         if not obj.get("url"):
@@ -498,7 +498,7 @@ async def _download_file(
     client: httpx.AsyncClient,
     url: str,
     dest: str,
-    progress_callback: Optional[Callable[[int, int, str], Awaitable[None]]] = None,
+    progress_callback: Callable[[int, int, str], Awaitable[None]] | None = None,
 ) -> None:
     headers = {
         "User-Agent": WEB_HEADERS["User-Agent"],
@@ -522,8 +522,8 @@ async def download_instagram(
     url: str,
     output_dir: str = ".",
     quiet: bool = False,
-    progress_callback: Optional[Callable[[int, int, str], Awaitable[None]]] = None,
-) -> List[DownloadResult]:
+    progress_callback: Callable[[int, int, str], Awaitable[None]] | None = None,
+) -> list[DownloadResult]:
     """
     Download media from any Instagram URL (post, reel, IGTV, story, share).
 
