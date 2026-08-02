@@ -1,5 +1,6 @@
 import asyncio
 import os
+from pathlib import Path
 
 from clean_links.clean import clean_url
 from urlextract import URLExtract
@@ -9,6 +10,7 @@ from bot.pkgs.insta_dl import is_valid_instagram_url
 from bot.pkgs.pinterest_dl import is_valid_pinterest_url
 from bot.pkgs.tiktok_dl import is_valid_tiktok_url, resolve_short_url
 from bot.utils.bot_utils import png_to_jpg, sync_to_async
+from bot.utils.events import Event
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.media_dl_utils import Listener as MediaListener
 from bot.utils.media_dl_utils import MediaHelper as MediaDLHelper
@@ -52,12 +54,14 @@ async def folder_upload(folder, event, audio, listener):
             file = os.path.join(path, name)
             await status_msg.edit(f"[{t}/{i}]\nUploading *{name}*…")
 
-            if size_of(file) >= 100000000:
+            file_sz = size_of(file)
+            if file_sz > 2 << 30:
                 await event.reply(f"*{name} too large to upload.*")
                 await asyncio.sleep(3)
                 continue
-
-            if ext_ in ("png", "jpg", "jpeg") and name_.startswith(
+            if file_sz >= 100000000:
+                event = await event.reply_document(file, f"*{base_name}*")
+            elif ext_ in ("png", "jpg", "jpeg") and name_.startswith(
                 path.split("/", maxsplit=2)[-1]
             ):
                 event = await event.reply_photo(file, f"*{name_}*")
@@ -85,7 +89,7 @@ async def get_audio_thumbnail(file):
     return await png_to_jpg(webp)
 
 
-async def youtube_reply(event, args, client):
+async def youtube_reply(event: Event, args: str, client):
     """
     Download and upload sent video from sent YouTube link
     """
@@ -100,7 +104,7 @@ async def youtube_reply(event, args, client):
             return
         if not bot.group_dict.get(event.chat.id, {}).get("ytdl"):
             return
-        trimmed = will_trim = False
+        trimmed = False
         extractor = URLExtract()
         text = args or event.text
         urls = extractor.find_urls(text)
@@ -123,6 +127,30 @@ async def youtube_reply(event, args, client):
             return
         job = list(supported_links)
         t_args = extract_bracketed_prefix(text)
+        async def _send(ytdl: YoutubeDLHelper, file:str, playlist:bool, audio:bool):
+            if not playlist:
+                if not file_exists(file):
+                    raise Exception(f"File: {file} not found!")
+                file_sz = size_of(file)
+                if file_sz > 2 << 30:
+                    return await event.reply(
+                        "*Upload failed, Media is too large!*\nTry with lower quality."
+                    )
+                if file_sz > 100000000:
+                    return await event.reply_document(file, Path(file).name, f"*{get_video_name(ytdl.base_name)}*")
+                log(e=f"Uploading {file}…")
+                base_name = get_video_name(ytdl.base_name)
+                if not audio:
+                    await event.reply_video(file, f"*{base_name}*")
+                else:
+                    photo = await get_audio_thumbnail(file)
+                    if photo:
+                        reply = await event.reply_photo(photo, f"*{base_name}*")
+                        await reply.reply_audio(file)
+                    else:
+                        await event.reply_audio(file)
+            else:
+                await folder_upload(ytdl.folder, event, audio, ytdl._listener)
         while job:
             try:
                 alt_listener = listener = MediaListener(job[0])
@@ -223,30 +251,7 @@ async def youtube_reply(event, args, client):
                     continue
                 await event.react("📤")
                 file = f"{ytdl.folder}/{ytdl.name}"
-                if not playlist:
-                    if not file_exists(file):
-                        raise Exception(f"File: {file} not found!")
-                    if size_of(file) > 100000000:
-                        await event.reply(
-                            "*Upload failed, Video is too large!*\nTry with lower quality."
-                        )
-                        await ytdl.clean_up()
-                        s_remove(ytdl.folder, folders=True)
-                        job.pop(0)
-                        continue
-                    log(e=f"Uploading {file}…")
-                    base_name = get_video_name(ytdl.base_name)
-                    if not audio:
-                        await event.reply_video(file, f"*{base_name}*")
-                    else:
-                        photo = await get_audio_thumbnail(file)
-                        if photo:
-                            reply = await event.reply_photo(photo, f"*{base_name}*")
-                            await reply.reply_audio(file)
-                        else:
-                            await event.reply_audio(file)
-                else:
-                    await folder_upload(ytdl.folder, event, audio, ytdl._listener)
+                await _send(ytdl, file, playlist, audio)
                 await ytdl.clean_up()
                 s_remove(ytdl.folder, folders=True)
                 await event.react("")
@@ -284,13 +289,17 @@ async def media_reply(event, listener, t_args=None) -> bool:
             if not file_exists(file_name):
                 await logger(e=f"File: {file_name} not found!", error=True)
                 continue
-            if size_of(file_name) > 100000000:
+            file_sz = size_of(file)
+            if file_sz > 2 << 30:
                 await event.reply(
                     "*Upload failed, Video is too large!*\nTry with lower quality."
                 )
                 continue
             caption = wrap_lines_with_asterisks(file.caption)
             log(e=f"Uploading {file_name}…")
+            if file_sz > 100000000:
+                msg = await msg.reply_document(file_name, caption=caption)
+                continue
 
             if file.media_type == "video":
                 if single_dl:

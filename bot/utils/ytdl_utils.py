@@ -345,7 +345,7 @@ class YoutubeDLHelper:
                     f"*{self.name or 'Media'} is bigger than the preset max size limit.*"
                 )
                 continue
-            if self.size >= 100000000 and not self.is_playlist:
+            if self.size >= 2 << 30 and not self.is_playlist:
                 self._listener.is_cancelled = True
                 await self.message.reply(
                     f"*{self.name or 'Media'} too large to upload.*"
