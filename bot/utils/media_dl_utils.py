@@ -49,6 +49,7 @@ class DownloadResult:
     width: int | None = None
     height: int | None = None
 
+
 class MediaHelper:
     """Handles download progress, cancellation, and trimming for Instagram & Pinterest."""
 
