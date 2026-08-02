@@ -127,7 +127,8 @@ async def youtube_reply(event: Event, args: str, client):
             return
         job = list(supported_links)
         t_args = extract_bracketed_prefix(text)
-        async def _send(ytdl: YoutubeDLHelper, file:str, playlist:bool, audio:bool):
+
+        async def _send(ytdl: YoutubeDLHelper, file: str, playlist: bool, audio: bool):
             if not playlist:
                 if not file_exists(file):
                     raise Exception(f"File: {file} not found!")
@@ -137,7 +138,9 @@ async def youtube_reply(event: Event, args: str, client):
                         "*Upload failed, Media is too large!*\nTry with lower quality."
                     )
                 if file_sz > 100000000:
-                    return await event.reply_document(file, Path(file).name, f"*{get_video_name(ytdl.base_name)}*")
+                    return await event.reply_document(
+                        file, Path(file).name, f"*{get_video_name(ytdl.base_name)}*"
+                    )
                 log(e=f"Uploading {file}…")
                 base_name = get_video_name(ytdl.base_name)
                 if not audio:
@@ -151,6 +154,7 @@ async def youtube_reply(event: Event, args: str, client):
                         await event.reply_audio(file)
             else:
                 await folder_upload(ytdl.folder, event, audio, ytdl._listener)
+
         while job:
             try:
                 alt_listener = listener = MediaListener(job[0])
