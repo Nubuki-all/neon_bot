@@ -302,7 +302,9 @@ async def media_reply(event, listener, t_args=None) -> bool:
             caption = wrap_lines_with_asterisks(file.caption)
             log(e=f"Uploading {file_name}…")
             if file_sz > 100000000:
-                msg = await msg.reply_document(file_name, Path(file_name).name, caption=caption)
+                msg = await msg.reply_document(
+                    file_name, Path(file_name).name, caption=caption
+                )
                 continue
 
             if file.media_type == "video":
