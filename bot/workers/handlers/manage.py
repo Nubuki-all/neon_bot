@@ -753,7 +753,7 @@ async def delete(event, args, client):
         ) and reply.from_user.id not in {me.JID.User, me.LID.User}:
             return await event.reply("Reply to one of *my* messages to delete.")
         # patch in the correct jid
-        reply.from_user.jid = me.JID
+        # reply.from_user.jid = me.JID
         await reply.delete()
         await event.react("✅")
     except Exception:
