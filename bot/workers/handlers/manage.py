@@ -1121,8 +1121,8 @@ async def auto_del_as_mute(event: Event, args: str, client):
 
         if arg.c:
             muted.clear()
-            modified.append(0)
-            await event.reply("*Cleared the muted list*")
+            await save2db2(bot.group_dict, "groups")
+            return await event.reply("*Cleared the muted list*")
         for user in args.split() or [event.reply_to_message.from_user.id]:
             try:
                 user = user.lstrip("@")
