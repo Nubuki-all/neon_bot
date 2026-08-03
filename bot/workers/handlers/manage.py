@@ -732,7 +732,7 @@ async def sudoers(event, args, client):
         await event.react("❌")
 
 
-async def delete(event, args, client):
+async def delete(event: Event, args, client):
     """
     Delete (bot's) message in group
     Arguments: Reply to message to delete
@@ -752,8 +752,6 @@ async def delete(event, args, client):
             me.JID.User, group_info.Participants
         ) and reply.from_user.id not in {me.JID.User, me.LID.User}:
             return await event.reply("Reply to one of *my* messages to delete.")
-        # patch in the correct jid
-        # reply.from_user.jid = me.JID
         await reply.delete()
         await event.react("✅")
     except Exception:

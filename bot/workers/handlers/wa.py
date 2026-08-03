@@ -1823,7 +1823,7 @@ def s_welcome_msg(gc_event, group_info):
         return "", None
 
 
-async def save_filter(event, args, client):
+async def save_filter(event: Event, args: str, client):
     """
     Saves a replied Text/media message to bot database;
     Can be retrieved when a message content matches {filter_name}
@@ -1841,6 +1841,8 @@ async def save_filter(event, args, client):
         group_info = await bot.client.get_group_info(event.chat.jid)
         if not user_is_admin(user, group_info.Participants):
             return
+    if not user_is_allowed(user):
+        return await event.react("⛔")
     try:
         arg, args = get_args(
             ["-a", "store_true"],
