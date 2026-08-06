@@ -2093,7 +2093,7 @@ async def get_filters(event, args, client):
         return await event.reply(message=filter_data)
 
 
-async def repeat(event, args, client):
+async def repeat(event: Event, args: str, client):
     """
     Repeat a replied message
     Arguments:
@@ -2106,6 +2106,7 @@ async def repeat(event, args, client):
         -f (add forwarded)
         -rf (remove forwarded)
         -ff (add forwarded many times)
+        -asm (if document; as video or image)
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2127,11 +2128,26 @@ async def repeat(event, args, client):
             ["-f", "store_true"],
             ["-ff", "store_true"],
             ["-rf", "store_true"],
+            ["-asm", "store_true"],
             "-x",
             "-C",
             to_parse=args,
             get_unknown=True,
         )
+        if arg.asm:
+            if not replied.document:
+                return await event.reply("Kindly reply to a document.")
+            mimetype: str = replied.media.mimetype
+            if not mimetype.startswith(("image", "video")):
+                return await event.reply("Not an image or video")
+            file = await replied.download()
+            if mimetype == "image/gif":
+                await event.reply_gif(file, replied.caption, quote=arg.nq)
+            elif mimetype.startswith("video"):
+                await event.reply_video(file, replied.caption, arg.nq)
+            else:
+                await event.reply_photo(file, replied.caption, arg.nq)
+            return
         if arg.uv or arg.vo:
             if replied.is_actual_media:
                 replied.media.viewOnce = True if arg.vo else False
