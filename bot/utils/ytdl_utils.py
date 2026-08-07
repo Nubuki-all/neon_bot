@@ -471,14 +471,14 @@ class YoutubeDLHelper:
         self.message = message
         await self._on_download_start()
 
-        self.opts["postprocessors"] = [
+        self.opts.setdefault("postprocessors", []).append(
             {
                 "add_chapters": True,
                 "add_infojson": "if_exists",
                 "add_metadata": True,
                 "key": "FFmpegMetadata",
             }
-        ]
+        )
 
         if trim_args and not twi:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
