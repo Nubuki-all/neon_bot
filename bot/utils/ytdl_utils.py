@@ -23,7 +23,7 @@ from .bot_utils import (
 )
 from .log_utils import log, logger
 from .msg_utils import user_is_admin, user_is_privileged
-from .os_utils import enshell, s_remove
+from .os_utils import enshell, s_remove, file_exists
 
 # Ripped almost all the code from;
 # https://github.com/anasty17/mirror-leech-telegram-bot/blob/master/bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py
@@ -417,6 +417,9 @@ class YoutubeDLHelper:
 
     def _download(self, path):
         try:
+            # temporary patch for ytdl with cookies
+            if file_exists(".cookies.txt"):
+                self.opts.update({'extractor_args': 'youtube:player-client=default,web_embedded'})
             with YoutubeDL(self.opts) as ydl:
                 try:
                     ydl.download([self._listener.link])
