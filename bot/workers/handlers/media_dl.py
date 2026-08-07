@@ -186,7 +186,7 @@ async def youtube_reply(event: Event, args: str, client):
                         {
                             "extractor_args": {
                                 "youtube": {
-                                    "player-client": ["default", "web_embedded"]
+                                    "player_client": ["default", "web_embedded"]
                                 }
                             }
                         }
