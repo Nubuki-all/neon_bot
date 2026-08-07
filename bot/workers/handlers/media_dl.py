@@ -182,9 +182,13 @@ async def youtube_reply(event: Event, args: str, client):
                 ytdl = YoutubeDLHelper(listener)
                 # temporary patch for ytdl with cookies
                 if file_exists(".cookies.txt"):
-                    ytdl.opts.update(
-                        {"extractor_args": "youtube:player-client=default,web_embedded"}
-                    )
+                    ytdl.opts.update({
+                        "extractor_args": {
+                            "youtube": {
+                                "player-client": ["default", "web_embedded"]
+                            }
+                        }
+                    })
                 if "music" in listener.link:
                     audio = True
                     _format = _alt_format = "ba/b-mp3{0}"
