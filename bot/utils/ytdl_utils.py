@@ -361,13 +361,19 @@ class YoutubeDLHelper:
     def extract_meta_data(self):
         if self._listener.link.startswith(("rtmp", "mms", "rstp", "rtmps")):
             self.opts["external_downloader"] = "ffmpeg"
+        prev_log = self.opts["logger"]
+        self.opts["logger"] = ExtractLogger()
         with YoutubeDL(self.opts) as ydl:
             try:
                 result = ydl.extract_info(self._listener.link, download=False)
                 if result is None:
                     raise ValueError("Info result is None")
             except Exception as e:
-                return self._on_download_error(str(e))
+                self._on_download_error(str(e))
+                raise
+            finally:
+                self.opts["logger"] = prev_log
+               
             if "entries" in result:
                 for entry in result["entries"]:
                     if not entry:
@@ -470,6 +476,7 @@ class YoutubeDLHelper:
             }
         ]
 
+
         if trim_args and not twi:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
             self.opts["download_ranges"] = download_range_func(
@@ -483,7 +490,7 @@ class YoutubeDLHelper:
 
         self.opts["format"] = qual
 
-        # await sync_to_async(self._extract_meta_data)
+        #await sync_to_async(self._extract_meta_data)
         if self._listener.is_cancelled:
             return
 
