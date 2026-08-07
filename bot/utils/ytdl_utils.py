@@ -363,17 +363,20 @@ class YoutubeDLHelper:
         if self._listener.link.startswith(("rtmp", "mms", "rstp", "rtmps")):
             self.opts["external_downloader"] = "ffmpeg"
         prev_log = self.opts["logger"]
-        self.opts["logger"] = ExtractLogger()
+        logger_ = ExtractLogger()
+        self.opts["logger"] = logger_
+        self.opts["ignoreerrors"] = True
         with YoutubeDL(self.opts) as ydl:
             try:
                 result = ydl.extract_info(self._listener.link, download=False)
                 if result is None:
-                    raise ValueError("Info result is None")
+                    raise ValueError(logger_.exc)
             except Exception as e:
                 self._on_download_error(str(e))
                 raise
             finally:
                 self.opts["logger"] = prev_log
+                self.opts["ignoreerrors"] = False
 
             if "entries" in result:
                 for entry in result["entries"]:
