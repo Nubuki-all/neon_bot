@@ -470,7 +470,6 @@ class YoutubeDLHelper:
             }
         ]
 
-
         if trim_args and not twi:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
             self.opts["download_ranges"] = download_range_func(
@@ -484,7 +483,7 @@ class YoutubeDLHelper:
 
         self.opts["format"] = qual
 
-        #await sync_to_async(self._extract_meta_data)
+        # await sync_to_async(self._extract_meta_data)
         if self._listener.is_cancelled:
             return
 
