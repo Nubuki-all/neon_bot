@@ -226,6 +226,7 @@ class YoutubeDLHelper:
         self.c_message = None
         self.cleaned = False
         self.is_playlist = False
+        self.folder = ""
         self.file_name = None
         self.start = None
         self.message = None
