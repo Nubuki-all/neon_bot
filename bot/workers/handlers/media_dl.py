@@ -23,7 +23,6 @@ from bot.utils.os_utils import dir_exists, file_exists, s_remove, size_of
 from bot.utils.ytdl_utils import (
     DummyListener,
     YoutubeDLHelper,
-    extract_info,
     get_video_name,
     is_supported,
     is_valid_trim_args,
@@ -181,10 +180,23 @@ async def youtube_reply(event: Event, args: str, client):
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
+                # temporary patch for ytdl with cookies
+                if file_exists(".cookies.txt"):
+                    ytdl.opts.update(
+                        {"extractor_args": "youtube:player-client=default,web_embedded"}
+                    )
                 if "music" in listener.link:
                     audio = True
                     _format = _alt_format = "ba/b-mp3{0}"
                     quality = "-"
+                    ytdl.opts["postprocessors"].append(
+                        {
+                            "key": "FFmpegExtractAudio",
+                            "preferredcodec": "mp3",
+                            # "preferredquality": rate,
+                        }
+                    )
+                    ytdl._ext = ".mp3"
                 elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
                 else:
@@ -202,7 +214,7 @@ async def youtube_reply(event: Event, args: str, client):
                     except Exception:
                         log(Exception)
                 try:
-                    result = await sync_to_async(extract_info, listener.link)
+                    result = await sync_to_async(ytdl.extract_meta_data)
                 except ValueError as w:
                     await group_logger(e=w, warning=True)
                     await asyncio.sleep(1)

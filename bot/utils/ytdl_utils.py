@@ -23,7 +23,7 @@ from .bot_utils import (
 )
 from .log_utils import log, logger
 from .msg_utils import user_is_admin, user_is_privileged
-from .os_utils import enshell, file_exists, s_remove
+from .os_utils import enshell, s_remove
 
 # Ripped almost all the code from;
 # https://github.com/anasty17/mirror-leech-telegram-bot/blob/master/bot/helper/mirror_leech_utils/download_utils/yt_dlp_download.py
@@ -358,7 +358,7 @@ class YoutubeDLHelper:
         self._listener.error = error
         s_remove(self.folder, folders=True)
 
-    def _extract_meta_data(self):
+    def extract_meta_data(self):
         if self._listener.link.startswith(("rtmp", "mms", "rstp", "rtmps")):
             self.opts["external_downloader"] = "ffmpeg"
         with YoutubeDL(self.opts) as ydl:
@@ -414,14 +414,10 @@ class YoutubeDLHelper:
                 self._listener.name = f"{uuid.uuid4()}{ext}"
                 if not self._ext:
                     self._ext = ext
+        return result
 
     def _download(self, path):
         try:
-            # temporary patch for ytdl with cookies
-            if file_exists(".cookies.txt"):
-                self.opts.update(
-                    {"extractor_args": "youtube:player-client=default,web_embedded"}
-                )
             with YoutubeDL(self.opts) as ydl:
                 try:
                     ydl.download([self._listener.link])
@@ -474,24 +470,6 @@ class YoutubeDLHelper:
             }
         ]
 
-        if qual.startswith("ba/b-"):
-            audio_info = qual.split("-")
-            qual = audio_info[0]
-            audio_format = audio_info[1]
-            rate = audio_info[2]
-            self.opts["postprocessors"].append(
-                {
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": audio_format,
-                    "preferredquality": rate,
-                }
-            )
-            if audio_format == "vorbis":
-                self._ext = ".ogg"
-            elif audio_format == "alac":
-                self._ext = ".m4a"
-            else:
-                self._ext = f".{audio_format}"
 
         if trim_args and not twi:
             s_time, e_time = map(video_timestamp_to_seconds, trim_args.split("-"))
@@ -506,7 +484,7 @@ class YoutubeDLHelper:
 
         self.opts["format"] = qual
 
-        await sync_to_async(self._extract_meta_data)
+        #await sync_to_async(self._extract_meta_data)
         if self._listener.is_cancelled:
             return
 
