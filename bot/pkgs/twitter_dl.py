@@ -203,111 +203,73 @@ def sanitize_caption(text: str) -> str:
 
 
 # ---------- Vork muxer detection and remux ----------
-def is_vork_muxer(file_path: str) -> bool:
+async def is_vork_muxer(file_path: str) -> bool:
     """Detect if an MP4 file was muxed with Twitter's vork muxer."""
-    import struct
-
     try:
-        with open(file_path, "rb") as f:
-            data = f.read(4096 * 1024)
+        proc = await asyncio.create_subprocess_exec(
+            "ffprobe", "-v", "quiet",
+            "-print_format", "json",
+            "-show_format", "-show_streams",
+            file_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
+        if proc.returncode != 0:
+            return False
+        data = json.loads(stdout)
     except Exception:
         return False
 
-    offset = 0
-    while offset < len(data) - 8:
-        size = struct.unpack(">I", data[offset : offset + 4])[0]
-        if size < 8:
-            break
-        box_type = data[offset + 4 : offset + 8].decode("ascii", errors="ignore")
-        if box_type == "moov":
-            pos = offset + 8
-            while pos < offset + size - 8:
-                child_size = struct.unpack(">I", data[pos : pos + 4])[0]
-                if child_size < 8:
-                    break
-                child_type = data[pos + 4 : pos + 8].decode("ascii", errors="ignore")
-                if child_type == "trak":
-                    p = pos + 8
-                    while p < pos + child_size - 8:
-                        sub_size = struct.unpack(">I", data[p : p + 4])[0]
-                        if sub_size < 8:
-                            break
-                        sub_type = data[p + 4 : p + 8].decode("ascii", errors="ignore")
-                        if sub_type == "mdia":
-                            q = p + 8
-                            while q < p + sub_size - 8:
-                                hdlr_size = struct.unpack(">I", data[q : q + 4])[0]
-                                if hdlr_size < 8:
-                                    break
-                                hdlr_type = data[q + 4 : q + 8].decode(
-                                    "ascii", errors="ignore"
-                                )
-                                if hdlr_type == "hdlr":
-                                    hdlr_data = data[q + 8 : q + hdlr_size]
-                                    # version+flags, pre_defined, handler_type, reserved[12]
-                                    name_start = q + 8 + 4 + 4 + 4 + 12
-                                    name_end = hdlr_data.find(b"\x00", name_start - q)
-                                    if name_end == -1:
-                                        name_end = hdlr_size
-                                    name = hdlr_data[
-                                        name_start - q : name_end - q
-                                    ].decode("ascii", errors="ignore")
-                                    if "Twitter-vork" in name:
-                                        return True
-                                    break
-                                q += hdlr_size
-                            break
-                        p += sub_size
-                    break
-                pos += child_size
-            break
-        offset += size
+    def has_vork(tags: dict) -> bool:
+        return any("Twitter-vork" in str(v) for v in tags.values())
+
+    if has_vork(data.get("format", {}).get("tags", {})):
+        return True
+    for stream in data.get("streams", []):
+        if has_vork(stream.get("tags", {})):
+            return True
     return False
 
 
-def remux_vork_video(input_path: str, output_path: str) -> None:
+async def remux_vork_video(input_path: str, output_path: str) -> None:
     """Remux a vork-muxed MP4 via double pass (MP4 -> MKV -> MP4)."""
     temp_path = input_path + ".temp.mkv"
     cmd1 = [
-        "ffmpeg",
-        "-i",
-        input_path,
-        "-map",
-        "0",
-        "-c",
-        "copy",
-        "-movflags",
-        "+faststart",
-        "-y",
-        temp_path,
+        "ffmpeg", "-i", input_path,
+        "-map", "0", "-c", "copy",
+        "-movflags", "+faststart",
+        "-y", temp_path,
     ]
-    proc = subprocess.run(cmd1, capture_output=True, text=True)
+    proc = await asyncio.create_subprocess_exec(
+        *cmd1,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
     if proc.returncode != 0:
         if os.path.exists(temp_path):
             os.remove(temp_path)
-        raise RuntimeError(f"FFmpeg first pass failed: {proc.stderr}")
+        raise RuntimeError(f"FFmpeg first pass failed: {stderr.decode()}")
 
     cmd2 = [
-        "ffmpeg",
-        "-i",
-        temp_path,
-        "-map",
-        "0",
-        "-c",
-        "copy",
-        "-movflags",
-        "+faststart",
-        "-y",
-        output_path,
+        "ffmpeg", "-i", temp_path,
+        "-map", "0", "-c", "copy",
+        "-movflags", "+faststart",
+        "-y", output_path,
     ]
-    proc = subprocess.run(cmd2, capture_output=True, text=True)
+    proc = await asyncio.create_subprocess_exec(
+        *cmd2,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
     if os.path.exists(temp_path):
         os.remove(temp_path)
     if proc.returncode != 0:
         if os.path.exists(output_path):
             os.remove(output_path)
-        raise RuntimeError(f"FFmpeg second pass failed: {proc.stderr}")
-
+        raise RuntimeError(f"FFmpeg second pass failed: {stderr.decode()}")
 
 # ---------- Core extraction ----------
 async def resolve_short_url(client: httpx.AsyncClient, short_url: str) -> str:
@@ -514,12 +476,12 @@ async def download_twitter(
             await _download_file(client, source_url, dest, progress_callback)
 
             # Vork detection and remux (only for videos)
-            if media.type == "video" and is_vork_muxer(dest):
+            if media.type == "video" and await is_vork_muxer(dest):
                 if not quiet:
                     print("[vork] Detected vork-muxed video, remuxing...")
                 try:
                     remuxed_dest = dest + ".remuxed.mp4"
-                    await asyncio.to_thread(remux_vork_video, dest, remuxed_dest)
+                    await remux_vork_video(dest, remuxed_dest)
                     os.replace(remuxed_dest, dest)
                     if not quiet:
                         print("[vork] Remuxed successfully")

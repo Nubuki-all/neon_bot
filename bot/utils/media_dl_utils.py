@@ -20,6 +20,7 @@ from .bot_utils import (
     time_formatter,
     video_timestamp_to_seconds,
 )
+from .events import Event
 from .log_utils import log, logger
 from .msg_utils import user_is_admin, user_is_privileged
 from .os_utils import enshell, s_remove
@@ -63,7 +64,7 @@ class MediaHelper:
         self._eta = "-"
         self._start_time = 0
         self.c_message = None
-        self._message = None
+        self._message: Event = None
         self.cancel_cmd = None
         self.cleaned = False
         self.caption = ""
@@ -99,6 +100,11 @@ class MediaHelper:
         return self._listener.completed
 
     async def _on_download_progress(self, current: int, total: int, file_path: str):
+        if total >= 2 << 30:
+            self._listener.is_cancelled = True
+            await self._message.reply(
+                f"*{self.name or 'Media'} too large to upload.*",
+            )
         if self._listener.is_cancelled:
             raise ValueError("Cancelling...")
 
@@ -300,6 +306,8 @@ class MediaHelper:
         self.folder = path
         self._gid = f"{event.chat.id}:{event.id}"
         self._start_time = time.time()
+
+        self._message = event
 
         self.cancel_handler_key = bot.add_handler(self._cancel)
 
