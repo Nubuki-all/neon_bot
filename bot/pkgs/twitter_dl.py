@@ -48,7 +48,7 @@ class DownloadResult:
 
     local_path: str
     caption: str
-    media_type: str  # "photo" or "video"
+    media_type: str  # "image" or "video"
     source_url: str
     thumbnail_url: str
     width: int | None = None
@@ -57,7 +57,7 @@ class DownloadResult:
 
 @dataclass
 class MediaFormat:
-    """Represents a single media format (video variant or photo)."""
+    """Represents a single media format (video variant or image)."""
 
     url: str
     bitrate: int | None = None
@@ -68,12 +68,12 @@ class MediaFormat:
 
 @dataclass
 class MediaItem:
-    """Represents a single media entity (photo or video)."""
+    """Represents a single media entity (image or video)."""
 
-    type: str  # "photo" or "video"
+    type: str  # "image" or "video"
     thumbnail: str | None = None
     formats: list[MediaFormat] = field(default_factory=list)  # for video
-    url: str | None = None  # for photo
+    url: str | None = None  # for image
     duration: int | None = None  # seconds
 
 
@@ -371,7 +371,7 @@ def parse_tweet_response(raw_data: dict[str, Any]) -> TweetInfo:
             if url:
                 media_items.append(
                     MediaItem(
-                        type="photo",
+                        type="image",
                         thumbnail=url,
                         url=url,
                     )
@@ -491,7 +491,7 @@ async def download_twitter(
     async with httpx.AsyncClient(follow_redirects=True) as client:
         for idx, media in enumerate(info.media):
             # Determine best URL and dimensions
-            if media.type == "photo":
+            if media.type == "image":
                 source_url = media.url
                 width = height = None  # not available
                 ext = "jpg"
