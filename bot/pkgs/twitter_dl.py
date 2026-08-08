@@ -488,7 +488,7 @@ async def download_twitter(
                 ext = "mp4"
 
             # Build filename: use tweet ID and index
-            fname = f"tweet_{idx}{ext}"
+            fname = f"tweet_{idx}.{ext}"
             dest = os.path.join(output_dir, fname)
 
             if not quiet:
