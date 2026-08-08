@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import re
-import subprocess
 import urllib.parse
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -207,9 +206,13 @@ async def is_vork_muxer(file_path: str) -> bool:
     """Detect if an MP4 file was muxed with Twitter's vork muxer."""
     try:
         proc = await asyncio.create_subprocess_exec(
-            "ffprobe", "-v", "quiet",
-            "-print_format", "json",
-            "-show_format", "-show_streams",
+            "ffprobe",
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
             file_path,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -236,10 +239,17 @@ async def remux_vork_video(input_path: str, output_path: str) -> None:
     """Remux a vork-muxed MP4 via double pass (MP4 -> MKV -> MP4)."""
     temp_path = input_path + ".temp.mkv"
     cmd1 = [
-        "ffmpeg", "-i", input_path,
-        "-map", "0", "-c", "copy",
-        "-movflags", "+faststart",
-        "-y", temp_path,
+        "ffmpeg",
+        "-i",
+        input_path,
+        "-map",
+        "0",
+        "-c",
+        "copy",
+        "-movflags",
+        "+faststart",
+        "-y",
+        temp_path,
     ]
     proc = await asyncio.create_subprocess_exec(
         *cmd1,
@@ -253,10 +263,17 @@ async def remux_vork_video(input_path: str, output_path: str) -> None:
         raise RuntimeError(f"FFmpeg first pass failed: {stderr.decode()}")
 
     cmd2 = [
-        "ffmpeg", "-i", temp_path,
-        "-map", "0", "-c", "copy",
-        "-movflags", "+faststart",
-        "-y", output_path,
+        "ffmpeg",
+        "-i",
+        temp_path,
+        "-map",
+        "0",
+        "-c",
+        "copy",
+        "-movflags",
+        "+faststart",
+        "-y",
+        output_path,
     ]
     proc = await asyncio.create_subprocess_exec(
         *cmd2,
@@ -271,7 +288,10 @@ async def remux_vork_video(input_path: str, output_path: str) -> None:
             os.remove(output_path)
         raise RuntimeError(f"FFmpeg second pass failed: {stderr.decode()}")
 
+
 # ---------- Core extraction ----------
+
+
 async def resolve_short_url(client: httpx.AsyncClient, short_url: str) -> str:
     """Follow t.co redirect and return the final tweet URL."""
     resp = await client.get(short_url, follow_redirects=True)
