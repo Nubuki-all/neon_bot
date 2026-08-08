@@ -108,6 +108,7 @@ async def youtube_reply(event: Event, args: str, client):
         extractor = URLExtract()
         text = args or event.text
         urls = extractor.find_urls(text)
+        only_use_ytdl =  "#yt-dlp-only" in event.text
         if not urls:
             return
         supported_links = []
@@ -120,6 +121,8 @@ async def youtube_reply(event: Event, args: str, client):
                 is_valid_tiktok_url,
                 is_valid_twitter_url,
             ]
+            if only_use_ytdl:
+                del extractors_checkers[1:]
             for check in extractors_checkers:
                 if check(url):
                     supported_links.append(url)
@@ -161,7 +164,9 @@ async def youtube_reply(event: Event, args: str, client):
                 alt_listener = listener = MediaListener(job[0])
                 tryAlt = False
 
-                if is_valid_tiktok_url(listener.link):
+                if only_use_ytdl:
+                    pass
+                elif is_valid_tiktok_url(listener.link):
                     tryAlt = listener.is_tiktok = True
                 elif is_valid_instagram_url(listener.link):
                     tryAlt = listener.is_insta = True
