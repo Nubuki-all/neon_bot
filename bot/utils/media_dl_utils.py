@@ -10,6 +10,7 @@ from bot.others.exceptions import NormalizeVidError
 from bot.pkgs.insta_dl import download_instagram
 from bot.pkgs.pinterest_dl import download_pinterest
 from bot.pkgs.tiktok_dl import download_tiktok
+from bot.pkgs.twitter_dl import download_twitter
 
 from .bot_utils import (
     is_valid_video_timestamp,
@@ -37,6 +38,7 @@ class Listener:
     is_insta: bool = False
     is_pintrest: bool = False
     is_tiktok: bool = False
+    is_twitter: bool = False
 
 
 @dataclass
@@ -268,6 +270,14 @@ class MediaHelper:
                 quiet=True,
                 progress_callback=self._on_download_progress,
                 cookie_file=".cookies.txt",
+            )
+        elif self._listener.is_twitter:
+            return await download_twitter(
+                url=url,
+                output_dir=path,
+                cookie_file=".cookies.txt",
+                progress_callback=self._on_download_progress,
+                quiet=True,
             )
         else:
             return await download_pinterest(

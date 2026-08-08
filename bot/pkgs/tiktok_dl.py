@@ -66,8 +66,8 @@ class DownloadResult:
     media_type: str
     source_url: str
     thumbnail_url: str
-    width: Optional[int] = None
-    height: Optional[int] = None
+    width: int | None = None
+    height: int | None = None
 
 
 def is_valid_tiktok_url(url: str) -> bool:
