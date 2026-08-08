@@ -186,6 +186,7 @@ def build_api_query(tweet_id: str) -> str:
     }
     return urllib.parse.urlencode(params)
 
+
 def parse_resolution_from_url(url: str) -> tuple[int, int]:
     """Extract width and height from a video URL."""
     match = RESOLUTION_RE.search(url)
