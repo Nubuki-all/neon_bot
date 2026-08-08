@@ -108,7 +108,7 @@ async def youtube_reply(event: Event, args: str, client):
         extractor = URLExtract()
         text = args or event.text
         urls = extractor.find_urls(text)
-        only_use_ytdl =  "#yt-dlp-only" in event.text
+        only_use_ytdl = "#yt-dlp-only" in event.text
         if not urls:
             return
         supported_links = []
