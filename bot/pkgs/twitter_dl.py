@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import subprocess
+import urllib.parse
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from http.cookiejar import Cookie, CookieJar
@@ -183,8 +184,7 @@ def build_api_query(tweet_id: str) -> str:
         "features": json.dumps(features, separators=(",", ":")),
         "fieldToggles": json.dumps(field_toggles, separators=(",", ":")),
     }
-    return "&".join(f"{k}={v}" for k, v in params.items())
-
+    return urllib.parse.urlencode(params)
 
 def parse_resolution_from_url(url: str) -> tuple[int, int]:
     """Extract width and height from a video URL."""
@@ -330,7 +330,8 @@ async def fetch_tweet_api(
     query = build_api_query(tweet_id)
     url = f"{API_ENDPOINT}?{query}"
     resp = await client.get(url, headers=headers, timeout=30)
-    resp.raise_for_status()
+    if resp.status_code != 200:
+        raise RuntimeError(f"API {resp.status_code}: {resp.text[:500]}")
     return resp.json()
 
 
