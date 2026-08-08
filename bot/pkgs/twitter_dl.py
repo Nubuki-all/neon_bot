@@ -327,9 +327,10 @@ async def fetch_tweet_api(
     if not csrf_token:
         raise ValueError("Missing 'ct0' cookie – required for CSRF")
 
-    headers = build_api_headers(csrf_token)
+    api_headers = build_api_headers(csrf_token)
     query = build_api_query(tweet_id)
     url = f"{API_ENDPOINT}?{query}"
+    headers = {**WEB_HEADERS, **api_headers}
     resp = await client.get(url, headers=headers, timeout=30)
     if resp.status_code != 200:
         raise RuntimeError(f"API {resp.status_code}: {resp.text[:500]}")
