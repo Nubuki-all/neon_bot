@@ -39,9 +39,12 @@ SHORT_URL_RE = re.compile(r"https?://t\.co/(?P<id>\w+)")
 RESOLUTION_RE = re.compile(r"(\d+)x(\d+)")
 
 # ---------- Data classes ----------
+
+
 @dataclass
 class DownloadResult:
     """Result of a downloaded media item."""
+
     local_path: str
     caption: str
     media_type: str  # "photo" or "video"
@@ -54,6 +57,7 @@ class DownloadResult:
 @dataclass
 class MediaFormat:
     """Represents a single media format (video variant or photo)."""
+
     url: str
     bitrate: int | None = None
     width: int = 0
@@ -64,16 +68,18 @@ class MediaFormat:
 @dataclass
 class MediaItem:
     """Represents a single media entity (photo or video)."""
+
     type: str  # "photo" or "video"
     thumbnail: str | None = None
     formats: list[MediaFormat] = field(default_factory=list)  # for video
-    url: str | None = None          # for photo
-    duration: int | None = None     # seconds
+    url: str | None = None  # for photo
+    duration: int | None = None  # seconds
 
 
 @dataclass
 class TweetInfo:
     """Extracted tweet data."""
+
     caption: str
     media: list[MediaItem]
 
@@ -82,7 +88,10 @@ def is_valid_twitter_url(url: str) -> bool:
     """Check if the URL is a valid Twitter/X post or short link."""
     return bool(TWEET_URL_RE.search(url) or SHORT_URL_RE.search(url))
 
+
 # ---------- Cookie helpers ----------
+
+
 def load_netscape_cookies(filepath: str) -> CookieJar:
     """Load Netscape-format cookies into a CookieJar."""
     jar = CookieJar()
@@ -196,6 +205,7 @@ def sanitize_caption(text: str) -> str:
 def is_vork_muxer(file_path: str) -> bool:
     """Detect if an MP4 file was muxed with Twitter's vork muxer."""
     import struct
+
     try:
         with open(file_path, "rb") as f:
             data = f.read(4096 * 1024)
@@ -204,38 +214,43 @@ def is_vork_muxer(file_path: str) -> bool:
 
     offset = 0
     while offset < len(data) - 8:
-        size = struct.unpack(">I", data[offset:offset+4])[0]
+        size = struct.unpack(">I", data[offset : offset + 4])[0]
         if size < 8:
             break
-        box_type = data[offset+4:offset+8].decode("ascii", errors="ignore")
+        box_type = data[offset + 4 : offset + 8].decode("ascii", errors="ignore")
         if box_type == "moov":
             pos = offset + 8
             while pos < offset + size - 8:
-                child_size = struct.unpack(">I", data[pos:pos+4])[0]
+                child_size = struct.unpack(">I", data[pos : pos + 4])[0]
                 if child_size < 8:
                     break
-                child_type = data[pos+4:pos+8].decode("ascii", errors="ignore")
+                child_type = data[pos + 4 : pos + 8].decode("ascii", errors="ignore")
                 if child_type == "trak":
                     p = pos + 8
                     while p < pos + child_size - 8:
-                        sub_size = struct.unpack(">I", data[p:p+4])[0]
+                        sub_size = struct.unpack(">I", data[p : p + 4])[0]
                         if sub_size < 8:
                             break
-                        sub_type = data[p+4:p+8].decode("ascii", errors="ignore")
+                        sub_type = data[p + 4 : p + 8].decode("ascii", errors="ignore")
                         if sub_type == "mdia":
                             q = p + 8
                             while q < p + sub_size - 8:
-                                hdlr_size = struct.unpack(">I", data[q:q+4])[0]
+                                hdlr_size = struct.unpack(">I", data[q : q + 4])[0]
                                 if hdlr_size < 8:
                                     break
-                                hdlr_type = data[q+4:q+8].decode("ascii", errors="ignore")
+                                hdlr_type = data[q + 4 : q + 8].decode(
+                                    "ascii", errors="ignore"
+                                )
                                 if hdlr_type == "hdlr":
-                                    hdlr_data = data[q+8:q+hdlr_size]
-                                    name_start = q + 8 + 4 + 4 + 4 + 12  # version+flags, pre_defined, handler_type, reserved[12]
+                                    hdlr_data = data[q + 8 : q + hdlr_size]
+                                    # version+flags, pre_defined, handler_type, reserved[12]
+                                    name_start = q + 8 + 4 + 4 + 4 + 12
                                     name_end = hdlr_data.find(b"\x00", name_start - q)
                                     if name_end == -1:
                                         name_end = hdlr_size
-                                    name = hdlr_data[name_start - q:name_end - q].decode("ascii", errors="ignore")
+                                    name = hdlr_data[
+                                        name_start - q : name_end - q
+                                    ].decode("ascii", errors="ignore")
                                     if "Twitter-vork" in name:
                                         return True
                                     break
@@ -254,12 +269,16 @@ def remux_vork_video(input_path: str, output_path: str) -> None:
     temp_path = input_path + ".temp.mkv"
     cmd1 = [
         "ffmpeg",
-        "-i", input_path,
-        "-map", "0",
-        "-c", "copy",
-        "-movflags", "+faststart",
+        "-i",
+        input_path,
+        "-map",
+        "0",
+        "-c",
+        "copy",
+        "-movflags",
+        "+faststart",
         "-y",
-        temp_path
+        temp_path,
     ]
     proc = subprocess.run(cmd1, capture_output=True, text=True)
     if proc.returncode != 0:
@@ -269,12 +288,16 @@ def remux_vork_video(input_path: str, output_path: str) -> None:
 
     cmd2 = [
         "ffmpeg",
-        "-i", temp_path,
-        "-map", "0",
-        "-c", "copy",
-        "-movflags", "+faststart",
+        "-i",
+        temp_path,
+        "-map",
+        "0",
+        "-c",
+        "copy",
+        "-movflags",
+        "+faststart",
         "-y",
-        output_path
+        output_path,
     ]
     proc = subprocess.run(cmd2, capture_output=True, text=True)
     if os.path.exists(temp_path):
@@ -406,7 +429,9 @@ async def extract_twitter(
         jar = load_netscape_cookies(cookie_file)
         cookies = cookies_to_dict(jar)
     else:
-        _log_.warning("No cookie file provided; Twitter API will likely reject the request.")
+        _log_.warning(
+            "No cookie file provided; Twitter API will likely reject the request."
+        )
 
     async with httpx.AsyncClient(
         cookies=cookies,
@@ -543,5 +568,3 @@ async def _download_file(
                 done += len(chunk)
                 if progress_callback:
                     await progress_callback(done, total, dest)
-
-
