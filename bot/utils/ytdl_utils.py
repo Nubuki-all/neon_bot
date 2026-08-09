@@ -32,7 +32,7 @@ from .os_utils import enshell, s_remove
 def is_supported(url):
     extractors = extractor.gen_extractors()
     for e in extractors:
-        if e.suitable(url) and e.IE_NAME != "generic":
+        if e.suitable(url):
             return True
     return False
 
