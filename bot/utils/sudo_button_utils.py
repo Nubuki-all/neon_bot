@@ -15,8 +15,8 @@ async def poll_as_button_handler(event):
     async with sudo_btn_lock:
         poll_update = get_poll_update_message(event.message)
         poll_msg_key = poll_update.pollCreationMessageKey
-        if poll_msg_key.fromMe:
-            return
+        # if poll_msg_key.fromMe:
+        #     return
         if not (poll_info := active_poll_dict.get(poll_msg_key.ID)):
             return
         if f := poll_info.get("callback"):
