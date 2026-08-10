@@ -24,7 +24,9 @@ _semaphore = asyncio.Semaphore(_CONCURRENCY)
 _http_client = httpx.AsyncClient(
     headers={
         "User-Agent": getattr(
-            conf, "RSS_USER_AGENT", "Mozilla/5.0 (compatible; RSSBot/1.0; +https://example.com)"
+            conf,
+            "RSS_USER_AGENT",
+            "Mozilla/5.0 (compatible; RSSBot/1.0; +https://example.com)",
         ),
         "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
     },
@@ -52,7 +54,9 @@ def _is_transient_error(exc: Exception | None) -> bool:
     """
     if exc is None:
         return False
-    return isinstance(exc, (OSError, TimeoutError, ConnectionError, asyncio.TimeoutError))
+    return isinstance(
+        exc, (OSError, TimeoutError, ConnectionError, asyncio.TimeoutError)
+    )
 
 
 async def _backoff_sleep(title: str, delay: float | None = None):
@@ -65,8 +69,11 @@ async def _backoff_sleep(title: str, delay: float | None = None):
     state["count"] += 1
     if delay is None:
         delay = min(BASE_BACKOFF * (2 ** (state["count"] - 1)), MAX_BACKOFF)
-        delay += uniform(0, delay * 0.1)  # jitter so feeds don't all retry in lockstep
-    log(e=f"Feed '{title}' backing off {delay:.1f}s (attempt {state['count']})")
+        # jitter so feeds don't all retry in lockstep
+        delay += uniform(0, delay * 0.1)
+    log(e=f"Feed '{title}' backing off {
+            delay:.1f}s (attempt {
+            state['count']})")
     await asyncio.sleep(delay)
 
 
@@ -177,7 +184,7 @@ async def process_feed(title: str, data: dict):
     async with _semaphore:
         rss_d = await _fetch_feed(title, data["link"])
         if rss_d is None:
-            return  
+            return
 
         if not rss_d.entries:
             log(e=f"No entries returned for feed: {title}")
@@ -285,7 +292,9 @@ async def _send_with_retry(feed_: dict, data: dict, title: str):
             # if _is_transient_error(e):
             #     await _backoff_sleep(title)
             #     continue
-            log(e=f"{e} - Feed Name: {title} - failed sending item: {feed_.get('title')}")
+            log(
+                e=f"{e} - Feed Name: {title} - failed sending item: {feed_.get('title')}"
+            )
             return
 
 
@@ -306,8 +315,6 @@ def get_pic_url(feed: dict) -> list | None:
 
 def schedule_rss():
     addjob(conf.RSS_DELAY, rss_monitor)
-
-
 
 
 schedule_rss()
