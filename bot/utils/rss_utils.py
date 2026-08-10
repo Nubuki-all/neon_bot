@@ -63,7 +63,9 @@ async def _backoff_sleep(title: str, delay: float | None = None):
         delay = min(BASE_BACKOFF * (2 ** (state["count"] - 1)), MAX_BACKOFF)
         # Jitter so feeds don't all retry in lockstep
         delay += uniform(0, delay * 0.1)
-    log(e=f"Feed '{title}' backing off {delay:.1f}s (attempt {state['count']})")
+    log(e=f"Feed '{title}' backing off {
+            delay:.1f}s (attempt {
+            state['count']})")
     await asyncio.sleep(delay)
 
 
