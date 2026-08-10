@@ -218,7 +218,7 @@ async def sanitized_video(event: Event, args: str, client):
                     file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
                     file_name += ".mp4"
                     if len(file) > 100000000:
-                        e =  await event.reply_document(file, file_name, file_name)
+                        e = await event.reply_document(file, file_name, file_name)
                     else:
                         e = await event.reply_video(file, file_name)
                 sanitized_video_cache[comp_sha] = e.media
@@ -250,9 +250,7 @@ async def sanitized_video(event: Event, args: str, client):
             file_sz = size_of(out_)
             if file_sz > 2 << 30:
                 s_remove(out_)
-                return await event.reply(
-                    "*Upload failed, Video is too large!*"
-                )
+                return await event.reply("*Upload failed, Video is too large!*")
             if file_sz > 100000000:
                 e = await event.reply_document(out_, file_name, file_name)
             else:
@@ -502,7 +500,7 @@ async def compress(event, args, client):
                 async with event.react("📤"):
                     file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
                     file_name += ".mkv"
-                    e =  await event.reply_document(file, file_name, file_name)
+                    e = await event.reply_document(file, file_name, file_name)
                 compress_cache[comp_sha] = e.media
                 return
             except Exception:
