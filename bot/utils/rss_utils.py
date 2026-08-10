@@ -63,6 +63,7 @@ async def _throttled_get(url: str) -> httpx.Response:
         finally:
             _host_last_request[host] = time.monotonic()
 
+
 # Tracks consecutive transient failures per feed so we can back off instead
 # of hammering a feed that's erroring. Deliberately in-memory only (not
 # persisted) - it resets on restart, which is fine since it's just a
@@ -101,8 +102,8 @@ async def _backoff_sleep(title: str, delay: float | None = None):
         # jitter so feeds don't all retry in lockstep
         delay += uniform(0, delay * 0.1)
     log(e=f"Feed '{title}' backing off {
-            delay:.1f}s (attempt {
-            state['count']})")
+        delay:.1f}s (attempt {
+        state['count']})")
     await asyncio.sleep(delay)
 
 
