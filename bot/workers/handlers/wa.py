@@ -35,6 +35,7 @@ from bot.utils.bot_utils import (
     list_to_str,
     png_to_jpg,
     post_to_tgph,
+    read_binary,
     same_week,
     screenshot_page,
     split_text,
@@ -73,13 +74,14 @@ from bot.utils.msg_utils import (
     user_is_owner,
     user_is_privileged,
 )
-from bot.utils.os_utils import enshell, s_remove
+from bot.utils.os_utils import enshell, s_remove, size_of
 from bot.utils.parse_td_utils import parse_reminder_time_hybrid
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
 from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
 
 compress_cache = LimitedDict()
+sanitized_video_cache = LimitedDict()
 mediainfo_cache = LimitedDict()
 purge_sessions = {}
 
@@ -90,8 +92,6 @@ async def tools(event, args, client):
         pre = conf.CMD_PREFIX
         s = "\n"
         msg = (
-            f"{pre}compress - *Compress a replied video*{s}"
-            f"{s}"
             f"*Filters:*{s}"
             f"{pre}del_filter - *Delete filters*{s}"
             f"{pre}filter - *Filter given word with replied message*{s}"
@@ -102,10 +102,14 @@ async def tools(event, args, client):
             f"{pre}get - *Get previously saved item*{s}"
             f"{pre}save - *Save a replied text/media*{s}"
             f"{s}"
+            f"*Videos & Images*{s}"
+            f"{pre}compress - *Compress a replied video*{s}"
             f"{pre}doc - *Convert videos/images/stickers to document*{s}"
             f"{pre}fps - *Get the fps of a replied video*{s}"
             f"{pre}mediainfo - *Get the mediainfo of a replied video*{s}"
             f"{pre}mp3 - *Convert Video to audio*{s}"
+            f"{pre}sanitized_video - *Make some videos playable*{s}"
+            f"{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}pin - *Pin a replied message*{s}"
             f"{pre}unpin - *Unpin a replied message*{s}"
@@ -180,6 +184,86 @@ async def to_doc(event, args, client):
         await event.react("❌")
 
 
+async def sanitized_video(event: Event, args: str, client):
+    """
+    Sanitize videos that cannot be opened due to the:
+    "The video is not available because something is wrong with the video file" error
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not (replied := event.reply_to_message):
+            return await event.reply("*Kindly reply to video.*")
+        f_name = ""
+        ext = ".mp4"
+        if replied.document:
+            if not (
+                replied.document.mimetype.startswith("video")
+                or is_video_file(replied.document.fileName)
+            ):
+                return await event.reply("*Replied document is not a video.*")
+            f_name, ext = split_ext(replied.document.fileName)
+        elif not replied.video:
+            return await event.reply("*Replied message is not a video.*")
+        comp_sha = replied.media.fileSHA256
+        if media := sanitized_video_cache.get(comp_sha):
+            try:
+                async with event.react("📥"):
+                    file = await dd_media(media, MediaType.MediaDocument)
+                async with event.react("📤"):
+                    file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
+                    file_name += ".mp4"
+                    if len(file) > 100000000:
+                        e =  await event.reply_document(file, file_name, file_name)
+                    else:
+                        e = await event.reply_video(file, file_name)
+                sanitized_video_cache[comp_sha] = e.media
+                return
+            except Exception:
+                await logger(Exception)
+                sanitized_video_cache.pop(comp_sha)
+        async with event.react("📥"):
+            file = await replied.download()
+
+        _id = f"{event.chat.id}:{event.id}"
+        in_ = f"temp/{_id}{ext}"
+        out_ = f"temp/{_id}-1.mp4"
+        cmd_str = f"ffmpeg -fflags +genpts+igndts -err_detect ignore_err -max_error_rate 1.0 -i {in_} -map 0:v -map 0:a -c:v libx264 -c:a copy -movflags +faststart {out_} -y"
+
+        await write_binary(in_, file)
+
+        async with event.react("⏲️"), comp_sem:
+            process, _stdout, stderr = await enshell(cmd_str)
+        if process.returncode != 0:
+            raise RuntimeError(
+                # type: ignore
+                f"stderr: {stderr} Return code: {process.returncode}"
+            )
+        s_remove(in_)
+        async with event.react("📤"):
+            file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
+            file_name += ".mp4"
+            file_sz = size_of(out_)
+            if file_sz > 2 << 30:
+                s_remove(out_)
+                return await event.reply(
+                    "*Upload failed, Video is too large!*"
+                )
+            if file_sz > 100000000:
+                e = await event.reply_document(out_, file_name, file_name)
+            else:
+                e = await event.reply_video(out_, f_name)
+            sanitized_video_cache[comp_sha] = e.media
+        s_remove(out_)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
 async def to_mp3(event, args, client):
     """
     Convert replied video to mp3
@@ -233,12 +317,10 @@ async def to_mp3(event, args, client):
             in_ = f"trim/{_id}.mp3"
             out_ = f"trim/{_id}-1.mp3"
             async with event.react("✂️"):
-                with open(in_, "wb") as file:
-                    file.write(audio)
+                await write_binary(in_, audio)
                 await trim_vid(st_, et_, in_, out_)
                 s_remove(in_)
-                with open(out_, "rb") as file:
-                    audio = file.read()
+                audio = await read_binary(out_)
                 s_remove(out_)
 
         async with event.react("📤"):
@@ -420,7 +502,9 @@ async def compress(event, args, client):
                 async with event.react("📤"):
                     file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
                     file_name += ".mkv"
-                    return await event.reply_document(file, file_name, file_name)
+                    e =  await event.reply_document(file, file_name, file_name)
+                compress_cache[comp_sha] = e.media
+                return
             except Exception:
                 await logger(Exception)
                 compress_cache.pop(comp_sha)
@@ -454,8 +538,7 @@ async def compress(event, args, client):
         -movflags +faststart \
         "{out_}"'''
 
-        with open(in_, "wb") as f:
-            f.write(file)
+        await write_binary(in_, file)
 
         async with event.react("⏲️"), comp_sem:
             process, _stdout, stderr = await enshell(cmd_str)
@@ -2588,6 +2671,7 @@ bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
 bot.add_handler(sticker_to_image, "stick2img")
 bot.add_handler(list_reminders, "all_reminders")
+bot.add_handler(sanitized_video, "sanitized_video")
 
 
 bot.add_handler(set_welcome, "setwelcome")
