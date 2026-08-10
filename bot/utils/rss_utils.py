@@ -66,8 +66,8 @@ async def _backoff_sleep(title: str, delay: float | None = None):
         # Jitter so feeds don't all retry in lockstep
         delay += uniform(0, delay * 0.1)
     _log_.info(f"Feed '{title}' backing off {
-            delay:.1f}s (attempt {
-            state['count']})")
+        delay:.1f}s (attempt {
+        state['count']})")
     await asyncio.sleep(delay)
 
 
@@ -119,7 +119,8 @@ async def _fetch_feed(title: str, link: str, retried=False):
     _reset_backoff(title)
 
     if getattr(rss_d, "bozo", 0):
-        _log_.debug(f"Feed '{title}' parsed with warnings: {rss_d.get('bozo_exception')}")
+        _log_.debug(f"Feed '{title}' parsed with warnings: {
+                rss_d.get('bozo_exception')}")
 
     return rss_d
 
