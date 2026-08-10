@@ -200,6 +200,7 @@ class User(BaseUser):
         )
         if self.jid == JID():
             self.jid = None
+            self.is_empty = True
             return
         self.id = self.jid.User
         self.is_empty = self.jid.IsEmpty
