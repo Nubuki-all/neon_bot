@@ -1,7 +1,9 @@
 import asyncio
+import time
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from random import uniform
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -23,16 +25,43 @@ _semaphore = asyncio.Semaphore(_CONCURRENCY)
 # a fresh TCP+TLS handshake per feed per cycle.
 _http_client = httpx.AsyncClient(
     headers={
-        "User-Agent": getattr(
-            conf,
-            "RSS_USER_AGENT",
-            "Mozilla/5.0 (compatible; RSSBot/1.0; +https://example.com)",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/124.0.0.0 Safari/537.36"
         ),
         "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+        # Optional, but helps mimic a browser even more
+        "Accept-Language": "en-US,en;q=0.9",
     },
     timeout=httpx.Timeout(connect=10, read=20, write=10, pool=10),
     follow_redirects=True,
 )
+
+_HOST_MIN_INTERVAL = getattr(conf, "RSS_HOST_MIN_INTERVAL", 3.0)
+_host_locks: dict[str, asyncio.Lock] = {}
+_host_last_request: dict[str, float] = {}
+
+
+def _host_lock(host: str) -> asyncio.Lock:
+    lock = _host_locks.get(host)
+    if lock is None:
+        lock = asyncio.Lock()
+        _host_locks[host] = lock
+    return lock
+
+
+async def _throttled_get(url: str) -> httpx.Response:
+    host = urlparse(url).netloc
+    async with _host_lock(host):
+        elapsed = time.monotonic() - _host_last_request.get(host, 0)
+        wait = _HOST_MIN_INTERVAL - elapsed
+        if wait > 0:
+            await asyncio.sleep(wait)
+        try:
+            return await _http_client.get(url)
+        finally:
+            _host_last_request[host] = time.monotonic()
 
 # Tracks consecutive transient failures per feed so we can back off instead
 # of hammering a feed that's erroring. Deliberately in-memory only (not
@@ -103,7 +132,7 @@ async def _fetch_feed(title: str, link: str):
     limited / should be skipped this cycle.
     """
     try:
-        resp = await _http_client.get(link)
+        resp = await _throttled_get(link)
     except httpx.TimeoutException as e:
         log(e=f"Timeout fetching feed '{title}': {e}")
         await _backoff_sleep(title)
