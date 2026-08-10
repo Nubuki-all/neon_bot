@@ -108,7 +108,7 @@ async def tools(event, args, client):
             f"{pre}fps - *Get the fps of a replied video*{s}"
             f"{pre}mediainfo - *Get the mediainfo of a replied video*{s}"
             f"{pre}mp3 - *Convert Video to audio*{s}"
-            f"{pre}sanitized_video - *Make some videos playable*{s}"
+            f"{pre}sanitize_video - *Make some videos playable*{s}"
             f"{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}pin - *Pin a replied message*{s}"
@@ -184,7 +184,7 @@ async def to_doc(event, args, client):
         await event.react("❌")
 
 
-async def sanitized_video(event: Event, args: str, client):
+async def sanitize_video(event: Event, args: str, client):
     """
     Sanitize videos that cannot be opened due to the:
     "The video is not available because something is wrong with the video file" error
@@ -2669,7 +2669,7 @@ bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
 bot.add_handler(sticker_to_image, "stick2img")
 bot.add_handler(list_reminders, "all_reminders")
-bot.add_handler(sanitized_video, "sanitized_video")
+bot.add_handler(sanitize_video, "sanitize_video")
 
 
 bot.add_handler(set_welcome, "setwelcome")
