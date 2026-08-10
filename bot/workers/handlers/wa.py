@@ -2137,16 +2137,18 @@ async def repeat(event: Event, args: str, client):
         if arg.asm:
             if not replied.document:
                 return await event.reply("Kindly reply to a document.")
-            mimetype: str = replied.media.mimetype
+            mimetype: str = replied.document.mimetype
             if not mimetype.startswith(("image", "video")):
                 return await event.reply("Not an image or video")
-            file = await replied.download()
-            if mimetype == "image/gif":
-                await event.reply_gif(file, replied.caption, quote=arg.nq)
-            elif mimetype.startswith("video"):
-                await event.reply_video(file, replied.caption, arg.nq)
-            else:
-                await event.reply_photo(file, replied.caption, arg.nq)
+            async with event.react("📥"):
+                file = await replied.download()
+            async with event.react("📤"):
+                if mimetype == "image/gif":
+                    await event.reply_gif(file, replied.caption, quote=arg.nq)
+                elif mimetype.startswith("video"):
+                    await event.reply_video(file, replied.caption, arg.nq)
+                else:
+                    await event.reply_photo(file, replied.caption, arg.nq)
             return
         if arg.uv or arg.vo:
             if replied.is_actual_media:
