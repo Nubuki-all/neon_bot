@@ -104,7 +104,7 @@ async def _fetch_feed(title: str, link: str, retried=False):
         _log_.info(f"Feed '{title}' rate limited (429)")
         await _backoff_sleep(title)
         if not retried:
-            return _fetch_feed(title, link, True)
+            return await _fetch_feed(title, link, True)
         return None
 
     if status >= 500:
