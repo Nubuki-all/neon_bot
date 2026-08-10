@@ -111,7 +111,9 @@ async def render_objection(event: Event, args: str, client):
 
             if os.path.exists(output_file):
                 await event.reply_video(
-                    output_file, caption="Here is your objection video!", skip_sidecar=True,
+                    output_file,
+                    caption="Here is your objection video!",
+                    skip_sidecar=True,
                 )
             else:
                 await event.reply("Failed to generate objection video.")
