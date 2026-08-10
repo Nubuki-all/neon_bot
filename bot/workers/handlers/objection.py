@@ -7,13 +7,14 @@ from objection_engine.beans.comment import Comment
 from objection_engine.renderer import render_comment_list
 
 from bot import conf, heavy_proc_lock
+from bot.utils.events import Event
 from bot.utils.log_utils import logger
 from bot.utils.msg_store import get_messages_between
 
 objection_sessions = {}
 
 
-async def insession(event, args, client):
+async def insession(event: Event, args: str, client):
     """
     Starts an objection session by marking the current message (or the replied message) as the starting point.
     Usage: /insession
@@ -30,7 +31,7 @@ async def insession(event, args, client):
     )
 
 
-async def render_objection(event, args, client):
+async def render_objection(event: Event, args: str, client):
     """
     Renders the objection video for the messages between the start point and the replied message.
     Usage: /renderobj (replying to the end message)
@@ -110,7 +111,7 @@ async def render_objection(event, args, client):
 
             if os.path.exists(output_file):
                 await event.reply_video(
-                    output_file, caption="Here is your objection video!"
+                    output_file, caption="Here is your objection video!", skip_sidecar=True,
                 )
             else:
                 await event.reply("Failed to generate objection video.")

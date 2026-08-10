@@ -88,7 +88,7 @@ async def anime_search(event, args, client):
         None,
         event.message,
     )
-    msg_id = msg_
+    msg_id = msg_.ID
     poll_msg = construct_msg_and_evt(
         event.chat.id,
         bot.client.me.JID.User,

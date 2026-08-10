@@ -570,6 +570,7 @@ class Event(BaseEvent):
         ghost_mentions: str | None = None,
         mentions_are_lids: bool = False,
         mentions_are_jids: bool = False,
+        skip_sidecar: bool = False,
         add_msg_secret: bool = False,
     ) -> Event:
         quoted = self._get_quoted() if quote else None
@@ -584,6 +585,7 @@ class Event(BaseEvent):
             spoiler=spoiler,
             ghost_mentions=ghost_mentions,
             mentions_are_lids=mentions_are_lids or mentions_are_not_jids,
+            skip_sidecar=skip_sidecar,
             add_msg_secret=add_msg_secret,
         )
         msg = self.gen_new_msg(response)
