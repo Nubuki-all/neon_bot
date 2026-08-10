@@ -120,7 +120,7 @@ async def _fetch_feed(title: str, link: str, retried=False):
 
     if getattr(rss_d, "bozo", 0):
         _log_.debug(f"Feed '{title}' parsed with warnings: {
-                rss_d.get('bozo_exception')}")
+            rss_d.get('bozo_exception')}")
 
     return rss_d
 
