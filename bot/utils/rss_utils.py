@@ -1,11 +1,8 @@
 import asyncio
 import time
-from datetime import datetime, timezone
-from email.utils import parsedate_to_datetime
-from random import uniform
+from random import shuffle, uniform
 from urllib.parse import urlparse
 
-import httpx
 from bs4 import BeautifulSoup
 from feedparser import parse as feedparse
 
@@ -21,24 +18,7 @@ from .msg_utils import parse_and_send_rss
 _CONCURRENCY = getattr(conf, "RSS_CONCURRENCY", 5)
 _semaphore = asyncio.Semaphore(_CONCURRENCY)
 
-# Reused across requests so we get connection pooling/keep-alive instead of
-# a fresh TCP+TLS handshake per feed per cycle.
-_http_client = httpx.AsyncClient(
-    headers={
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/124.0.0.0 Safari/537.36"
-        ),
-        "Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
-        # Optional, but helps mimic a browser even more
-        "Accept-Language": "en-US,en;q=0.9",
-    },
-    timeout=httpx.Timeout(connect=10, read=20, write=10, pool=10),
-    follow_redirects=True,
-)
-
-_HOST_MIN_INTERVAL = getattr(conf, "RSS_HOST_MIN_INTERVAL", 3.0)
+_HOST_MIN_INTERVAL = getattr(conf, "RSS_HOST_MIN_INTERVAL", 10.0)
 _host_locks: dict[str, asyncio.Lock] = {}
 _host_last_request: dict[str, float] = {}
 
@@ -51,23 +31,8 @@ def _host_lock(host: str) -> asyncio.Lock:
     return lock
 
 
-async def _throttled_get(url: str) -> httpx.Response:
-    host = urlparse(url).netloc
-    async with _host_lock(host):
-        elapsed = time.monotonic() - _host_last_request.get(host, 0)
-        wait = _HOST_MIN_INTERVAL - elapsed
-        if wait > 0:
-            await asyncio.sleep(wait)
-        try:
-            return await _http_client.get(url)
-        finally:
-            _host_last_request[host] = time.monotonic()
-
-
 # Tracks consecutive transient failures per feed so we can back off instead
-# of hammering a feed that's erroring. Deliberately in-memory only (not
-# persisted) - it resets on restart, which is fine since it's just a
-# rate-limiting aid, not real state.
+# of hammering a feed that's erroring. Deliberately in-memory only.
 _error_state: dict[str, dict] = {}
 
 BASE_BACKOFF = 5
@@ -77,10 +42,7 @@ MAX_BACKOFF = 300
 def _is_transient_error(exc: Exception | None) -> bool:
     """
     True for errors that mean "something is temporarily wrong, slow down",
-    as opposed to expected control-flow errors (e.g. IndexError from
-    walking past the last feed entry, which is normal and needs no backoff).
-    Used on the *send* path (WhatsApp via neonize), separate from the
-    httpx fetch path below which has its own, more specific handling.
+    as opposed to expected control-flow errors.
     """
     if exc is None:
         return False
@@ -99,11 +61,9 @@ async def _backoff_sleep(title: str, delay: float | None = None):
     state["count"] += 1
     if delay is None:
         delay = min(BASE_BACKOFF * (2 ** (state["count"] - 1)), MAX_BACKOFF)
-        # jitter so feeds don't all retry in lockstep
+        # Jitter so feeds don't all retry in lockstep
         delay += uniform(0, delay * 0.1)
-    log(e=f"Feed '{title}' backing off {
-        delay:.1f}s (attempt {
-        state['count']})")
+    log(e=f"Feed '{title}' backing off {delay:.1f}s (attempt {state['count']})")
     await asyncio.sleep(delay)
 
 
@@ -111,68 +71,54 @@ def _reset_backoff(title: str):
     _error_state.pop(title, None)
 
 
-def _parse_retry_after(value: str) -> float | None:
-    """Retry-After can be either an integer number of seconds or an HTTP date."""
-    value = value.strip()
-    if value.isdigit():
-        return float(value)
-    try:
-        dt = parsedate_to_datetime(value)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return max((dt - datetime.now(timezone.utc)).total_seconds(), 0)
-    except (TypeError, ValueError):
-        return None
-
-
 async def _fetch_feed(title: str, link: str):
     """
-    Fetch a feed over HTTP with httpx (so we get real status codes and
-    timeout types) and hand the bytes to feedparser to parse. Returns a
-    parsed feedparser dict, or None if the fetch failed / was rate
-    limited / should be skipped this cycle.
+    Fetch and parse a feed directly using feedparser inside an asyncio thread.
+    Returns a feedparser dict or None if fetching failed.
     """
-    try:
-        resp = await _throttled_get(link)
-    except httpx.TimeoutException as e:
-        log(e=f"Timeout fetching feed '{title}': {e}")
-        await _backoff_sleep(title)
-        return None
-    except httpx.HTTPError as e:
-        log(e=f"Error fetching feed '{title}': {e}")
-        await _backoff_sleep(title)
-        return None
+    host = urlparse(link).netloc
+    async with _host_lock(host):
+        elapsed = time.monotonic() - _host_last_request.get(host, 0)
+        wait = _HOST_MIN_INTERVAL - elapsed
+        if wait > 0:
+            await asyncio.sleep(wait)
+        try:
+            rss_d = await asyncio.to_thread(feedparse, link)
+        except Exception as e:
+            log(e=f"Error fetching feed '{title}': {e}")
+            await _backoff_sleep(title)
+            return None
+        finally:
+            _host_last_request[host] = time.monotonic()
 
-    if resp.status_code == 429:
-        retry_after = resp.headers.get("Retry-After")
-        wait = _parse_retry_after(retry_after) if retry_after else None
+    status = getattr(rss_d, "status", 200)
+
+    if status == 429:
         log(e=f"Feed '{title}' rate limited (429)")
-        await _backoff_sleep(title, delay=wait)
-        return None
-
-    if resp.status_code >= 500:
-        log(e=f"Feed '{title}' returned {resp.status_code}")
         await _backoff_sleep(title)
         return None
 
-    if resp.status_code >= 400:
-        log(e=f"Feed '{title}' returned {resp.status_code} - {link}")
+    if status >= 500:
+        log(e=f"Feed '{title}' returned {status}")
+        await _backoff_sleep(title)
+        return None
+
+    if status >= 400:
+        log(e=f"Feed '{title}' returned {status} - {link}")
         return None
 
     _reset_backoff(title)
-    rss_d = await asyncio.to_thread(feedparse, resp.content)
+
     if getattr(rss_d, "bozo", 0):
-        # This is a parse warning (malformed XML etc.), not a network
-        # issue - httpx already got us a 200, so no backoff, just a note.
         log(e=f"Feed '{title}' parsed with warnings: {rss_d.get('bozo_exception')}")
+
     return rss_d
 
 
 async def rss_monitor():
     """
     An asynchronous function to get rss links.
-    Each feed runs as its own task so a slow or erroring feed can't block
-    the others.
+    Each feed runs as its own task so a slow or erroring feed can't block the others.
     """
     if not conf.RSS_CHAT:
         log(e="RSS_CHAT not set! Shutting down rss scheduler...")
@@ -190,6 +136,9 @@ async def rss_monitor():
         log(e="No active rss feed\nRss Monitor has been paused!")
         return
 
+    # Randomize active feeds order before gathering tasks
+    shuffle(active_items)
+
     results = await asyncio.gather(
         *(process_feed(title, data) for title, data in active_items),
         return_exceptions=True,
@@ -197,8 +146,7 @@ async def rss_monitor():
 
     for (title, data), result in zip(active_items, results):
         if isinstance(result, Exception):
-            # Safety net - process_feed handles its own errors internally,
-            # so anything landing here is unexpected and worth logging loudly.
+            # Safety net for unexpected exceptions
             log(e=f"{result} - Feed Name: {title} - Feed Link: {data['link']}")
 
     if not bot.rss_ran_once:
@@ -207,9 +155,8 @@ async def rss_monitor():
 
 async def process_feed(title: str, data: dict):
     """
-    Fetch and process a single RSS feed. Runs as its own task (bounded by
-    a semaphore) so it can be slow or back off without holding up any
-    other feed.
+    Fetch and process a single RSS feed. Bounded by a semaphore so it
+    doesn't overload resources.
     """
     async with _semaphore:
         rss_d = await _fetch_feed(title, data["link"])
@@ -310,18 +257,13 @@ async def process_feed(title: str, data: dict):
 
 async def _send_with_retry(feed_: dict, data: dict, title: str):
     """
-    Send a single feed item, sleeping and retrying on errors that look
-    transient (network hiccups, connection drops).
-    Todo: actually retry on errors
+    Send a single feed item.
     """
     while True:
         try:
             await parse_and_send_rss(feed_, data["chat"])
             return
         except Exception as e:
-            # if _is_transient_error(e):
-            #     await _backoff_sleep(title)
-            #     continue
             log(
                 e=f"{e} - Feed Name: {title} - failed sending item: {feed_.get('title')}"
             )
