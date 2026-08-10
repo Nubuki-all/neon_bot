@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from random import shuffle, uniform
 from urllib.parse import urlparse
@@ -11,8 +12,9 @@ from bot.config import bot, conf
 from bot.workers.auto.schedule import addjob, scheduler
 
 from .db_utils import save2db2
-from .log_utils import log
 from .msg_utils import parse_and_send_rss
+
+_log_ = logging.getLogger(__name__)
 
 # How many feeds to fetch/send concurrently.
 _CONCURRENCY = getattr(conf, "RSS_CONCURRENCY", 5)
@@ -63,7 +65,7 @@ async def _backoff_sleep(title: str, delay: float | None = None):
         delay = min(BASE_BACKOFF * (2 ** (state["count"] - 1)), MAX_BACKOFF)
         # Jitter so feeds don't all retry in lockstep
         delay += uniform(0, delay * 0.1)
-    log(e=f"Feed '{title}' backing off {
+    _log_.info(f"Feed '{title}' backing off {
             delay:.1f}s (attempt {
             state['count']})")
     await asyncio.sleep(delay)
@@ -73,7 +75,7 @@ def _reset_backoff(title: str):
     _error_state.pop(title, None)
 
 
-async def _fetch_feed(title: str, link: str):
+async def _fetch_feed(title: str, link: str, retried=False):
     """
     Fetch and parse a feed directly using feedparser inside an asyncio thread.
     Returns a feedparser dict or None if fetching failed.
@@ -81,13 +83,16 @@ async def _fetch_feed(title: str, link: str):
     host = urlparse(link).netloc
     async with _host_lock(host):
         elapsed = time.monotonic() - _host_last_request.get(host, 0)
-        wait = _HOST_MIN_INTERVAL - elapsed
+        interval = _HOST_MIN_INTERVAL
+        if "reddit.com" in host:
+            interval = 30
+        wait = interval - elapsed
         if wait > 0:
             await asyncio.sleep(wait)
         try:
             rss_d = await asyncio.to_thread(feedparse, link)
         except Exception as e:
-            log(e=f"Error fetching feed '{title}': {e}")
+            _log_.error(f"Error fetching feed '{title}': {e}")
             await _backoff_sleep(title)
             return None
         finally:
@@ -96,23 +101,25 @@ async def _fetch_feed(title: str, link: str):
     status = getattr(rss_d, "status", 200)
 
     if status == 429:
-        log(e=f"Feed '{title}' rate limited (429)")
+        _log_.info(f"Feed '{title}' rate limited (429)")
         await _backoff_sleep(title)
+        if not retried:
+            return _fetch_feed(title, link, True)
         return None
 
     if status >= 500:
-        log(e=f"Feed '{title}' returned {status}")
+        _log_.info(f"Feed '{title}' returned {status}")
         await _backoff_sleep(title)
         return None
 
     if status >= 400:
-        log(e=f"Feed '{title}' returned {status} - {link}")
+        _log_.error("Feed '{title}' returned {status} - {link}")
         return None
 
     _reset_backoff(title)
 
     if getattr(rss_d, "bozo", 0):
-        log(e=f"Feed '{title}' parsed with warnings: {rss_d.get('bozo_exception')}")
+        _log_.debug(f"Feed '{title}' parsed with warnings: {rss_d.get('bozo_exception')}")
 
     return rss_d
 
@@ -123,7 +130,7 @@ async def rss_monitor():
     Each feed runs as its own task so a slow or erroring feed can't block the others.
     """
     if not conf.RSS_CHAT:
-        log(e="RSS_CHAT not set! Shutting down rss scheduler...")
+        _log_.info("RSS_CHAT not set! Shutting down rss scheduler...")
         scheduler.shutdown(wait=False)
         return
     if len(bot.rss_dict) == 0:
@@ -135,7 +142,7 @@ async def rss_monitor():
 
     if not active_items:
         scheduler.pause()
-        log(e="No active rss feed\nRss Monitor has been paused!")
+        _log_.info("No active rss feed\nRss Monitor has been paused!")
         return
 
     # Randomize active feeds order before gathering tasks
@@ -149,7 +156,7 @@ async def rss_monitor():
     for (title, data), result in zip(active_items, results):
         if isinstance(result, Exception):
             # Safety net for unexpected exceptions
-            log(e=f"{result} - Feed Name: {title} - Feed Link: {data['link']}")
+            _log_.error(f"{result} - Feed Name: {title} - Feed Link: {data['link']}")
 
     if not bot.rss_ran_once:
         bot.rss_ran_once = True
@@ -166,7 +173,7 @@ async def process_feed(title: str, data: dict):
             return
 
         if not rss_d.entries:
-            log(e=f"No entries returned for feed: {title}")
+            _log_.info(f"No entries returned for feed: {title}")
             return
 
         _reset_backoff(title)
@@ -200,11 +207,11 @@ async def process_feed(title: str, data: dict):
                     if data["last_feed"] == url or data["last_title"] == item_title:
                         break
                 except IndexError:
-                    log(
-                        e=f"Reached Max index no. {feed_count} for this feed: {title}. Maybe you need to use less RSS_DELAY to not miss some torrents"
+                    _log_.info(
+                        f"Reached Max index no. {feed_count} for this feed: {title}. Maybe you need to use less RSS_DELAY to not miss some torrents"
                     )
                     if not data.get("allow_rss_spam"):
-                        log(e="Due to spam prevention, RSS feed has been reset.")
+                        _log_.info("Due to spam prevention, RSS feed has been reset.")
                         feed_list = []
                     break
 
@@ -247,14 +254,14 @@ async def process_feed(title: str, data: dict):
                     }
                 )
             await save2db2(bot.rss_dict, "rss")
-            log(e=f"Feed Name: {title}")
-            log(e=f"Last item: {last_link}")
+            _log_.info(f"Feed Name: {title}")
+            _log_.info(f"Last item: {last_link}")
 
         except Exception as e:
             if _is_transient_error(e):
                 await _backoff_sleep(title)
             else:
-                log(e=f"{e} - Feed Name: {title} - Feed Link: {data['link']}")
+                _log_.error(f"{e} - Feed Name: {title} - Feed Link: {data['link']}")
 
 
 async def _send_with_retry(feed_: dict, data: dict, title: str):
@@ -266,8 +273,8 @@ async def _send_with_retry(feed_: dict, data: dict, title: str):
             await parse_and_send_rss(feed_, data["chat"])
             return
         except Exception as e:
-            log(
-                e=f"{e} - Feed Name: {title} - failed sending item: {feed_.get('title')}"
+            _log_.error(
+                f"{e} - Feed Name: {title} - failed sending item: {feed_.get('title')}"
             )
             return
 
