@@ -135,6 +135,7 @@ ANIME_TEMPLATE = """[{c_flag}] *{romaji}*
 ➤ *SEASON:* {season}
 ➤ *EPISODES:* {episodes}
 ➤ *STATUS:* {status}
+➤ *START DATE:* {start_date}
 ➤ *NEXT AIRING:* {air_on}
 ➤ *SCORE:* {score}% 🌟
 ➤ *ADULT RATED:* {adult}
@@ -196,6 +197,7 @@ async def anime_arch(query, arg):
         nextAir = data["nextAiringEpisode"]["airingAt"]
         air_on = make_it_rw(nextAir)
     s_date = data.get("startDate")
+    start_date = f"{s_date['day']}/{s_date['month']}/{s_date['year']}"
     adult = data.get("isAdult")
     trailer_link = "N/A"
 
@@ -233,7 +235,7 @@ async def anime_arch(query, arg):
         html_pc += html_char
         html_pc += "<br><br>"
     html_pc += "<h3>More Info:</h3>"
-    html_pc += f"<b>Started On:</b> {s_date['day']}/{s_date['month']}/{s_date['year']}"
+    html_pc += f"<b>Started On:</b> {start_date}"
     html_pc += f"<br><b>Studios:</b> {studios}<br>"
     html_pc += f"<a href='https://myanimelist.net/anime/{idmal}'>View on MAL</a>"
     html_pc += f"<a href='{url}'> View on anilist.co</a>"
