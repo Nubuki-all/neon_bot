@@ -990,12 +990,15 @@ async def upscale_image(event, args, client):
         if bot.disable_cic:
             return await event.reply("*CPU heavy commands are currently disabled.*")
         replied = event.reply_to_message
-        if not replied.image:
-            if replied.document:
-                if not replied.document.mimetype.startswith("image"):
-                    return await event.reply(
-                        "*Command can only be used when replying to an image.*"
-                    )
+        if replied.document:
+            if not replied.document.mimetype.startswith("image"):
+                return await event.reply(
+                    "*Replied document is not an image.*"
+                )
+        elif not replied.image:
+            return await event.reply(
+                "*Command can only be used when replying to an image.*"
+            )
         if replied.media.fileLength > 17939583:
             return await sticker_reply(event, args, client, True)
         turn().append(turn_id)
