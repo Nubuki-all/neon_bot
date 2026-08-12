@@ -394,7 +394,7 @@ def parse_tweet_response(raw_data: dict[str, Any]) -> TweetInfo:
 async def extract_twitter(
     url: str,
     cookie_file: str | None = None,
-) -> TweetInfo:
+) -> (TweetInfo, str):
     """
     Extract media information from a Twitter/X tweet URL.
 
@@ -404,6 +404,7 @@ async def extract_twitter(
 
     Returns:
         TweetInfo object with caption and list of media items.
+        tweet id: str
 
     Raises:
         ValueError: Invalid URL or missing cookies.
@@ -440,7 +441,7 @@ async def extract_twitter(
                 ) from e
             raise
 
-        return parse_tweet_response(raw_data)
+        return parse_tweet_response(raw_data), tweet_id
 
 
 async def download_twitter(
@@ -465,7 +466,7 @@ async def download_twitter(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    info = await extract_twitter(url, cookie_file)
+    info, tweet_id = await extract_twitter(url, cookie_file)
     if not info.media:
         raise RuntimeError("No media found in tweet.")
 
@@ -488,7 +489,7 @@ async def download_twitter(
                 ext = "mp4"
 
             # Build filename: use tweet ID and index
-            fname = f"tweet_{idx}.{ext}"
+            fname = f"tweet_{tweet_id}_{idx}.{ext}"
             dest = os.path.join(output_dir, fname)
 
             if not quiet:
