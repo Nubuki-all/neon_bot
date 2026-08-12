@@ -992,9 +992,7 @@ async def upscale_image(event, args, client):
         replied = event.reply_to_message
         if replied.document:
             if not replied.document.mimetype.startswith("image"):
-                return await event.reply(
-                    "*Replied document is not an image.*"
-                )
+                return await event.reply("*Replied document is not an image.*")
         elif not replied.image:
             return await event.reply(
                 "*Command can only be used when replying to an image.*"
