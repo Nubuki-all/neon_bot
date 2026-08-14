@@ -4,7 +4,6 @@ import shutil
 import time
 
 import emoji
-
 from objection_engine.beans.comment import Comment
 from objection_engine.renderer import render_comment_list
 
