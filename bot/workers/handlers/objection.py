@@ -3,6 +3,8 @@ import os
 import shutil
 import time
 
+import emoji
+
 from objection_engine.beans.comment import Comment
 from objection_engine.renderer import render_comment_list
 
@@ -69,12 +71,13 @@ async def render_objection(event: Event, args: str, client):
                 is_image = msg.image or (
                     msg.document and msg.document.mimetype.startswith("image")
                 )
-                if not (msg.text or is_image):
+                clean_text = emoji.replace_emoji(msg.text, replace="")
+                if not (clean_text or is_image):
                     continue
 
                 user_name = msg.from_user.name or "User"
                 user_id = msg.from_user.id
-                text = msg.text or msg.caption or "..."
+                text = msg.text or emoji.replace_emoji(msg.caption, replace="") or "..."
                 evidence_path = None
 
                 if is_image:
