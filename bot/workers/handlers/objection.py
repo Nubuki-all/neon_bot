@@ -79,7 +79,7 @@ async def render_objection(event: Event, args: str, client):
                 user_name = msg.from_user.name or "User"
                 user_id = msg.from_user.id
                 text = (
-                    msg.text
+                    clean_text
                     or emoji.replace_emoji(msg.caption or "", replace="")
                     or "..."
                 )
