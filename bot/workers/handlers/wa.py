@@ -232,7 +232,7 @@ async def sanitize_video(event: Event, args: str, client):
         _id = f"{event.chat.id}:{event.id}"
         in_ = f"temp/{_id}{ext}"
         out_ = f"temp/{_id}-1.mp4"
-        cmd_str = f"ffmpeg -fflags +genpts+igndts -err_detect ignore_err -max_error_rate 1.0 -i {in_} -map 0:v -map 0:a -c:v libx264 -c:a copy -movflags +faststart {out_} -y"
+        cmd_str = f"ffmpeg -fflags +genpts+igndts -err_detect ignore_err -max_error_rate 1.0 -i {in_} -map 0:v -map 0:a? -c:v libx264 -c:a copy -movflags +faststart {out_} -y"
 
         await write_binary(in_, file)
 
