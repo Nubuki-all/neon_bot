@@ -26,7 +26,7 @@ async def send_reminder_async(
         "@" + user_id + ": *Reminder*",
         store["message"],
         chat_jid,
-        # mentions_are_lids=store["lid_address"],
+        mentions_are_lids=True,
     )
     bot.remind_dict.setdefault(chat_id, {}).setdefault(user_id, {}).pop(store["id"])
     await save2db2(bot.remind_dict, "reminders")

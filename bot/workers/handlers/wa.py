@@ -2486,7 +2486,7 @@ async def s_rules(event, pm=True):
         await logger(Exception)
 
 
-async def save_reminder(event, args, client):
+async def save_reminder(event: Event, args: str, client):
     """
     Remind user of a replied message at a future time
     Argument: Future Time
