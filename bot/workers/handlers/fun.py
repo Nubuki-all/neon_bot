@@ -280,7 +280,6 @@ async def gif_helper(event, args, client):
     )
 
 
-
 async def sticker(event, args, client):
     """
     Fetches a random sticker that matches the search result
