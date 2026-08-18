@@ -248,21 +248,37 @@ async def gif(event, args, client):
 
 async def gif_helper(event, args, client):
     """Prevents indentation hell"""
-    if not conf.TENOR_API_KEY:
-        return await event.reply("TENOR_API_KEY is needed for this function to work.")
+    if not conf.KLIPY_API_KEY:
+        return await event.reply("KLIPY_API_KEY is needed for this function to work.")
+
     if not args:
         args = "anime"
-    url = f"https://tenor.googleapis.com/v2/search?key={
-        conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon"
+
+    url = (
+        f"https://api.klipy.com/v2/search?"
+        f"key={conf.KLIPY_API_KEY}"
+        f"&q={args}"
+        f"&limit=50"
+        f"&client_key=neon"
+    )
+
     result = await get_json(url)
+
     if not result:
         return await event.reply("*Request Failed!*")
-    if not result["results"]:
-        await event.reply("*No results!*")
-        return
+
+    if not result.get("results"):
+        return await event.reply("*No results!*")
 
     gif_link = random.choice(result["results"])["media_formats"]["gif"]["url"]
-    await clean_reply(event, event.reply_to_message, "reply_gif", gif_link)
+
+    await clean_reply(
+        event,
+        event.reply_to_message,
+        "reply_gif",
+        gif_link,
+    )
+
 
 
 async def sticker(event, args, client):
@@ -287,30 +303,43 @@ async def sticker(event, args, client):
 
 async def sticker_helper(event, args, client):
     """Prevents indentation hell"""
-    if not conf.TENOR_API_KEY:
-        return await event.reply("TENOR_API_KEY is needed for this function to work.")
+    if not conf.KLIPY_API_KEY:
+        return await event.reply("KLIPY_API_KEY is needed for this function to work.")
+
     if not args:
         args = "anime"
-    url = f"https://tenor.googleapis.com/v2/search?key={
-        conf.TENOR_API_KEY}&q={args}&limit=50&client_key=neon&searchfilter=sticker"
+
+    url = (
+        f"https://api.klipy.com/v2/search?"
+        f"key={conf.KLIPY_API_KEY}"
+        f"&q={args}"
+        f"&limit=50"
+        f"&client_key=neon"
+        f"&searchfilter=sticker"
+    )
+
     result = await get_json(url)
+
     if not result:
         return await event.reply("*Request Failed!*")
-    if not result["results"]:
-        await event.reply("*No results!*")
-        return
+
+    if not result.get("results"):
+        return await event.reply("*No results!*")
 
     sticker = random.choice(result["results"])
-    duration = sticker["media_formats"]["gif"]["duration"]
-    animated = True if duration else False
-    link = (
+
+    duration = sticker["media_formats"]["gif"].get("duration", 0)
+    animated = bool(duration)
+
+    media = (
         sticker["media_formats"].get("gif_transparent")
         or sticker["media_formats"]["gif"]
     )
-    link = link["url"]
-    # link = sticker["media_formats"]["mp4"]["url"]
+
+    link = media["url"]
 
     me = await bot.client.get_me()
+
     await clean_reply(
         event,
         event.reply_to_message,

@@ -43,6 +43,7 @@ class Config:
             dev: str = config("DEV", default="")
             self.DEV = set(dev.split())
             self.IGNORE_PM = config("IGNORE_PM", default=True, cast=bool)
+            self.KLIPY_API_KEY = config("KLIPY_API_KEY", default=None)
             self.LOG_GROUP = config("LOG_GROUP", default="")
             self.MSG_STORE = config(
                 "MSG_STORE", default="sqlite+aiosqlite:///msg_store.db"
@@ -61,7 +62,6 @@ class Config:
             self.TELEGRAPH_API = config(
                 "TELEGRAPH_API", default="https://api.telegra.ph"
             )
-            self.TENOR_API_KEY = config("TENOR_API_KEY", default=None)
             self.WA_DB = config("WA_DB", default="db.sqlite3")
             self.WA_DB_BACKUP_INTERVAL = config(
                 "WA_DB_BACKUP_INTERVAL", default=43200, cast=int
