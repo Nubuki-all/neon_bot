@@ -40,7 +40,7 @@ RUN dnf -qq -y update && dnf -qq -y install \
 
 RUN dnf -qq -y install libicu-devel pkgconf-pkg-config gcc-c++
 
-RUN if [[ $(arch) == 'aarch64' ]]; then   dnf -qq -y install gcc python3-devel; fi 
+RUN dnf -qq -y install gcc python3-devel
 
 # 4. Copy files from repo to home directory
 COPY . .
@@ -48,8 +48,8 @@ COPY . .
 # 5. Install python3 requirements
 RUN pip3 install -r requirements.txt
 
-# 6. cleanup for arm64
-RUN if [[ $(arch) == 'aarch64' ]]; then   dnf -qq -y history undo last; fi && dnf clean all
+# 6. cleanup
+RUN dnf -qq -y history undo last && dnf clean all
 
 # 7. Start bot
 CMD ["bash","run.sh"]
