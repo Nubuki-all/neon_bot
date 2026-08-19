@@ -34,6 +34,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from urllib.parse import urlparse
 
+from colorlog import ColoredFormatter
 from html_telegraph_poster import TelegraphPoster
 from html_telegraph_poster import errors as telegraph_errors
 from neonize.aioze.client import NewAClient
@@ -88,6 +89,18 @@ if os.path.exists(log_file_name):
     with open(log_file_name, "r+") as f_d:
         f_d.truncate(0)
 
+formatter = ColoredFormatter(
+    "%(asctime)s - %(log_color)s%(name)s - %(levelname)s - %(message)s%(reset)s",
+    datefmt="%d-%b-%y %H:%M:%S",
+    log_colors={
+        "INFO": "cyan",
+        "WARNING": "yellow",
+        "ERROR": "red",
+        "CRITICAL": "bold_red",
+    },
+)
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
 logging.basicConfig(
     level=logging.INFO,
     force=True,
@@ -95,7 +108,7 @@ logging.basicConfig(
     datefmt="%d-%b-%y %H:%M:%S",
     handlers=[
         RotatingFileHandler(log_file_name, maxBytes=2097152000, backupCount=10),
-        logging.StreamHandler(),
+        stream_handler,
     ],
 )
 logging.getLogger("neonize").setLevel(logging.INFO)
