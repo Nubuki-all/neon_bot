@@ -36,7 +36,7 @@ RUN dnf -qq -y update && dnf -qq -y install \
     mesa-libGL \
     ca-certificates \
     python3-tkinter \
-    && dnf clean all
+    && dnf clean all && useradd -m chromeuser
 
 RUN dnf -qq -y install libicu-devel pkgconf-pkg-config gcc-c++
 
