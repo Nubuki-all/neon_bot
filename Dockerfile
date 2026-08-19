@@ -40,14 +40,6 @@ RUN dnf -qq -y update && dnf -qq -y install \
 
 RUN dnf -qq -y install libicu-devel pkgconf-pkg-config gcc-c++
 
-# Install postgresql repo & latest postgresql 
-RUN if [[ $(arch) == 'x86_64' ]]; then dnf -qq -y install "https://download.postgresql.org/pub/repos/yum/reporpms/F-$(. /etc/os-release; echo $VERSION_ID)-x86_64/pgdg-fedora-repo-latest.noarch.rpm"; fi
-RUN if [[ $(arch) == 'x86_64' ]]; then \
-        dnf -qq -y install postgresql17-server; \
-    else \
-        dnf -qq -y install postgresql-server; \
-    fi
-
 RUN if [[ $(arch) == 'aarch64' ]]; then   dnf -qq -y install gcc python3-devel; fi 
 
 # 4. Copy files from repo to home directory
