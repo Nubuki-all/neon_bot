@@ -813,7 +813,7 @@ async def stickerize_image(event: Event, args: str, client):
         await event.react("❌")
 
 
-async def stickerize_album(event:Event, args:str, client):
+async def stickerize_album(event: Event, args: str, client):
     """
     Turns replied sticker to sticker-pack.
     Args:
