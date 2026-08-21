@@ -734,11 +734,13 @@ async def kang_sticker(event, args, client):
         await event.react("❌")
 
 
-async def stickerize_image(event, args, client):
+async def stickerize_image(event: Event, args: str, client):
     """
     Turns replied album/image/gif/video/ to sticker.
     Args:
         Name of sticker [Optional] [Recommended]
+        -q: quality (1-100)
+        -cl: compression_level (1-6)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -748,8 +750,12 @@ async def stickerize_image(event, args, client):
             return await event.react("⛔")
     try:
         args_ = args
+        quality = 75
+        compression_level = 4
         if args:
             arg, args = get_args(
+                "-q",
+                "-cl",
                 ["-nl", "store_false"],
                 ["-c", "store_true"],
                 ["-f", "store_true"],
@@ -759,6 +765,16 @@ async def stickerize_image(event, args, client):
             crop = arg.c
             forced = arg.f
             limit = arg.nl
+            if q := arg.q:
+                if not q.isdigit():
+                    await event.reply(f"-q: argument requires a digit not {q}")
+                else:
+                    quality = int(q)
+            if cl := arg.cl:
+                if not cl.isdigit():
+                    await event.reply(f"-cl: argument requires a digit not {cl}")
+                else:
+                    compression_level = int(cl)
         else:
             crop = False
             forced = False
@@ -789,21 +805,29 @@ async def stickerize_image(event, args, client):
                 crop=crop,
                 enforce_not_broken=limit,
                 animated_gif=forced,
+                quality=quality,
+                compression_level=compression_level,
             )
     except Exception:
         await logger(Exception)
         await event.react("❌")
 
 
-async def stickerize_album(event, args, client):
+async def stickerize_album(event:Event, args:str, client):
     """
     Turns replied sticker to sticker-pack.
     Args:
         Name of stickerpack [Optional] [Recommended]
+        -q: quality (1-100)
+        -cl: compression_level (1-6)
     """
     try:
+        quality = 75
+        compression_level = 4
         if args:
             arg, args = get_args(
+                "-q",
+                "-cl",
                 ["-c", "store_true"],
                 ["-f", "store_true"],
                 to_parse=args,
@@ -811,6 +835,16 @@ async def stickerize_album(event, args, client):
             )
             crop = arg.c
             forced = arg.f
+            if q := arg.q:
+                if not q.isdigit():
+                    await event.reply(f"-q: argument requires a digit not {q}")
+                else:
+                    quality = int(q)
+            if cl := arg.cl:
+                if not cl.isdigit():
+                    await event.reply(f"-cl: argument requires a digit not {cl}")
+                else:
+                    compression_level = int(cl)
         else:
             crop = False
             forced = False
@@ -832,6 +866,8 @@ async def stickerize_album(event, args, client):
                 publisher=me.PushName,
                 crop=crop,
                 animated_gif=forced,
+                quality=quality,
+                compression_level=compression_level,
             )
     except Exception:
         await logger(Exception)

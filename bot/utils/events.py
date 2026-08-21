@@ -514,6 +514,8 @@ class Event(BaseEvent):
         crop: bool = False,
         enforce_not_broken: bool = False,
         animated_gif: bool = False,
+        quality: int = 75,
+        compression_level: int = 4,
         passthrough: bool = False,
         add_msg_secret: bool = False,
     ) -> Event:
@@ -527,6 +529,8 @@ class Event(BaseEvent):
             crop=crop,
             enforce_not_broken=enforce_not_broken,
             animated_gif=animated_gif,
+            quality=quality,
+            compression_level=compression_level,
             passthrough=passthrough,
             add_msg_secret=add_msg_secret,
         )
@@ -541,6 +545,8 @@ class Event(BaseEvent):
         publisher: str = "",
         crop: bool = False,
         animated_gif: bool = False,
+        quality: int = 75,
+        compression_level: int = 4,
         passthrough: bool = False,
         add_msg_secret: bool = False,
     ) -> Event:
@@ -553,6 +559,8 @@ class Event(BaseEvent):
             publisher=publisher,
             crop=crop,
             animated_gif=animated_gif,
+            quality=quality,
+            compression_level=compression_level,
             passthrough=passthrough,
             add_msg_secret=add_msg_secret,
         )
