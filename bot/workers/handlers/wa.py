@@ -344,7 +344,7 @@ async def getminfo(event, args, client):
     return await vinfo(event, "media_info_link", client)
 
 
-async def vinfo(event, args, client):
+async def vinfo(event: Event, args: str, client):
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -362,6 +362,10 @@ async def vinfo(event, args, client):
             ):
                 return await event.reply("*Replied message is not a video.*")
             _, ext = split_ext(replied.document.fileName)
+        elif replied.sticker:
+            if not replied.sticker.isAnimated:
+                return await event.reply("*Replied message is not an animated sticker*")
+            ext = ".webp"
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         args = args or ""
