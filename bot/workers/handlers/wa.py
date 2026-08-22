@@ -356,8 +356,9 @@ async def vinfo(event: Event, args: str, client):
             return await event.reply("*Kindly reply to video.*")
         ext = ".mp4"
         if replied.document:
+            mimetype = replied.document.mimetype
             if not (
-                replied.document.mimetype.startswith("video")
+                mimetype.startswith("video") or mimetype == "image/gif"
                 or is_video_file(replied.document.fileName)
             ):
                 return await event.reply("*Replied message is not a video.*")
