@@ -111,90 +111,72 @@ async def _resolve_share_url(client: httpx.AsyncClient, share_url: str) -> str:
     return share_url
 
 
-def _build_gql_request(shortcode: str):
-    session_str = "::" + random_alpha(6)
-    session_data = random_base64(8)
-    csrf_token = random_base64(32)
-    device_id = random_base64(24)
-    machine_id = random_base64(24)
-    dynamic_flags = random_base64(154)
-    csr = random_base64(154)
-    jazoest = str(secrets.randbelow(10000) + 1)
-    timestamp = str(int(time.time()))
+def _get_number_from_query(name: str, data: str):
+    match = re.search(rf"{re.escape(name)}=(\d+)", data or "")
+    return int(match.group(1)) if match else None
 
-    cookies = "; ".join(
-        [
-            f"csrftoken={csrf_token}",
-            f"ig_did={device_id}",
-            "wd=1280x720",
-            "dpr=2",
-            f"mid={machine_id}",
-            "ig_nrcb=1",
-        ]
-    )
 
-    headers = {
-        **WEB_HEADERS,
-        "x-ig-app-id": APP_ID,
-        "X-FB-LSD": session_data,
-        "X-CSRFToken": csrf_token,
-        "X-Bloks-Version-Id": BLOKS_VERSION_ID,
-        "x-asbd-id": ASBD_ID,
-        "cookie": cookies,
-        "Content-Type": "application/x-www-form-urlencoded",
-        "X-FB-Friendly-Name": POLARIS_ACTION,
-    }
+def _get_object_from_entries(name: str, data: str):
+    match = re.search(rf'\["{re.escape(name)}",.*?,({{.*?}}),\d+\]', data or "")
+    if not match:
+        return None
+    try:
+        return json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return None
 
-    variables = json.dumps(
-        {
-            "shortcode": shortcode,
-            "fetch_tagged_user_count": None,
-            "hoisted_comment_id": None,
-            "hoisted_reply_id": None,
-        },
-        separators=(",", ":"),
-    )
 
-    body = {
-        "__d": "www",
-        "__a": "1",
-        "__s": session_str,
-        "__hs": HIDDEN_STATE,
-        "__req": "b",
-        "__ccg": "EXCELLENT",
-        "__rev": ROLLOUT_HASH,
-        "__hsi": SESSION_INTERNAL,
-        "__dyn": dynamic_flags,
-        "__csr": csr,
-        "__user": "0",
-        "__comet_req": "7",
-        "libav": "0",
-        "dpr": "2",
-        "lsd": session_data,
-        "jazoest": jazoest,
-        "__spin_r": ROLLOUT_HASH,
-        "__spin_b": "trunk",
-        "__spin_t": timestamp,
-        "fb_api_caller_class": "RelayModern",
-        "fb_api_req_friendly_name": POLARIS_ACTION,
-        "variables": variables,
-        "server_timestamps": "true",
-        "doc_id": DOC_ID,
-    }
-    return headers, urllib.parse.urlencode(body).encode()
+async def _get_gql_params(client: httpx.AsyncClient, shortcode: str):
+    resp = await client.get(f"https://www.instagram.com/p/{shortcode}/", headers=WEB_HEADERS, follow_redirects=True)
+    resp.raise_for_status()
+    html = resp.text
+
+    site_data = _get_object_from_entries("SiteData", html)
+    polaris_site_data = _get_object_from_entries("PolarisSiteData", html)
+    web_config = _get_object_from_entries("DGWWebConfig", html)
+    push_info = _get_object_from_entries("InstagramWebPushInfo", html)
+    security_config = _get_object_from_entries("InstagramSecurityConfig", html)
+    bloks = _get_object_from_entries("WebBloksVersioningID", html)
+    lsd_data = _get_object_from_entries("LSD", html)
+
+    lsd = lsd_data.get("token") if isinstance(lsd_data, dict) else None
+    lsd = lsd or random_base64(8)
+    csrf = security_config.get("csrf_token") if isinstance(security_config, dict) else None
+    app_id = web_config.get("appId") if isinstance(web_config, dict) else None
+    app_id = app_id or APP_ID
+    bloks_version = bloks.get("versioningID") if isinstance(bloks, dict) else None
+    bloks_version = bloks_version or BLOKS_VERSION_ID
+
+    device_id = polaris_site_data.get("device_id") if isinstance(polaris_site_data, dict) else None
+    machine_id = polaris_site_data.get("machine_id") if isinstance(polaris_site_data, dict) else None
+    anon_cookie = "; ".join(x for x in [f"csrftoken={csrf}" if csrf else None, f"ig_did={device_id}" if device_id else None, "wd=1280x720", "dpr=2", f"mid={machine_id}" if machine_id else None, "ig_nrcb=1"] if x)
+
+    rollout_hash = push_info.get("rollout_hash") if isinstance(push_info, dict) else None
+    rollout_hash = rollout_hash or ROLLOUT_HASH
+    haste_session = site_data.get("haste_session") if isinstance(site_data, dict) else None
+    haste_session = haste_session or HIDDEN_STATE
+    hsi = site_data.get("hsi") if isinstance(site_data, dict) else None
+    hsi = hsi or SESSION_INTERNAL
+    spin_r = site_data.get("__spin_r") if isinstance(site_data, dict) else None
+    spin_r = spin_r or rollout_hash
+    spin_b = site_data.get("__spin_b") if isinstance(site_data, dict) else None
+    spin_b = spin_b or "trunk"
+    spin_t = site_data.get("__spin_t") if isinstance(site_data, dict) else None
+    spin_t = spin_t or int(time.time())
+
+    headers = {**WEB_HEADERS, "x-ig-app-id": app_id, "X-FB-LSD": lsd, "X-CSRFToken": csrf or "", "X-Bloks-Version-Id": bloks_version, "x-asbd-id": ASBD_ID, "cookie": anon_cookie, "Content-Type": "application/x-www-form-urlencoded", "X-FB-Friendly-Name": POLARIS_ACTION}
+    body = {"__d":"www","__a":"1","__s":"::"+random_alpha(6),"__hs":haste_session,"__req":"b","__ccg":"EXCELLENT","__rev":rollout_hash,"__hsi":hsi,"__dyn":random_base64(154),"__csr":random_base64(154),"__user":"0","__comet_req":_get_number_from_query("__comet_req",html) or 7,"av":"0","dpr":"2","lsd":lsd,"jazoest":_get_number_from_query("jazoest",html) or secrets.randbelow(10000)+1,"__spin_r":spin_r,"__spin_b":spin_b,"__spin_t":spin_t,"fb_api_caller_class":"RelayModern","fb_api_req_friendly_name":POLARIS_ACTION,"variables":json.dumps({"shortcode":shortcode,"fetch_tagged_user_count":None,"hoisted_comment_id":None,"hoisted_reply_id":None},separators=(",",":")),"server_timestamps":"true","doc_id":DOC_ID}
+    return headers, body
 
 
 async def _get_gql_media(client: httpx.AsyncClient, shortcode: str) -> dict:
-    headers, body = _build_gql_request(shortcode)
-    resp = await client.post(GRAPHQL_ENDPOINT, data=body, headers=headers)
+    headers, body = await _get_gql_params(client, shortcode)
+    resp = await client.post(GRAPHQL_ENDPOINT, data=urllib.parse.urlencode(body).encode(), headers=headers)
     resp.raise_for_status()
     data = resp.json()
     if data.get("status") != "ok":
         raise RuntimeError(f"GQL status not ok: {data.get('status')}")
-    # The correct key is "xdt_shortcode_media" (Go struct tag)
-    media = data.get("data", {}).get("xdt_shortcode_media")
-    if not media:
-        media = data.get("data", {}).get("shortcode_media")  # fallback
+    media = data.get("data", {}).get("xdt_shortcode_media") or data.get("data", {}).get("shortcode_media")
     if not media:
         raise RuntimeError("shortcode_media is None in GQL response")
     return media
