@@ -282,8 +282,9 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     body = resp.text
 
     patterns = [
-        re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),        # current
-        re.compile(r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy", re.DOTALL),  # older
+        re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),  # current
+        re.compile(r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy", re.DOTALL),
+        # older
     ]
     raw_json = None
     for pattern in patterns:
@@ -307,7 +308,8 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     if isinstance(ctx_json_raw, str):
         ctx_json = json.loads(ctx_json_raw)
     else:
-        raise RuntimeError(f"Unexpected contextJSON type: {type(ctx_json_raw)}")
+        raise RuntimeError(f"Unexpected contextJSON type: {
+                type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
