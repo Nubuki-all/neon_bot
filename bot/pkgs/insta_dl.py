@@ -281,11 +281,19 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     resp.raise_for_status()
     body = resp.text
 
-    match = EMBED_PATTERN.search(body)
-    if not match:
-        raise RuntimeError("ServerJS JSON blob not found in embed page")
+    patterns = [
+        re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),        # current
+        re.compile(r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy", re.DOTALL),  # older
+    ]
+    raw_json = None
+    for pattern in patterns:
+        match = pattern.search(body)
+        if match:
+            raw_json = match.group(1)
+            break
+    if raw_json is None:
+        raise RuntimeError("Embedded JSON blob not found in embed page")
 
-    raw_json = match.group(1)
     try:
         data = json.loads(raw_json)
     except json.JSONDecodeError:
@@ -299,16 +307,15 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     if isinstance(ctx_json_raw, str):
         ctx_json = json.loads(ctx_json_raw)
     else:
-        raise RuntimeError(f"Unexpected contextJSON type: {
-            type(ctx_json_raw)}")
+        raise RuntimeError(f"Unexpected contextJSON type: {type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
         raise RuntimeError("gql_data not found in contextJSON")
 
-    media = gql_data.get("shortcode_media")
+    media = gql_data.get("shortcode_media") or gql_data.get("xdt_shortcode_media")
     if not media:
-        raise RuntimeError("shortcode_media not found in gql_data")
+        raise RuntimeError("shortcode_media/xdt_shortcode_media not found in gql_data")
     return media
 
 
