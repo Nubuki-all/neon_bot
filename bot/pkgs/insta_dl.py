@@ -470,63 +470,64 @@ def _parse_gql_media(data: dict) -> list[DownloadResult]:
         caption = edge.get("node", {}).get("text", "")
         break
 
-    typename = data.get("__typename", "")
     items = []
 
-    if typename in ("GraphVideo", "XDTGraphVideo"):
-        video_url = data["video_url"]
-        display_url = data.get("display_url", "")
-        items.append(
-            DownloadResult(
-                local_path="",
-                caption=caption,
-                media_type="video",
-                source_url=video_url,
-                thumbnail_url=display_url,
-                width=data.get("dimensions", {}).get("width"),
-                height=data.get("dimensions", {}).get("height"),
-            )
-        )
-    elif typename in ("GraphImage", "XDTGraphImage"):
-        url = data["display_url"]
-        items.append(
-            DownloadResult(
-                local_path="",
-                caption=caption,
-                media_type="image",
-                source_url=url,
-                thumbnail_url=url,
-            )
-        )
-    elif typename in ("GraphSidecar", "XDTGraphSidecar"):
-        for edge in data.get("edge_sidecar_to_children", {}).get("edges", []):
+    sidecar = data.get("edge_sidecar_to_children", {}).get("edges", [])
+    if sidecar:
+        for edge in sidecar:
             node = edge.get("node", {})
-            node_type = node.get("__typename", "")
-            if node_type in ("GraphVideo", "XDTGraphVideo"):
-                video_url = node["video_url"]
-                display_url = node.get("display_url", "")
+            # Video node
+            if node.get("video_url"):
                 items.append(
                     DownloadResult(
                         local_path="",
                         caption=caption,
                         media_type="video",
-                        source_url=video_url,
-                        thumbnail_url=display_url,
+                        source_url=node["video_url"],
+                        thumbnail_url=node.get("display_url", ""),
                         width=node.get("dimensions", {}).get("width"),
                         height=node.get("dimensions", {}).get("height"),
                     )
                 )
-            elif node_type in ("GraphImage", "XDTGraphImage"):
-                url = node["display_url"]
+            # Image node
+            elif node.get("display_url"):
                 items.append(
                     DownloadResult(
                         local_path="",
                         caption=caption,
                         media_type="image",
-                        source_url=url,
-                        thumbnail_url=url,
+                        source_url=node["display_url"],
+                        thumbnail_url=node["display_url"],
                     )
                 )
+        return items
+
+    if data.get("video_url"):
+        items.append(
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="video",
+                source_url=data["video_url"],
+                thumbnail_url=data.get("display_url", ""),
+                width=data.get("dimensions", {}).get("width"),
+                height=data.get("dimensions", {}).get("height"),
+            )
+        )
+        return items
+
+    if data.get("display_url"):
+        items.append(
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="image",
+                source_url=data["display_url"],
+                thumbnail_url=data["display_url"],
+            )
+        )
+        return items
+
     return items
 
 
