@@ -220,7 +220,7 @@ async def youtube_reply(event: Event, args: str, client):
                     )
                     ytdl._ext = ".mp3"
                 elif "youtube.com/post/" in listener.link:
-                    _format = _img_format
+                    _format = _alt_format = _img_format
                     listener.is_ytp = image = True
                 elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
