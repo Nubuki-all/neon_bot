@@ -583,7 +583,7 @@ class YoutubeDLHelper:
                 "-c:v",
                 "png",
                 "-vf",
-                "crop=if(gt(ih,iw),iw,ih):if(gt(iw,ih),ih,iw)",
+                "crop='if(gt(ih,iw),iw,ih)':'if(gt(iw,ih),ih,iw)'",
             ]
         # msg, button = await stop_duplicate_check(self._listener)
         # if msg:
