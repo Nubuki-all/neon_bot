@@ -38,24 +38,7 @@ def is_supported(url):
 
 
 def get_video_name(base_name, with_quality=False):
-    try:
-        if not base_name.split()[-1].isdigit():
-            return base_name
-        index = base_name.rfind(" ")
-        base_name = base_name[:index]
-        if with_quality or len(base_name.split()) < 2:
-            return
-        if base_name.split()[-1].endswith("fps") or (
-            base_name.split()[-1].endswith("p") and base_name.split()[-1][:-1].isdigit()
-        ):
-            index = base_name.rfind(" ")
-            base_name = base_name[:index]
-            return
-        return
-    except Exception:
-        return
-    finally:
-        return base_name.strip()
+    return base_name.strip()
 
 
 class ExtractLogger:
@@ -395,7 +378,7 @@ class YoutubeDLHelper:
                         if not self._ext:
                             self._ext = ext
             else:
-                outtmpl_ = "%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s"
+                outtmpl_ = "%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d.%(ext)s"
                 if self._ext == ".mp3":
                     outtmpl_ = (
                         "%(title,fulltitle,alt_title)s • %(artist,uploader)s.%(ext)s"
@@ -523,7 +506,7 @@ class YoutubeDLHelper:
                 }
             else:
                 self.opts["outtmpl"] = {
-                    "default": f"{path}/{self._listener.name}/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s",
+                    "default": f"{path}/{self._listener.name}/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d.%(ext)s",
                     # "thumbnail": f"{path}/yt-dlp-thumb/%(title,fulltitle,alt_title)s%(season_number& |)s%(season_number&S|)s%(season_number|)02d%(episode_number&E|)s%(episode_number|)02d%(height& |)s%(height|)s%(height&p|)s%(fps|)s%(fps&fps|)s%(tbr& |)s%(tbr|)d.%(ext)s",
                 }
         elif "download_ranges" in options:
