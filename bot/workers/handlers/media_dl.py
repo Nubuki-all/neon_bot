@@ -63,9 +63,9 @@ async def folder_upload(
                 continue
             if file_sz >= 100000000:
                 event = await event.reply_document(file, f"*{base_name}*")
-            elif ext_ in ("png", "jpg", "jpeg", "webp") and (
-                image or name_.startswith(path.split("/", maxsplit=2)[-1])
-            ):
+            elif ext_ in (".png", ".jpg", ".jpeg", ".webp") and ( image or name_.startswith(
+                path.split("/", maxsplit=2)[-1]
+            )):
                 file = await image_to_png(file)
                 event = await event.reply_photo(file, f"*{name_}*")
             elif audio and file.endswith("mp3"):
