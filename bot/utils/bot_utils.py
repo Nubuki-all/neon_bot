@@ -245,6 +245,21 @@ async def png_to_jpg(png: bytes | str):
     return await ffmpeg.execute(input_)
 
 
+async def image_to_png(img: bytes | str):
+    raw = not isinstance(img, str)
+    ffmpeg = (
+        FFmpeg()
+        .option("y")
+        .input("pipe:0" if raw else img)
+        .output(
+            "pipe:1",
+            f="png",
+        )
+    )
+    input_ = img if raw else None
+    return await ffmpeg.execute(input_)
+
+
 def turn(turn_id: str | None = None):
     if turn_id:
         return turn_id in bot.p_queue

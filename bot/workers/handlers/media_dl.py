@@ -10,7 +10,7 @@ from bot.pkgs.insta_dl import is_valid_instagram_url
 from bot.pkgs.pinterest_dl import is_valid_pinterest_url
 from bot.pkgs.tiktok_dl import is_valid_tiktok_url, resolve_short_url
 from bot.pkgs.twitter_dl import is_valid_twitter_url
-from bot.utils.bot_utils import png_to_jpg, sync_to_async
+from bot.utils.bot_utils import image_to_png, png_to_jpg, read_binary, sync_to_async
 from bot.utils.events import Event
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.media_dl_utils import Listener as MediaListener
@@ -64,6 +64,7 @@ async def folder_upload(folder, event, audio, listener):
             elif ext_ in ("png", "jpg", "jpeg") and name_.startswith(
                 path.split("/", maxsplit=2)[-1]
             ):
+                file = await image_to_png(file)
                 event = await event.reply_photo(file, f"*{name_}*")
             elif audio and file.endswith("mp3"):
                 photo = await get_audio_thumbnail(file)
@@ -84,8 +85,7 @@ async def get_audio_thumbnail(file):
     else:
         return None
 
-    with open(image, "rb") as pfile:
-        webp = pfile.read()
+    webp = read_binary(image)
     return await png_to_jpg(webp)
 
 
@@ -132,7 +132,7 @@ async def youtube_reply(event: Event, args: str, client):
         job = list(supported_links)
         t_args = extract_bracketed_prefix(text)
 
-        async def _send(ytdl: YoutubeDLHelper, file: str, playlist: bool, audio: bool):
+        async def _send(ytdl: YoutubeDLHelper, file: str, playlist: bool, audio: bool, image: bool):
             if not playlist:
                 if not file_exists(file):
                     raise Exception(f"File: {file} not found!")
@@ -147,8 +147,11 @@ async def youtube_reply(event: Event, args: str, client):
                     )
                 log(e=f"Uploading {file}…")
                 base_name = get_video_name(ytdl.base_name)
-                if not audio:
+                if not (audio or image):
                     await event.reply_video(file, f"*{base_name}*")
+                elif image:
+                    file: bytes = image_to_png(file)
+                    await event.reply_photo(file, f"*{base_name}*")
                 else:
                     photo = await get_audio_thumbnail(file)
                     if photo:
@@ -182,11 +185,12 @@ async def youtube_reply(event: Event, args: str, client):
                     except Exception:
                         await logger(Exception)
                         await event.react("↩️")
-                audio = False
+                audio = image = False
                 twi = False
                 is_tiktok = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
+                _img_format = "best{0}"
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
                 # temporary patch for ytdl with cookies
@@ -200,6 +204,7 @@ async def youtube_reply(event: Event, args: str, client):
                             }
                         }
                     )
+                quality = ""
                 if "music" in listener.link:
                     audio = True
                     _format = _alt_format = "ba/b-mp3{0}"
@@ -212,6 +217,8 @@ async def youtube_reply(event: Event, args: str, client):
                         }
                     )
                     ytdl._ext = ".mp3"
+                elif "youtube.com/post/" in listener.link:
+                    listener.is_ytp = image = True
                 elif "shorts" in listener.link and "(720p)" in text:
                     quality = "1280"
                 else:
@@ -282,7 +289,7 @@ async def youtube_reply(event: Event, args: str, client):
                     continue
                 await event.react("📤")
                 file = f"{ytdl.folder}/{ytdl.name}"
-                await _send(ytdl, file, playlist, audio)
+                await _send(ytdl, file, playlist, audio, image)
                 await ytdl.clean_up()
                 s_remove(ytdl.folder, folders=True)
                 await event.react("")

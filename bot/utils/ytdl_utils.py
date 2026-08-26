@@ -181,6 +181,7 @@ class DummyListener:
         self.name = None
         self.size = 0
         self.is_ytm = False
+        self.is_ytp = False
 
 
 class MyLogger:
@@ -399,6 +400,8 @@ class YoutubeDLHelper:
                     outtmpl_ = (
                         "%(title,fulltitle,alt_title)s • %(artist,uploader)s.%(ext)s"
                     )
+                elif self._listener.is_ytp:
+                    pass
                 else:
                     h264_formats = [
                         fmt["format_id"]
