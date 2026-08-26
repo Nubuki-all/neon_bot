@@ -88,7 +88,7 @@ async def get_audio_thumbnail(file):
         return None
 
     webp = await read_binary(image)
-    return await png_to_jpg(webp)
+    return await image_to_png(webp)
 
 
 async def youtube_reply(event: Event, args: str, client):
