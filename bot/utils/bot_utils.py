@@ -253,7 +253,8 @@ async def image_to_png(img: bytes | str):
         .input("pipe:0" if raw else img)
         .output(
             "pipe:1",
-            f="png",
+            f="image2",
+            vcodec="png",
         )
     )
     input_ = img if raw else None
