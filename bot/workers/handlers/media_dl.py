@@ -152,7 +152,7 @@ async def youtube_reply(event: Event, args: str, client):
                 if not (audio or image):
                     await event.reply_video(file, f"*{base_name}*")
                 elif image:
-                    file: bytes = image_to_png(file)
+                    file: bytes = await image_to_png(file)
                     await event.reply_photo(file, f"*{base_name}*")
                 else:
                     photo = await get_audio_thumbnail(file)
