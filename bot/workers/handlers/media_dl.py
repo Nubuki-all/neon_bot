@@ -10,7 +10,7 @@ from bot.pkgs.insta_dl import is_valid_instagram_url
 from bot.pkgs.pinterest_dl import is_valid_pinterest_url
 from bot.pkgs.tiktok_dl import is_valid_tiktok_url, resolve_short_url
 from bot.pkgs.twitter_dl import is_valid_twitter_url
-from bot.utils.bot_utils import image_to_png, png_to_jpg, read_binary, sync_to_async
+from bot.utils.bot_utils import image_to_png, read_binary, sync_to_async
 from bot.utils.events import Event
 from bot.utils.log_utils import group_logger, log, logger
 from bot.utils.media_dl_utils import Listener as MediaListener
