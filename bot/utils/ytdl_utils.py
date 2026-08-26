@@ -566,23 +566,25 @@ class YoutubeDLHelper:
                 {
                     "key": "FFmpegThumbnailsConvertor",
                     "format": "png",
+                    "when": "before_dl",
                 }
             )
 
             self.opts["postprocessors"].append(
                 {
-                    "already_have_thumbnail": True,
                     "key": "EmbedThumbnail",
+                    "already_have_thumbnail": True,
                 }
             )
 
-            self.opts["postprocessor_args"] = {
-                "ThumbnailsConvertor+FFmpeg_o": [
-                    "-c:v", "png",
-                    "-vf",
-                    "crop=if(gt(ih,iw),iw,ih):if(gt(iw,ih),ih,iw)",
-                ],
-            }
+            self.opts.setdefault("postprocessor_args", {})[
+                "thumbnailsconvertor+ffmpeg_o"
+            ] = [
+                "-c:v",
+                "png",
+                "-vf",
+                "crop=if(gt(ih,iw),iw,ih):if(gt(iw,ih),ih,iw)",
+            ]
         # msg, button = await stop_duplicate_check(self._listener)
         # if msg:
         # await self._listener.on_download_error(msg, button)
