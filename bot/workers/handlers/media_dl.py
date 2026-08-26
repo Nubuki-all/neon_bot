@@ -87,7 +87,7 @@ async def get_audio_thumbnail(file):
     else:
         return None
 
-    webp = read_binary(image)
+    webp = await read_binary(image)
     return await png_to_jpg(webp)
 
 
