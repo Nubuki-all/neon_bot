@@ -132,7 +132,9 @@ async def youtube_reply(event: Event, args: str, client):
         job = list(supported_links)
         t_args = extract_bracketed_prefix(text)
 
-        async def _send(ytdl: YoutubeDLHelper, file: str, playlist: bool, audio: bool, image: bool):
+        async def _send(
+            ytdl: YoutubeDLHelper, file: str, playlist: bool, audio: bool, image: bool
+        ):
             if not playlist:
                 if not file_exists(file):
                     raise Exception(f"File: {file} not found!")
@@ -190,7 +192,6 @@ async def youtube_reply(event: Event, args: str, client):
                 is_tiktok = False
                 _format = "bv*[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}]+ba[ext=m4a]/b[ext=mp4][vcodec~='h264|avc1'][filesize<100M][height<={0}] / bv*+ba/b"
                 _alt_format = "bv*[ext=mp4][vcodec~='h264|avc1'][height<={0}]+ba/b[ext=mp4][vcodec~='h264|avc1'][height<={0}] / bv*+ba/b"
-                _img_format = "best{0}"
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
                 # temporary patch for ytdl with cookies
