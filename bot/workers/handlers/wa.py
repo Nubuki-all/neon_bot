@@ -1085,7 +1085,7 @@ async def upscale_image(event, args, client):
             await status_msg.delete()
 
 
-async def pick_random(event, args, client):
+async def pick_random(event: Event, args: str, client):
     """
     A randomizer;
     Select a random or multiple random values from a list (replied message).
@@ -1103,7 +1103,7 @@ async def pick_random(event, args, client):
             return await event.react("⛔")
     try:
         replied = event.reply_to_message
-        if not replied.text:
+        if not (replied or replied.text or replied.caption):
             return await event.reply(
                 "*Reply to a message with list of items to choose from.*"
             )
@@ -1114,7 +1114,8 @@ async def pick_random(event, args, client):
             to_parse=(args or ""),
             get_unknown=True,
         )
-        items = replied.text.split(arg.s or "\n")
+        text = replied.text or replied.caption
+        items = text.split(arg.s or "\n")
         if len(items) < 2:
             return await event.reply("I need more options to choose from.")
         if arg.a:
