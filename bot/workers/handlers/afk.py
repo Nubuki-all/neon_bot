@@ -66,7 +66,7 @@ async def afk_helper(event, args, client):
 
             else:
                 await event.reply(afk_message.format(user_name, reason, since))
-            replied_jid = jid.build_jid(afk_dict.get("ph"))
+            replied_jid = jid.build_jid(afk_dict.get("lid", ""), "lid")
             patch_msg_sender(replied.message, replied.user.jid, replied_jid)
             reply = await replied.reply(
                 text=event.text,
@@ -92,7 +92,7 @@ async def afk_helper(event, args, client):
                 continue
             if afk_dict.get("is_link"):
                 afk_dict = get_afk_status(afk_dict.get("lid"))
-            alt_user = afk_dict.get("ph") or user
+            alt_user = afk_dict.get("lid") or user
             if replied and (
                 replied.from_user.id == user or replied.from_user.id == alt_user
             ):
@@ -186,7 +186,7 @@ async def activate_afk(event: Event, args, client):
             "reason": args,
             "time": time.time(),
             "user_name": user_info.PushName,
-            "ph": event.from_user.id,
+            "lid": event.from_user.id,
             "msg": replied_media,
             "msg_wc": media_sup_cap,
         }
