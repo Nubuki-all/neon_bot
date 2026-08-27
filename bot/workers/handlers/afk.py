@@ -5,6 +5,7 @@ from bot import jid
 from bot.config import bot
 from bot.utils.bot_utils import time_formatter
 from bot.utils.db_utils import save2db2
+from bot.utils.events import Event
 from bot.utils.log_utils import logger
 from bot.utils.msg_store import get_messages
 from bot.utils.msg_utils import (
@@ -155,7 +156,7 @@ async def afk_helper(event, args, client):
         await event.react("❌")
 
 
-async def activate_afk(event, args, client):
+async def activate_afk(event: Event, args, client):
     """
     Marks you as AFK;
     while AFK I will send, messages that either tags or mentions you to your DM
@@ -188,9 +189,11 @@ async def activate_afk(event, args, client):
             "msg": replied_media,
             "msg_wc": media_sup_cap,
         }
-        afk_dict2 = {"is_link": True, "lid": event.from_user.hid}
         bot.user_dict.setdefault(event.from_user.hid, {}).update(afk=afk_dict)
-        bot.user_dict.setdefault(event.from_user.id, {}).update(afk=afk_dict2)
+        if event.user_has_ph:
+            afk_dict2 = {"is_link": True, "lid": event.from_user.hid}
+            bot.user_dict.setdefault(event.from_user.ph, {}).update(afk=afk_dict2)
+
         await save2db2(bot.user_dict, "users")
         await event.reply(f"{user_info.PushName} is now AFK!", quote=False)
     except Exception:
