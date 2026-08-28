@@ -5,6 +5,7 @@ import hmac
 import json
 import logging
 import os
+import pprint
 import re
 import secrets
 import time
@@ -465,6 +466,8 @@ async def _get_igram_story(
 
 # Media parsing
 def _parse_gql_media(data: dict) -> list[DownloadResult]:
+    with open("last_insta_gql_media.json", "w") as f:
+        f.write(pprint.pformat(data, 2))
     caption = ""
     for edge in data.get("edge_media_to_caption", {}).get("edges", []):
         caption = edge.get("node", {}).get("text", "")
