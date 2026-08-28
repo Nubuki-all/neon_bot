@@ -283,7 +283,7 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     body = resp.text
 
     patterns = [
-        re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),  # current
+        # re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),  # current
         re.compile(r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy", re.DOTALL),
         # older
     ]
