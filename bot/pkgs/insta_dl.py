@@ -283,7 +283,7 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     body = resp.text
 
     patterns = [
-        # re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),  # current
+        re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),  # current
         re.compile(r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy", re.DOTALL),
         # older
     ]
@@ -466,8 +466,8 @@ async def _get_igram_story(
 
 # Media parsing
 def _parse_gql_media(data: dict) -> list[DownloadResult]:
-    with open("last_insta_gql_media.json", "w") as f:
-        f.write(pprint.pformat(data, 2))
+    # with open("last_insta_gql_media.json", "w") as f:
+    #     f.write(pprint.pformat(data, 2))
     caption = ""
     for edge in data.get("edge_media_to_caption", {}).get("edges", []):
         caption = edge.get("node", {}).get("text", "")
