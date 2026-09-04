@@ -17,8 +17,8 @@ import aiofiles
 import httpx
 
 GRAPHQL_ENDPOINT = "https://www.instagram.com/graphql/query/"
-POLARIS_ACTION = "PolarisPostActionLoadPostQueryQuery"
-DOC_ID = "8845758582119845"
+POLARIS_ACTION = "PolarisPostRootQuery"
+DOC_ID = "28077897148546091"
 
 IGRAM_API_BASE = "api.igram.world"
 IGRAM_HOST = "api-wh.igram.world"
@@ -97,7 +97,6 @@ def _canonical_instagram_url(original_url: str, shortcode: str) -> str:
     )
     if match:
         return match.group(1) + "/"
-    # fallback to /p/ (original behaviour)
     return f"https://www.instagram.com/p/{shortcode}/"
 
 
@@ -230,9 +229,8 @@ async def _get_gql_params(client: httpx.AsyncClient, shortcode: str):
         "variables": json.dumps(
             {
                 "shortcode": shortcode,
-                "fetch_tagged_user_count": None,
-                "hoisted_comment_id": None,
-                "hoisted_reply_id": None,
+                "__relay_internal__pv__PolarisShortDramaEnabledrelayprovider": True,
+                "__relay_internal__pv__PolarisMultiCaptionCarouselEnabledrelayprovider": True,
             },
             separators=(",", ":"),
         ),
@@ -249,14 +247,12 @@ async def _get_gql_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     )
     resp.raise_for_status()
     data = resp.json()
-    if data.get("status") != "ok":
-        raise RuntimeError(f"GQL status not ok: {data.get('status')}")
-    media = data.get("data", {}).get("xdt_shortcode_media") or data.get("data", {}).get(
-        "shortcode_media"
-    )
-    if not media:
-        raise RuntimeError("shortcode_media is None in GQL response")
-    return media
+    
+    items = data.get("data", {}).get("xdt_api__v1__media__shortcode__web_info", {}).get("items")
+    if not items:
+        raise RuntimeError("xdt_api__v1__media__shortcode__web_info items not found in GQL response")
+    
+    return items[0]
 
 
 def _traverse_json(obj, key: str):
@@ -282,9 +278,8 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     body = resp.text
 
     patterns = [
-        re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL),  # current
+        re.compile(r'"init",\[\],\[(.*?)\]\],', re.DOTALL), 
         re.compile(r"new ServerJS\(\)\);s\.handle\(({.*?})\);requireLazy", re.DOTALL),
-        # older
     ]
     raw_json = None
     for pattern in patterns:
@@ -308,8 +303,7 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     if isinstance(ctx_json_raw, str):
         ctx_json = json.loads(ctx_json_raw)
     else:
-        raise RuntimeError(f"Unexpected contextJSON type: {
-            type(ctx_json_raw)}")
+        raise RuntimeError(f"Unexpected contextJSON type: {type(ctx_json_raw)}")
 
     gql_data = ctx_json.get("gql_data")
     if not gql_data:
@@ -357,7 +351,6 @@ async def _igram_build_payload(client: httpx.AsyncClient, url_params: dict) -> b
 
 
 def _get_cdn_url(igram_url: str) -> str:
-    """Extract the real CDN URL from igram's redirector."""
     parsed = urllib.parse.urlparse(igram_url)
     params = urllib.parse.parse_qs(parsed.query)
     cdn = params.get("uri", [None])[0]
@@ -390,9 +383,7 @@ async def _get_igram_media(
             if isinstance(data, list):
                 return data
             if data.get("success") is False:
-                raise RuntimeError(f"igram returned success=false: {
-                    data.get(
-                        'message', '')}")
+                raise RuntimeError(f"igram returned success=false: {data.get('message', '')}")
             return [data]
         except (httpx.TimeoutException, httpx.ReadTimeout) as e:
             last_exc = e
@@ -412,7 +403,6 @@ async def _get_igram_media(
 async def _get_igram_story(
     client: httpx.AsyncClient, story_url: str, shortcode: str
 ) -> DownloadResult:
-    # shortcode not used for story, but we keep for consistency
     payload = await _igram_build_payload(client, {"url": story_url})
     headers = {
         "Content-Type": "application/json",
@@ -436,7 +426,6 @@ async def _get_igram_story(
     is_video = bool(story.get("video_versions"))
 
     if is_video:
-        # pick best quality by height
         videos = sorted(
             story["video_versions"], key=lambda v: v["height"], reverse=True
         )
@@ -445,7 +434,6 @@ async def _get_igram_story(
         width, height = best.get("width", 0), best.get("height", 0)
         media_type = "video"
     else:
-        # pick best candidate from image_versions2.candidates
         candidates = story["image_versions2"]["candidates"]
         best = max(candidates, key=lambda c: c.get("width", 0) * c.get("height", 0))
         source_url = best["url"]
@@ -453,7 +441,7 @@ async def _get_igram_story(
         media_type = "image"
 
     return DownloadResult(
-        local_path="",  # set after download
+        local_path="", 
         caption="",
         media_type=media_type,
         source_url=source_url,
@@ -463,10 +451,94 @@ async def _get_igram_story(
     )
 
 
-# Media parsing
+def _parse_new_media(data: dict) -> list[DownloadResult]:
+    """Parses the new xdt_api__v1__media__shortcode__web_info response format"""
+    caption_dict = data.get("caption") or {}
+    caption = caption_dict.get("text", "")
+    items = []
+
+    carousel = data.get("carousel_media")
+    if carousel:
+        for item in carousel:
+            if not item.get("image_versions2"):
+                continue
+            
+            is_video = bool(item.get("video_versions"))
+            candidates = item["image_versions2"].get("candidates", [])
+            thumb = candidates[0]["url"] if candidates else ""
+
+            if is_video:
+                videos = sorted(item["video_versions"], key=lambda v: v.get("width", 0) * v.get("height", 0), reverse=True)
+                best_video = videos[0]
+                items.append(
+                    DownloadResult(
+                        local_path="",
+                        caption=caption,
+                        media_type="video",
+                        source_url=best_video["url"],
+                        thumbnail_url=thumb,
+                        width=best_video.get("width"),
+                        height=best_video.get("height"),
+                    )
+                )
+            else:
+                best_img = max(candidates, key=lambda c: c.get("width", 0) * c.get("height", 0)) if candidates else None
+                if best_img:
+                    items.append(
+                        DownloadResult(
+                            local_path="",
+                            caption=caption,
+                            media_type="image",
+                            source_url=best_img["url"],
+                            thumbnail_url=thumb,
+                            width=best_img.get("width"),
+                            height=best_img.get("height"),
+                        )
+                    )
+        return items
+
+    if data.get("video_versions"):
+        videos = sorted(data["video_versions"], key=lambda v: v.get("width", 0) * v.get("height", 0), reverse=True)
+        best_video = videos[0]
+        candidates = data.get("image_versions2", {}).get("candidates", [])
+        thumb = candidates[0]["url"] if candidates else ""
+        
+        items.append(
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="video",
+                source_url=best_video["url"],
+                thumbnail_url=thumb,
+                width=best_video.get("width"),
+                height=best_video.get("height"),
+            )
+        )
+        return items
+
+    if data.get("image_versions2", {}).get("candidates"):
+        candidates = data["image_versions2"]["candidates"]
+        best_img = max(candidates, key=lambda c: c.get("width", 0) * c.get("height", 0))
+        thumb = candidates[0]["url"] if candidates else ""
+        
+        items.append(
+            DownloadResult(
+                local_path="",
+                caption=caption,
+                media_type="image",
+                source_url=best_img["url"],
+                thumbnail_url=thumb,
+                width=best_img.get("width"),
+                height=best_img.get("height"),
+            )
+        )
+        return items
+
+    return items
+
+
 def _parse_gql_media(data: dict) -> list[DownloadResult]:
-    # with open("last_insta_gql_media.json", "w") as f:
-    #     f.write(pprint.pformat(data, 2))
+    """Parses the old shortcode_media format used by the embed HTML fallback"""
     caption = ""
     for edge in data.get("edge_media_to_caption", {}).get("edges", []):
         caption = edge.get("node", {}).get("text", "")
@@ -478,7 +550,6 @@ def _parse_gql_media(data: dict) -> list[DownloadResult]:
     if sidecar:
         for edge in sidecar:
             node = edge.get("node", {})
-            # Video node
             if node.get("video_url"):
                 items.append(
                     DownloadResult(
@@ -491,7 +562,6 @@ def _parse_gql_media(data: dict) -> list[DownloadResult]:
                         height=node.get("dimensions", {}).get("height"),
                     )
                 )
-            # Image node
             elif node.get("display_url"):
                 items.append(
                     DownloadResult(
@@ -637,7 +707,6 @@ async def download_instagram(
             username, story_id = story_match.groups()
             if not quiet:
                 print(f"[story] Downloading story {story_id} from {username}")
-            # shortcode not needed for story, pass dummy
             item = await _get_igram_story(client, url, "")
             ext = "mp4" if item.media_type == "video" else "jpg"
             fname = f"story_{username}_{story_id}.{ext}"
@@ -666,7 +735,7 @@ async def download_instagram(
             print("[1] Trying GQL Web API...")
         try:
             media = await _get_gql_media(client, shortcode)
-            items = _parse_gql_media(media)
+            items = _parse_new_media(media)
             if not quiet:
                 print("[1] Success")
         except Exception as e:
@@ -741,10 +810,7 @@ async def download_instagram(
         return items
 
 
-# might remove later
-
 UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-
 
 def parse_download_html(html: str) -> list:
     if not html or not isinstance(html, str):
@@ -793,9 +859,7 @@ def parse_download_html(html: str) -> list:
 
     return results
 
-
 async def deobfuscate_with_deno(raw_js: str) -> str:
-    """Uses Deno to securely execute the JS deobfuscation logic."""
     js_code = f"""
     const raw = {json.dumps(raw_js)};
     const fakeEvalHolder = {{ val: '' }};
@@ -824,7 +888,6 @@ async def deobfuscate_with_deno(raw_js: str) -> str:
         return stdout.decode("utf-8")
 
     return raw_js
-
 
 async def try_snapsave(url: str) -> list:
     async with httpx.AsyncClient() as client:
