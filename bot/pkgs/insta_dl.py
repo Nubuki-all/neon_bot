@@ -751,6 +751,22 @@ async def download_instagram(
         if not quiet:
             print(f"[*] Shortcode: {shortcode}")
 
+        def _result_to_items(res: dict, caption: str = "") -> list[DownloadResult]:
+            items: list[DownloadResult] = []
+            for r in res:
+                if not r.get("url"):
+                    continue
+                items.append(
+                    DownloadResult(
+                        local_path="",
+                        caption=caption,
+                        media_type=r.get("type", "image"),
+                        source_url=r.get("url"),
+                        thumbnail_url=r.get("thumbnail", ""),
+                    )
+                )
+            return items
+
         items = []
 
         # Extraction Method 1: GQL
@@ -776,19 +792,7 @@ async def download_instagram(
                 if items and not items[0].source_url:
                     res = await try_snapsave(url)
                     caption = items[0].caption
-                    items: list[DownloadResult] = []
-                    for r in res:
-                        if not r.get("url"):
-                            continue
-                        items.append(
-                            DownloadResult(
-                                local_path="",
-                                caption=caption,
-                                media_type=r.get("type", "image"),
-                                source_url=r.get("url"),
-                                thumbnail_url=r.get("thumbnail", ""),
-                            )
-                        )
+                    items = _result_to_items(res, caption)
 
                 if not quiet:
                     print("[2] Success")
@@ -797,13 +801,15 @@ async def download_instagram(
                 if not quiet:
                     print(f"[2] Failed: {e}")
 
-        # Extraction Method 3: igram.world (posts)
+        # Extraction Method 3
         if not items:
             if not quiet:
-                print("[3] Trying igram.world...")
+                print("[3] Trying external extractor...")
             try:
-                raw = await _get_igram_media(client, url, shortcode, max_retries=2)
-                items = _parse_igram_items(raw)
+                # raw = await _get_igram_media(client, url, shortcode, max_retries=2)
+                # items = _parse_igram_items(raw)
+                res = await try_snapsave(url)
+                items = _result_to_items(res)
                 if not quiet:
                     print("[3] Success")
             except Exception as e:
