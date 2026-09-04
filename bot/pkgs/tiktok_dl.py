@@ -6,9 +6,10 @@ import logging
 import os
 import re
 import traceback
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from http.cookiejar import Cookie, CookieJar
-from typing import Awaitable, Callable, List, Optional
+from typing import Optional
 from urllib.parse import parse_qs, urlparse
 
 import aiofiles
@@ -349,7 +350,7 @@ def _parse_universal_data(html: str) -> dict:
     return item_struct
 
 
-def _parse_tiktok_item(item: dict) -> List[DownloadResult]:
+def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
     """Convert the raw itemStruct into a list of DownloadResult objects."""
     caption = item.get("desc", "").strip()
 
@@ -432,7 +433,7 @@ async def download_tiktok(
     quiet: bool = False,
     progress_callback: Optional[Callable[[int, int, str], Awaitable[None]]] = None,
     cookie_file: Optional[str] = None,
-) -> List[DownloadResult]:
+) -> list[DownloadResult]:
     """
     Download media from a TikTok URL.
 

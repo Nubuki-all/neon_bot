@@ -517,6 +517,14 @@ def _parse_gql_media(data: dict) -> list[DownloadResult]:
             )
         )
         return items
+    if data.get("is_video"):
+        items.append(
+            DownloadResult(
+                caption=caption,
+                media_type="video"
+            )
+        )
+        return items
 
     if data.get("display_url"):
         items.append(
@@ -670,6 +678,22 @@ async def download_instagram(
             try:
                 media = await _get_embed_media(client, shortcode)
                 items = _parse_gql_media(media)
+                if items and not items[0].source_url:
+                    res = await try_snapsave(url)
+                    caption = items[0].caption
+                    items: list[DownloadResult] = []
+                    for r in res:
+                        if not r.get("url"):
+                            continue
+                        items.append(
+                            DownloadResult (
+                                caption=caption,
+                                media_type=r.get("type", "image"),
+                                source_url=r.get("url"),
+                                thumbnail_url=r.get("thumbnail", ""),
+                            )    
+                        )
+                        
                 if not quiet:
                     print("[2] Success")
             except Exception as e:
@@ -710,4 +734,130 @@ async def download_instagram(
             if i < len(items) - 1:
                 await asyncio.sleep(0.5)
 
+        return items
+
+
+
+
+##### might remove later
+
+UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+
+def parse_download_html(html: str) -> list:
+    if not html or not isinstance(html, str):
+        return []
+        
+    results = []
+    seen_urls = set()
+    
+    video_pattern = r'href=\\?["\'](https?://[^"\'\\]+/v2\?token=[^"\'\\]+|[^"\'\\]+\.mp4[^"\'\\]*)'
+    video_matches = re.finditer(video_pattern, html)
+    video_urls = []
+    for m in video_matches:
+        u = m.group(1).replace('&amp;', '&').replace('\\u0026', '&')
+        if u and u not in seen_urls:
+            seen_urls.add(u)
+            video_urls.append(u)
+            
+    thumb_pattern = r'src=\\?["\'](https?://[^"\'\\]+/thumb\?token=[^"\'\\]+|[^"\'\\]+\.jpg[^"\'\\]*)'
+    thumb_matches = re.finditer(thumb_pattern, html)
+    thumb_urls = []
+    for m in thumb_matches:
+        u = m.group(1).replace('&amp;', '&').replace('\\u0026', '&')
+        if u and u not in seen_urls:
+            seen_urls.add(u)
+            thumb_urls.append(u)
+            
+    if video_urls:
+        for i, v_url in enumerate(video_urls):
+            item = {'url': v_url, 'type': 'video'}
+            if i < len(thumb_urls):
+                item['thumbnail'] = thumb_urls[i]
+            results.append(item)
+    else:
+        img_patterns = [
+            r'href=\\?["\'](https?://[^"\'\\]+\.jpg[^"\'\\]*)',
+            r'"url"\s*:\s*"(https?://[^"]+\.jpg[^"]*)"',
+        ]
+        for pat in img_patterns:
+            for match in re.finditer(pat, html):
+                u = match.group(1).replace('&amp;', '&').replace('\\u0026', '&')
+                if u and u not in seen_urls:
+                    seen_urls.add(u)
+                    results.append({'url': u, 'type': 'image'})
+                    
+    return results
+
+
+async def deobfuscate_with_deno(raw_js: str) -> str:
+    """Uses Deno to securely execute the JS deobfuscation logic."""
+    js_code = f"""
+    const raw = {json.dumps(raw_js)};
+    const fakeEvalHolder = {{ val: '' }};
+    const patched = raw.replace(/\\beval\\s*\\(/, 'fakeEvalHolder.val=(');
+    try {{
+        const fn = new Function('fakeEvalHolder', patched);
+        fn(fakeEvalHolder);
+    }} catch (e) {{}}
+    
+    const output = fakeEvalHolder.val || raw;
+    Deno.stdout.writeSync(new TextEncoder().encode(output));
+    """
+    
+    process = await asyncio.create_subprocess_exec(
+        'deno', 'run', '-',
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE
+    )
+    
+    stdout, stderr = await process.communicate(input=js_code.encode('utf-8'))
+    
+    if process.returncode == 0 and stdout:
+        return stdout.decode('utf-8')
+    
+    return raw_js
+
+
+async def try_snapsave(url: str) -> list:
+    async with httpx.AsyncClient() as client:
+        await client.get(
+            'https://snapsave.app/',
+            headers={'User-Agent': UA_BROWSER},
+            timeout=10.0
+        )
+        
+        cookie_str = "; ".join([f"{k}={v}" for k, v in client.cookies.items()])
+        
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Referer': 'https://snapsave.app/',
+            'Origin': 'https://snapsave.app',
+            'User-Agent': UA_BROWSER,
+        }
+        if cookie_str:
+            headers['Cookie'] = cookie_str
+            
+        r2 = await client.post(
+            'https://snapsave.app/action.php',
+            data={'url': url},
+            headers=headers,
+            timeout=15.0
+        )
+        
+        raw = r2.text if isinstance(r2.text, str) else json.dumps(r2.text)
+        
+        decoded = raw
+        if 'eval(' in raw:
+            decoded = await deobfuscate_with_deno(raw)
+
+        if 'Unable to connect' in decoded or 'error_api' in decoded:
+            raise RuntimeError('snapsave: Instagram blocked')
+            
+        items = parse_download_html(decoded)
+        
+        if not items:
+            raise RuntimeError('snapsave: no media found')
+            
         return items
