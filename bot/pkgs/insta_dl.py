@@ -518,7 +518,7 @@ def _parse_gql_media(data: dict) -> list[DownloadResult]:
         )
         return items
     if data.get("is_video"):
-        items.append(DownloadResult(caption=caption, media_type="video"))
+        items.append(DownloadResult(local_path="", caption=caption, media_type="video", source_url="", thumbnail_url=""))
         return items
 
     if data.get("display_url"):
@@ -682,6 +682,7 @@ async def download_instagram(
                             continue
                         items.append(
                             DownloadResult(
+                                local_path="",
                                 caption=caption,
                                 media_type=r.get("type", "image"),
                                 source_url=r.get("url"),
