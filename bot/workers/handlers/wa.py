@@ -2322,34 +2322,42 @@ async def tikmate(event: Event, args: str, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not args:
-            return await event.reply("kindly supply a url")
         base_dir = f"media_dl/{event.chat.id}:{event.id}"
-        async with event.react("📥"):
-            items = await TikmateAsync().download_tikmate(
-                args,
-                base_dir,
-            )
-        if not items:
-            return await event.reply("Tikmate returned no media")
-        caption = items[0].caption
-        caption = f"*{caption}*" if caption else caption
-        groups = defaultdict(list)
-        for item in items:
-            groups[item.media_type].append(item.local_path)
-        async with event.react("📤"):
-            for media_type, paths in groups.items():
-                if media_type == "image":
-                    for i, file in enumerate(paths):
-                        jpg = await png_to_jpg(file)
-                        paths[i] = jpg
-                if len(paths) > 1:
-                    await event.reply_album(paths, caption)
-                else:
-                    if media_type == "video":
-                        await event.reply_video(paths[0], caption)
+        rargs = ""
+        if replied := event.reply_to_message:
+            rargs = (replied.text or replied.caption)
+        if not (txt := (rargs or args)):
+            return await event.reply("kindly supply a url")
+        extractor = URLExtract()    
+        urls = extractor.find_urls(txt)
+        if not urls:
+            return await event.reply("*No link found in your message*")
+        for url in urls:
+            async with event.react("📥"):
+                items = await TikmateAsync().download_tikmate(
+                    url,
+                    base_dir,
+                )
+            if not items:
+                return await event.reply("Tikmate returned no media")
+            caption = items[0].caption
+            caption = f"*{caption}*" if caption else caption
+            groups = defaultdict(list)
+            for item in items:
+                groups[item.media_type].append(item.local_path)
+            async with event.react("📤"):
+                for media_type, paths in groups.items():
+                    if media_type == "image":
+                        for i, file in enumerate(paths):
+                            jpg = await png_to_jpg(file)
+                            paths[i] = jpg
+                    if len(paths) > 1:
+                        await event.reply_album(paths, caption)
                     else:
-                        await event.reply_photo(paths[0], caption)
+                        if media_type == "video":
+                            await event.reply_video(paths[0], caption)
+                        else:
+                            await event.reply_photo(paths[0], caption)
     except Exception:
         await logger(Exception)
         await event.react("✖️")
