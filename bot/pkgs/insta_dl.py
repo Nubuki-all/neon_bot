@@ -1,7 +1,5 @@
 import asyncio
 import base64
-import hashlib
-import hmac
 import json
 import logging
 import os
@@ -317,7 +315,6 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     return media
 
 
-
 def _get_cdn_url(igram_url: str) -> str:
     parsed = urllib.parse.urlparse(igram_url)
     params = urllib.parse.parse_qs(parsed.query)
@@ -325,8 +322,6 @@ def _get_cdn_url(igram_url: str) -> str:
     if not cdn:
         raise RuntimeError(f"No 'uri' param in igram URL: {igram_url}")
     return cdn
-
-
 
 
 def _parse_new_media(data: dict) -> list[DownloadResult]:
