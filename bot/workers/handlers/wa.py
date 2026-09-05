@@ -2327,7 +2327,8 @@ async def tikmate(event: Event, args: str, client):
         base_dir = f"media_dl/{event.chat.id}:{event.id}"
         async with event.react("📤"):
             items = await TikmateAsync().download_tikmate(
-                args, base_dir,
+                args,
+                base_dir,
             )
         if not items:
             return await event.reply("Tikmate returned no media")
