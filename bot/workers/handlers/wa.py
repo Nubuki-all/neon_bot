@@ -2324,9 +2324,11 @@ async def tikmate(event: Event, args: str, client):
     try:
         if not args:
             return await event.reply("kindly supply a url")
-        items = await TikmateAsync().download_tikmate(
-            args, f"media_dl/{event.chat.id}:{event.id}"
-        )
+        base_dir = f"media_dl/{event.chat.id}:{event.id}"
+        async with event.react("📤"):
+            items = await TikmateAsync().download_tikmate(
+                args, base_dir,
+            )
         if not items:
             return await event.reply("Tikmate returned no media")
         caption = items[0].caption
@@ -2346,6 +2348,7 @@ async def tikmate(event: Event, args: str, client):
         await logger(Exception)
         await event.react("✖️")
     finally:
+        s_remove(base_dir, folders=True)
         raise StopHandlers
 
 

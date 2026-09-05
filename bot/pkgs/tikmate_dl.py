@@ -112,6 +112,7 @@ class TikmateAsync(AsyncClient):
         quiet: bool = False,
         progress_callback: Callable[[int, int, str], Awaitable[None]] | None = None,
     ) -> list[DownloadResult]:
+        os.makedirs(output_dir, exist_ok=True)
         packed_html = await self.get_media(url)
         decoded_html = await self.decode_with_deno(packed_html)
         res = parse_tiktok_media(decoded_html)
