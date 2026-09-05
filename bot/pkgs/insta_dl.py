@@ -20,11 +20,6 @@ GRAPHQL_ENDPOINT = "https://www.instagram.com/graphql/query/"
 POLARIS_ACTION = "PolarisPostRootQuery"
 DOC_ID = "28077897148546091"
 
-IGRAM_API_BASE = "api.igram.world"
-IGRAM_HOST = "api-wh.igram.world"
-IGRAM_HMAC_KEY = "75f2d70d3724f98e4a7d1ffd0ba9cfd907f3ae2632ee159980e2c521bff62358"
-IGRAM_STATIC_TS = 1771418815381
-
 APP_ID = "936619743392459"
 BLOKS_VERSION_ID = "6309c8d03d8a3f47a1658ba38b304a3f837142ef5f637ebf1f8f52d4b802951e"
 ASBD_ID = "129477"
@@ -322,40 +317,6 @@ async def _get_embed_media(client: httpx.AsyncClient, shortcode: str) -> dict:
     return media
 
 
-async def _igram_get_server_time(client: httpx.AsyncClient) -> int:
-    try:
-        resp = await client.get(f"https://{IGRAM_API_BASE}/msec", timeout=10)
-        result = resp.json()
-        return int(result["msec"] * 1000)
-    except Exception:
-        return int(time.time() * 1000)
-
-
-def _igram_sign(partial: dict, ts: int) -> str:
-    json_str = json.dumps(partial, sort_keys=True, separators=(",", ":"))
-    data_str = json_str + str(ts)
-    key = bytes.fromhex(IGRAM_HMAC_KEY)
-    return hmac.new(key, data_str.encode(), hashlib.sha256).hexdigest()
-
-
-async def _igram_build_payload(client: httpx.AsyncClient, url_params: dict) -> bytes:
-    now_ms = int(time.time() * 1000)
-    server_ms = await _igram_get_server_time(client)
-    drift = server_ms - now_ms
-    correction = drift if abs(drift) >= 60000 else 0
-    ts = now_ms + correction
-    partial = {"_sc": 0, "_ef": 0, "_df": 0, **url_params}
-    sig = _igram_sign(partial, ts)
-    final = {
-        **partial,
-        "ts": ts,
-        "_ts": IGRAM_STATIC_TS,
-        "_tsc": correction,
-        "_sv": 2,
-        "_s": sig,
-    }
-    return json.dumps(final, separators=(",", ":")).encode()
-
 
 def _get_cdn_url(igram_url: str) -> str:
     parsed = urllib.parse.urlparse(igram_url)
@@ -366,98 +327,6 @@ def _get_cdn_url(igram_url: str) -> str:
     return cdn
 
 
-async def _get_igram_media(
-    client: httpx.AsyncClient, original_url: str, shortcode: str, max_retries: int = 2
-) -> list:
-    target_url = _canonical_instagram_url(original_url, shortcode)
-    payload = await _igram_build_payload(client, {"target_url": target_url})
-    headers = {
-        "Content-Type": "application/json",
-        "Referer": "https://igram.world/",
-        "User-Agent": WEB_HEADERS["User-Agent"],
-    }
-    last_exc = None
-    for attempt in range(max_retries):
-        try:
-            resp = await client.post(
-                f"https://{IGRAM_HOST}/api/convert",
-                data=payload,
-                headers=headers,
-                timeout=60.0,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            if isinstance(data, list):
-                return data
-            if data.get("success") is False:
-                raise RuntimeError(f"igram returned success=false: {
-                    data.get(
-                        'message', '')}")
-            return [data]
-        except (httpx.TimeoutException, httpx.ReadTimeout) as e:
-            last_exc = e
-            if attempt < max_retries - 1:
-                await asyncio.sleep(2)
-                continue
-            raise RuntimeError(f"iGram timeout after {max_retries} attempts") from e
-        except Exception as e:
-            last_exc = e
-            if attempt < max_retries - 1:
-                await asyncio.sleep(1)
-                continue
-            raise
-    raise last_exc
-
-
-async def _get_igram_story(
-    client: httpx.AsyncClient, story_url: str, shortcode: str
-) -> DownloadResult:
-    payload = await _igram_build_payload(client, {"url": story_url})
-    headers = {
-        "Content-Type": "application/json",
-        "Referer": "https://igram.world/",
-        "User-Agent": WEB_HEADERS["User-Agent"],
-    }
-    resp = await client.post(
-        f"https://{IGRAM_HOST}/api/v1/instagram/story",
-        data=payload,
-        headers=headers,
-        timeout=60.0,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-
-    result = data.get("result")
-    if not result or len(result) == 0:
-        raise RuntimeError("No story result")
-
-    story = result[0]
-    is_video = bool(story.get("video_versions"))
-
-    if is_video:
-        videos = sorted(
-            story["video_versions"], key=lambda v: v["height"], reverse=True
-        )
-        best = videos[0]
-        source_url = best["url"]
-        width, height = best.get("width", 0), best.get("height", 0)
-        media_type = "video"
-    else:
-        candidates = story["image_versions2"]["candidates"]
-        best = max(candidates, key=lambda c: c.get("width", 0) * c.get("height", 0))
-        source_url = best["url"]
-        width, height = best.get("width", 0), best.get("height", 0)
-        media_type = "image"
-
-    return DownloadResult(
-        local_path="",
-        caption="",
-        media_type=media_type,
-        source_url=source_url,
-        thumbnail_url=source_url,
-        width=width,
-        height=height,
-    )
 
 
 def _parse_new_media(data: dict) -> list[DownloadResult]:
@@ -713,6 +582,22 @@ async def download_instagram(
     """
     os.makedirs(output_dir, exist_ok=True)
 
+    def _result_to_items(res: dict, caption: str = "") -> list[DownloadResult]:
+        items: list[DownloadResult] = []
+        for r in res:
+            if not r.get("url"):
+                continue
+            items.append(
+                DownloadResult(
+                    local_path="",
+                    caption=caption,
+                    media_type=r.get("type", "image"),
+                    source_url=r.get("url"),
+                    thumbnail_url=r.get("thumbnail", ""),
+                )
+            )
+        return items
+
     async with httpx.AsyncClient(
         http2=True, timeout=30.0, follow_redirects=False
     ) as client:
@@ -730,7 +615,8 @@ async def download_instagram(
             username, story_id = story_match.groups()
             if not quiet:
                 print(f"[story] Downloading story {story_id} from {username}")
-            item = await _get_igram_story(client, url, "")
+            res = await try_snapsave(url)
+            item = _result_to_items(res)[0]
             ext = "mp4" if item.media_type == "video" else "jpg"
             fname = f"story_{username}_{story_id}.{ext}"
             dest = os.path.join(output_dir, fname)
@@ -750,22 +636,6 @@ async def download_instagram(
 
         if not quiet:
             print(f"[*] Shortcode: {shortcode}")
-
-        def _result_to_items(res: dict, caption: str = "") -> list[DownloadResult]:
-            items: list[DownloadResult] = []
-            for r in res:
-                if not r.get("url"):
-                    continue
-                items.append(
-                    DownloadResult(
-                        local_path="",
-                        caption=caption,
-                        media_type=r.get("type", "image"),
-                        source_url=r.get("url"),
-                        thumbnail_url=r.get("thumbnail", ""),
-                    )
-                )
-            return items
 
         items = []
 
