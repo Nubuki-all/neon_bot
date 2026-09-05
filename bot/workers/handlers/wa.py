@@ -2339,6 +2339,10 @@ async def tikmate(event: Event, args: str, client):
             groups[item.media_type].append(item.local_path)
         async with event.react("📤"):
             for media_type, paths in groups.items():
+                if media_type == "image":
+                    for i, file in enumerate(paths):
+                        jpg = await png_to_jpg(file)
+                        paths[i] = jpg
                 if len(paths) > 1:
                     await event.reply_album(paths, caption)
                 else:
