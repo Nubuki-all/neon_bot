@@ -26,7 +26,7 @@ from bot import (
     jid,
 )
 from bot.config import bot, conf
-from bot.others.exceptions import StopAutoHandlers
+from bot.others.exceptions import StopAutoHandlers, StopHandlers
 from bot.types.event import BaseEvent, Chat, User
 
 from .bot_utils import write_binary
@@ -750,6 +750,8 @@ async def on_message(client: NewAClient, message: MessageEv):
             return
         funcs = [func(client, event) for func in concurrent_autos]
         await asyncio.gather(*funcs)
+    except StopHandlers:
+        pass
     except Exception:  # noqa: BLE001
         await logger(e="Unhandled Exception(s):", error=True)
         await logger(Exception)

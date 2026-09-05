@@ -5,6 +5,7 @@ import io
 import random
 import time
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime as dt
 from os.path import splitext as split_ext
@@ -24,7 +25,8 @@ from bot import Message
 from bot.config import bot, conf
 from bot.fun.quips import enquip, enquip4
 from bot.fun.stickers import ran_stick
-from bot.others.exceptions import StopAutoHandlers
+from bot.others.exceptions import StopAutoHandlers, StopHandlers
+from bot.pkgs.tikmate_dl import TikmateAsync
 from bot.utils.bot_utils import (
     LimitedDict,
     get_date_from_isostr,
@@ -109,6 +111,7 @@ async def tools(event, args, client):
             f"{pre}mediainfo - *Get the mediainfo of a replied video*{s}"
             f"{pre}mp3 - *Convert Video to audio*{s}"
             f"{pre}sanitize_video - *Make some videos playable*{s}"
+            f"{pre}tikmate - *Download tiktok videos*{s}"
             f"{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}pin - *Pin a replied message*{s}"
@@ -2306,6 +2309,44 @@ async def repeat(event: Event, args: str, client):
         await logger(Exception)
 
 
+async def tikmate(event: Event, args: str, client):
+    """
+    Download tiktok videos/images from tikmate
+    Argument:
+        tiktok url
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not args:
+            return await event.reply("kindly supply a url")
+        items = await TikmateAsync().download_tikmate(args, f"media_dl/{event.chat.id}:{event.id}")
+        if not items:
+            return await event.reply("Tikmate returned no media")
+        caption = items[0].caption
+        groups = defaultdict(list)
+        for item in items:
+            groups[item.media_type].append(item.local_path)
+
+        for media_type, paths in groups.items():
+            if len(paths) > 1:
+                await event.reply_album(paths, caption)
+            else:
+                if media_type == "video":
+                    await event.reply_video(paths[0], caption)
+                else:
+                    await event.reply_photo(paths[0], caption)        
+    except Exception:
+        await logger(Exception)
+        await event.react("✖️")
+    finally:
+        raise StopHandlers
+
+
 async def set_rules(event, args, client):
     """
     Set Groups Rules
@@ -2697,6 +2738,7 @@ bot.add_handler(repeat, "repeat")
 bot.add_handler(undelete, "undel")
 bot.add_handler(get_rules, "rules")
 bot.add_handler(pin_message, "pin")
+bot.add_handler(tikmate, "tikmate")
 bot.add_handler(compress, "compress")
 bot.add_handler(kang_sticker, "kang")
 bot.add_handler(pick_random, "random")
