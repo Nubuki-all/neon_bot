@@ -2325,10 +2325,10 @@ async def tikmate(event: Event, args: str, client):
         base_dir = f"media_dl/{event.chat.id}:{event.id}"
         rargs = ""
         if replied := event.reply_to_message:
-            rargs = (replied.text or replied.caption)
+            rargs = replied.text or replied.caption
         if not (txt := (rargs or args)):
             return await event.reply("kindly supply a url")
-        extractor = URLExtract()    
+        extractor = URLExtract()
         urls = extractor.find_urls(txt)
         if not urls:
             return await event.reply("*No link found in your message*")
