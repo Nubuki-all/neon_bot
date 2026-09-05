@@ -51,7 +51,7 @@ class TikmateAsync(AsyncClient):
             ) as media:
                 return await media.text()
 
-        async def _download_file(
+    async def _download_file(
             self,
             client: AsyncClient,
             url: str,
