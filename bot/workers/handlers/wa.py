@@ -2324,7 +2324,9 @@ async def tikmate(event: Event, args: str, client):
     try:
         if not args:
             return await event.reply("kindly supply a url")
-        items = await TikmateAsync().download_tikmate(args, f"media_dl/{event.chat.id}:{event.id}")
+        items = await TikmateAsync().download_tikmate(
+            args, f"media_dl/{event.chat.id}:{event.id}"
+        )
         if not items:
             return await event.reply("Tikmate returned no media")
         caption = items[0].caption
@@ -2339,7 +2341,7 @@ async def tikmate(event: Event, args: str, client):
                 if media_type == "video":
                     await event.reply_video(paths[0], caption)
                 else:
-                    await event.reply_photo(paths[0], caption)        
+                    await event.reply_photo(paths[0], caption)
     except Exception:
         await logger(Exception)
         await event.react("✖️")
