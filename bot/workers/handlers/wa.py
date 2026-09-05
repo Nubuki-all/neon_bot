@@ -2325,7 +2325,7 @@ async def tikmate(event: Event, args: str, client):
         if not args:
             return await event.reply("kindly supply a url")
         base_dir = f"media_dl/{event.chat.id}:{event.id}"
-        async with event.react("📤"):
+        async with event.react("📥"):
             items = await TikmateAsync().download_tikmate(
                 args,
                 base_dir,
@@ -2333,18 +2333,19 @@ async def tikmate(event: Event, args: str, client):
         if not items:
             return await event.reply("Tikmate returned no media")
         caption = items[0].caption
+        caption = f"*{caption}*" if caption else caption
         groups = defaultdict(list)
         for item in items:
             groups[item.media_type].append(item.local_path)
-
-        for media_type, paths in groups.items():
-            if len(paths) > 1:
-                await event.reply_album(paths, caption)
-            else:
-                if media_type == "video":
-                    await event.reply_video(paths[0], caption)
+        async with event.react("📤"):
+            for media_type, paths in groups.items():
+                if len(paths) > 1:
+                    await event.reply_album(paths, caption)
                 else:
-                    await event.reply_photo(paths[0], caption)
+                    if media_type == "video":
+                        await event.reply_video(paths[0], caption)
+                    else:
+                        await event.reply_photo(paths[0], caption)
     except Exception:
         await logger(Exception)
         await event.react("✖️")

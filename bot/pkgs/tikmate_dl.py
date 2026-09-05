@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import aiofiles
 import aiohttp
 from bs4 import BeautifulSoup
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPStatusError, RequestError
 
 
 @dataclass
@@ -26,7 +26,7 @@ class TikmateAsync(AsyncClient):
     BASE_URL = "https://tikmate.io/"
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(timeout=120.0)
         self.headers: dict[str, str] = {
             "referer": "https://tikmate.io/",
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.81 Safari/537.36",
@@ -51,25 +51,43 @@ class TikmateAsync(AsyncClient):
             ) as media:
                 return await media.text()
 
-    async def _download_file(
-        self,
-        client: AsyncClient,
-        url: str,
-        dest: str,
-        progress_callback: Callable[[int, int, str], Awaitable[None]] | None = None,
-    ) -> None:
-        async with client.stream(
-            "GET", url, headers=self.headers, follow_redirects=True
-        ) as resp:
-            resp.raise_for_status()
-            total = int(resp.headers.get("Content-Length", 0))
-            done = 0
-            async with aiofiles.open(dest, "wb") as f:
-                async for chunk in resp.aiter_bytes(chunk_size=65536):
-                    await f.write(chunk)
-                    done += len(chunk)
-                    if progress_callback:
-                        await progress_callback(done, total, dest)
+        async def _download_file(
+            self,
+            client: AsyncClient,
+            url: str,
+            dest: str,
+            progress_callback: Callable[[int, int, str], Awaitable[None]] | None = None,
+            max_retries: int = 3,
+        ) -> None:
+            for attempt in range(max_retries):
+                try:
+                    async with client.stream(
+                        "GET", url, headers=self.headers, follow_redirects=True
+                    ) as resp:
+                        resp.raise_for_status()
+                        total = int(resp.headers.get("Content-Length", 0))
+                        done = 0
+                    
+                        async with aiofiles.open(dest, "wb") as f:
+                            async for chunk in resp.aiter_bytes(chunk_size=65536):
+                                await f.write(chunk)
+                                done += len(chunk)
+                                if progress_callback:
+                                    await progress_callback(done, total, dest)
+                                
+                    return
+                
+                except (HTTPStatusError, RequestError) as e:
+                    if isinstance(e, HTTPStatusError) and e.response.status_code < 500:
+                        raise
+                
+                    if attempt == max_retries - 1:
+                        print(f"\n[error] Download failed after {max_retries} attempts: {e}")
+                        raise
+                
+                    sleep_time = 2 ** (attempt + 1)
+                    print(f"\n[warn] Network/Server hiccup ({e}). Retrying in {sleep_time}s... (Attempt {attempt + 1}/{max_retries})")
+                    await asyncio.sleep(sleep_time)
 
     async def decode_with_deno(self, html_res: str) -> str:
         script_match = re.search(r"<script>(.*?)</script>", html_res, re.DOTALL)
