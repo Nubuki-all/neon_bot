@@ -3,6 +3,7 @@ import copy
 import datetime
 import io
 import random
+import re
 import time
 import uuid
 from collections import defaultdict
@@ -2224,7 +2225,7 @@ async def get_filters(event, args, client):
 
 async def to_media(event: Event, _, client):
     """
-    if a document's caption contains (asm) converts the document to media
+    if a document's caption contains (asm) converts the document to media  
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -2238,9 +2239,9 @@ async def to_media(event: Event, _, client):
         mimetype: str = event.document.mimetype
         if not mimetype.startswith(("image", "video")):
             return
-        if not ((caption := event.caption) and "(asm)" in caption):
+        if not((caption := event.caption) and "(asm)" in caption.casefold()):
             return
-        caption = caption.replace("(asm)", "", 1).strip()
+        caption = re.sub(r'\(asm\)', '', caption, count=1, flags=re.IGNORECASE).strip()
         is_gif = mimetype == "image/gif"
         target = event.reply_to_message or event
         async with event.react("📥"):
@@ -2259,7 +2260,7 @@ async def to_media(event: Event, _, client):
                 if not is_avc:
                     async with event.react("🧑‍🏭"):
                         file = await ffmpeg.to_mp4_reencode()
-
+        
         async with event.react("📤"):
             if is_gif:
                 await target.reply_gif(file, caption)
