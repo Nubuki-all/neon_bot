@@ -33,8 +33,8 @@ from bot.utils.bot_utils import (
     get_fps,
     get_mediainfo,
     human_format_num,
-    is_video_file,
     image_to_png,
+    is_video_file,
     list_to_str,
     png_to_jpg,
     post_to_tgph,
@@ -2224,7 +2224,7 @@ async def get_filters(event, args, client):
 
 async def to_media(event: Event, _, client):
     """
-    if a document's caption contains (asm) converts the document to media  
+    if a document's caption contains (asm) converts the document to media
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -2238,7 +2238,7 @@ async def to_media(event: Event, _, client):
         mimetype: str = event.document.mimetype
         if not mimetype.startswith(("image", "video")):
             return
-        if not((caption := event.caption) and "(asm)" in caption):
+        if not ((caption := event.caption) and "(asm)" in caption):
             return
         caption = caption.replace("(asm)", "", 1).strip()
         is_gif = mimetype == "image/gif"
@@ -2259,7 +2259,7 @@ async def to_media(event: Event, _, client):
                 if not is_avc:
                     async with event.react("🧑‍🏭"):
                         file = await ffmpeg.to_mp4_reencode()
-        
+
         async with event.react("📤"):
             if is_gif:
                 await target.reply_gif(file, caption)
