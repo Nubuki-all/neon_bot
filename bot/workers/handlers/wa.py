@@ -34,6 +34,7 @@ from bot.utils.bot_utils import (
     get_mediainfo,
     human_format_num,
     is_video_file,
+    image_to_png,
     list_to_str,
     png_to_jpg,
     post_to_tgph,
@@ -2221,6 +2222,55 @@ async def get_filters(event, args, client):
         return await event.reply(message=filter_data)
 
 
+async def to_media(event: Event, _, client):
+    """
+    if a document's caption contains (asm) converts the document to media  
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        if not event.document:
+            return
+        mimetype: str = event.document.mimetype
+        if not mimetype.startswith(("image", "video")):
+            return
+        if not((caption := event.caption) and "(asm)" in caption):
+            return
+        caption = caption.replace("(asm)", "", 1).strip()
+        is_gif = mimetype == "image/gif"
+        target = event.reply_to_message or event
+        async with event.react("📥"):
+            file = await event.download()
+        if mimetype.startswith("image"):
+            if not is_gif:
+                file = await image_to_png(file)
+        else:
+            is_avc = False
+            async with AFFmpeg(file) as ffmpeg:
+                streams = (await ffmpeg.extract_info()).streams
+                try:
+                    is_avc = any(s.is_avc for s in streams)
+                except Exception:
+                    pass
+                if not is_avc:
+                    async with event.react("🧑‍🏭"):
+                        file = await ffmpeg.to_mp4_reencode()
+        
+        async with event.react("📤"):
+            if is_gif:
+                await target.reply_gif(file, caption)
+            elif mimetype.startswith("video"):
+                await target.reply_video(file, caption)
+            else:
+                await target.reply_photo(file, caption)
+    except Exception:
+        logger(Exception)
+
+
 async def repeat(event: Event, args: str, client):
     """
     Repeat a replied message
@@ -2740,6 +2790,7 @@ async def test_button(event, args, client):
 
 
 # Add command handlers
+bot.add_handler(to_media)
 bot.add_handler(get_notes2)
 bot.add_handler(tag_everyone)
 bot.add_handler(detect_filters)
