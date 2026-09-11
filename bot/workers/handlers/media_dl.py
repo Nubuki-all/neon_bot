@@ -211,8 +211,7 @@ async def youtube_reply(event: Event, args: str, client):
                 quality = ""
                 if "music" in listener.link:
                     audio = True
-                    _format = _alt_format = "ba/b-mp3{0}"
-                    quality = "-"
+                    _format = _alt_format = "ba/b-mp3{0}/b"
                     ytdl.opts.setdefault("postprocessors", []).append(
                         {
                             "key": "FFmpegExtractAudio",
