@@ -544,7 +544,7 @@ async def compress(event, args, client):
         -metadata title="{title_} | MiNi" \
         -c:v {video_codec} \
         {video_params} \
-        -vf "scale={quality.get(args, '854:-2')}" \
+        -vf "scale={quality.get(args, '-2:480')}" \
         -pix_fmt yuv420p \
         -c:a libopus -ac 2 -vbr 2 -ab {a_quality.get(args, "32k")} \
         -c:s copy \
