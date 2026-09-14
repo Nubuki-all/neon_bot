@@ -524,7 +524,11 @@ async def compress(event, args, client):
         _id = f"{event.chat.id}:{event.id}"
         in_ = f"comp/{_id}{ext}"
         out_ = f"comp/{_id}-1.mkv"
-        quality = {"480p": "854x480", "720p": "1280x720", "1080p": "1920x1080"}
+        quality = {
+            "480p": "-2:480",
+            "720p": "-2:720",
+            "1080p": "-2:1080",
+        }
         a_quality = {"480p": "32k", "720p": "64k", "1080p": "128k"}
         crf_quality = {"1080p": "35"}
         title_ = (replied.caption or "").split("\n")[-1]
@@ -540,11 +544,10 @@ async def compress(event, args, client):
         -metadata title="{title_} | MiNi" \
         -c:v {video_codec} \
         {video_params} \
-        -s {quality.get(args, "854x480")} \
+        -vf "scale={quality.get(args, '854:-2')}" \
         -pix_fmt yuv420p \
         -c:a libopus -ac 2 -vbr 2 -ab {a_quality.get(args, "32k")} \
         -c:s copy \
-        -movflags +faststart \
         "{out_}"'''
 
         await write_binary(in_, file)
