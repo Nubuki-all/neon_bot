@@ -524,11 +524,6 @@ async def compress(event, args, client):
         _id = f"{event.chat.id}:{event.id}"
         in_ = f"comp/{_id}{ext}"
         out_ = f"comp/{_id}-1.mkv"
-        quality = {
-            "480p": "-2:480",
-            "720p": "-2:720",
-            "1080p": "-2:1080",
-        }
         a_quality = {"480p": "32k", "720p": "64k", "1080p": "128k"}
         crf_quality = {"1080p": "35"}
         title_ = (replied.caption or "").split("\n")[-1]
@@ -539,17 +534,24 @@ async def compress(event, args, client):
             else f'-preset 9 -g 240 -svtav1-params tune=1:film-grain=0 -crf {crf_quality.get(args, "42")}'
         )
 
+        quality = {
+        "480p": 480,
+        "720p": 720,
+        "1080p": 1080,
+        }
+
+        height = quality.get(args, 480)
+
         cmd_str = f'''ffmpeg -i "{in_}" \
         -map 0:v? -map 0:a? -map 0:s? -map 0:t? \
         -metadata title="{title_} | MiNi" \
         -c:v {video_codec} \
         {video_params} \
-        -vf "scale={quality.get(args, '-2:480')}" \
+        -vf "scale='if(gt(iw,ih),-2,{height})':'if(gt(iw,ih),{height},-2)'" \
         -pix_fmt yuv420p \
         -c:a libopus -ac 2 -vbr 2 -ab {a_quality.get(args, "32k")} \
         -c:s copy \
         "{out_}"'''
-
         await write_binary(in_, file)
 
         async with event.react("⏲️"), comp_sem:
