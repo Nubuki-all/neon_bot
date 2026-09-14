@@ -535,9 +535,9 @@ async def compress(event, args, client):
         )
 
         quality = {
-        "480p": 480,
-        "720p": 720,
-        "1080p": 1080,
+            "480p": 480,
+            "720p": 720,
+            "1080p": 1080,
         }
 
         height = quality.get(args, 480)
