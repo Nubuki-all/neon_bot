@@ -352,7 +352,6 @@ def _parse_universal_data(html: str) -> dict:
 
 def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
     """Convert the raw itemStruct into a list of DownloadResult objects."""
-    _log_.info(item)
     caption = item.get("desc", "").strip()
 
     # Photo slides
@@ -378,14 +377,13 @@ def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
     if video and "PlayAddrStruct" in video:
         play_addr = video["PlayAddrStruct"]
         url_list = play_addr.get("UrlList", [])
-        _log_.info(url_list)
         if url_list:
             return [
                 DownloadResult(
                     local_path="",
                     caption=caption,
                     media_type="video",
-                    source_url=url_list[-1],
+                    source_url=url_list[0],
                     thumbnail_url="",
                     width=play_addr.get("Width"),
                     height=play_addr.get("Height"),
