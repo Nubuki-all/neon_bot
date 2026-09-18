@@ -377,6 +377,7 @@ def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
     if video and "PlayAddrStruct" in video:
         play_addr = video["PlayAddrStruct"]
         url_list = play_addr.get("UrlList", [])
+        _log_.info(url_list)
         if url_list:
             return [
                 DownloadResult(
