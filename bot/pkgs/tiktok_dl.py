@@ -378,12 +378,13 @@ def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
         play_addr = video["PlayAddrStruct"]
         url_list = play_addr.get("UrlList", [])
         if url_list:
+            direct_urls = [u for u in url_list if "/aweme/v1/play/" not in u]
             return [
                 DownloadResult(
                     local_path="",
                     caption=caption,
                     media_type="video",
-                    source_url=url_list[0],
+                    source_url=direct_urls[-1],
                     thumbnail_url="",
                     width=play_addr.get("Width"),
                     height=play_addr.get("Height"),
