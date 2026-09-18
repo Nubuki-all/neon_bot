@@ -352,6 +352,7 @@ def _parse_universal_data(html: str) -> dict:
 
 def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
     """Convert the raw itemStruct into a list of DownloadResult objects."""
+    _log_.info(item)
     caption = item.get("desc", "").strip()
 
     # Photo slides
