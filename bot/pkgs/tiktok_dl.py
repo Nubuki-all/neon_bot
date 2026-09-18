@@ -371,11 +371,13 @@ def _pick_best_video_addr(video: dict) -> dict | None:
     best = max(pool, key=lambda v: v.get("Bitrate", 0))
     return best.get("PlayAddr")
 
+
 def _direct_url(play_addr: dict) -> str | None:
     """Return first non-redirect CDN URL from a PlayAddr dict."""
     urls = play_addr.get("UrlList", []) if play_addr else []
     direct = [u for u in urls if "/aweme/v1/play/" not in u]
     return (direct or urls or [None])[0]
+
 
 def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
     caption = item.get("desc", "").strip()
@@ -430,6 +432,7 @@ def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
             height=height,
         )
     ]
+
 
 async def _download_media(
     url: str,
