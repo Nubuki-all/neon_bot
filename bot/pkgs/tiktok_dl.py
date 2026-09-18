@@ -350,8 +350,34 @@ def _parse_universal_data(html: str) -> dict:
     return item_struct
 
 
+def _pick_best_video_addr(video: dict) -> dict | None:
+    """Return the best HEVC PlayAddr dict, preferring 'original' gears."""
+    variants = video.get("bitrateInfo") or []
+
+    def is_hevc(v: dict) -> bool:
+        codec = (v.get("CodecType") or "").lower()
+        urlkey = (v.get("UrlKey") or "").lower()
+        return "h265" in codec or "hevc" in codec or "bytevc1" in urlkey
+
+    def is_original(v: dict) -> bool:
+        return "original" in (v.get("GearName") or "").lower()
+
+    hevc = [v for v in variants if is_hevc(v)]
+    if not hevc:
+        return None
+
+    originals = [v for v in hevc if is_original(v)]
+    pool = originals or hevc
+    best = max(pool, key=lambda v: v.get("Bitrate", 0))
+    return best.get("PlayAddr")
+
+def _direct_url(play_addr: dict) -> str | None:
+    """Return first non-redirect CDN URL from a PlayAddr dict."""
+    urls = play_addr.get("UrlList", []) if play_addr else []
+    direct = [u for u in urls if "/aweme/v1/play/" not in u]
+    return (direct or urls or [None])[0]
+
 def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
-    """Convert the raw itemStruct into a list of DownloadResult objects."""
     caption = item.get("desc", "").strip()
 
     # Photo slides
@@ -374,24 +400,36 @@ def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
 
     # Single video
     video = item.get("video")
-    if video and "PlayAddrStruct" in video:
-        play_addr = video["PlayAddrStruct"]
-        url_list = play_addr.get("UrlList", [])
-        if url_list:
-            direct_urls = [u for u in url_list if "/aweme/v1/play/" not in u]
-            return [
-                DownloadResult(
-                    local_path="",
-                    caption=caption,
-                    media_type="video",
-                    source_url=direct_urls[-1],
-                    thumbnail_url="",
-                    width=play_addr.get("Width"),
-                    height=play_addr.get("Height"),
-                )
-            ]
-    return []
+    if not video:
+        return []
 
+    play_addr = _pick_best_video_addr(video)
+
+    # Fallback: if no HEVC variant exists at all, use PlayAddrStruct
+    if play_addr is None:
+        play_addr = video.get("PlayAddrStruct") or video.get("playAddr")
+
+    url = _direct_url(play_addr)
+    if not url:
+        return []
+
+    if isinstance(play_addr, str):
+        width = height = None
+    else:
+        width = play_addr.get("Width")
+        height = play_addr.get("Height")
+
+    return [
+        DownloadResult(
+            local_path="",
+            caption=caption,
+            media_type="video",
+            source_url=url,
+            thumbnail_url="",
+            width=width,
+            height=height,
+        )
+    ]
 
 async def _download_media(
     url: str,
