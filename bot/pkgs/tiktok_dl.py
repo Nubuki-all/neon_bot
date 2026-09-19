@@ -377,7 +377,6 @@ def _direct_url(play_addr: dict) -> str | None:
 
 
 def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
-    _log_.info(item)
     caption = item.get("desc", "").strip()
 
     # Photo slides
