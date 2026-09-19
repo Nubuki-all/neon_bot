@@ -351,26 +351,23 @@ def _parse_universal_data(html: str) -> dict:
 
 
 def _pick_best_video_addr(video: dict) -> dict | None:
-    """Return the best HEVC PlayAddr dict, preferring 'original' gears."""
+    """
+    Pick the best available video variant.
+    """
     variants = video.get("bitrateInfo") or []
-
-    def is_hevc(v: dict) -> bool:
-        codec = (v.get("CodecType") or "").lower()
-        urlkey = (v.get("UrlKey") or "").lower()
-        return "h265" in codec or "hevc" in codec or "bytevc1" in urlkey
-
-    def is_original(v: dict) -> bool:
-        return "original" in (v.get("GearName") or "").lower()
-
-    hevc = [v for v in variants if is_hevc(v)]
-    if not hevc:
+    if not variants:
         return None
 
-    originals = [v for v in hevc if is_original(v)]
-    pool = originals or hevc
-    best = max(pool, key=lambda v: v.get("Bitrate", 0))
-    return best.get("PlayAddr")
+    def bitrate(v: dict) -> int:
+        return v.get("Bitrate") or 0
 
+    originals = [
+        v for v in variants
+        if "original" in (v.get("GearName") or "").lower()
+    ]
+    pool = originals or variants
+    best = max(pool, key=bitrate)
+    return best.get("PlayAddr")
 
 def _direct_url(play_addr: dict) -> str | None:
     """Return first non-redirect CDN URL from a PlayAddr dict."""
