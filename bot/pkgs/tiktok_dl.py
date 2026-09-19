@@ -361,13 +361,11 @@ def _pick_best_video_addr(video: dict) -> dict | None:
     def bitrate(v: dict) -> int:
         return v.get("Bitrate") or 0
 
-    originals = [
-        v for v in variants
-        if "original" in (v.get("GearName") or "").lower()
-    ]
+    originals = [v for v in variants if "original" in (v.get("GearName") or "").lower()]
     pool = originals or variants
     best = max(pool, key=bitrate)
     return best.get("PlayAddr")
+
 
 def _direct_url(play_addr: dict) -> str | None:
     """Return first non-redirect CDN URL from a PlayAddr dict."""
