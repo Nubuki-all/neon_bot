@@ -7,7 +7,8 @@ import os
 import re
 import tempfile
 import traceback
-from collections import OrderedDict
+from collections import OrderedDict, deque
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from fractions import Fraction
 from functools import partial
@@ -261,22 +262,116 @@ async def image_to_png(img: bytes | str):
     return await ffmpeg.execute(input_)
 
 
+
+class TurnQueue:
+    def __init__(self) -> None:
+        self._queue: deque[str] = deque()
+        # Fresh event every change so waiters can safely race with notifiers.
+        self._changed = asyncio.Event()
+
+    # --- notifications ----------------------------------------------------
+    def _notify(self) -> None:
+        old, self._changed = self._changed, asyncio.Event()
+        old.set()
+
+    # --- read API ---------------------------------------------------------
+    def __contains__(self, turn_id: object) -> bool:
+        return turn_id in self._queue
+
+    def __len__(self) -> int:
+        return len(self._queue)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._queue)
+
+    def list(self) -> list[str]:
+        return list(self._queue)
+
+    @property
+    def current(self) -> str | None:
+        return self._queue[0] if self._queue else None
+
+    @property
+    def has_waiting(self) -> bool:
+        """True if someone is queued behind the current turn."""
+        return len(self._queue) > 1
+
+    # --- write API --------------------------------------------------------
+    def add(self, turn_id: str) -> bool:
+        """Append to queue. Returns False if already present."""
+        if turn_id in self._queue:
+            return False
+        self._queue.append(turn_id)
+        self._notify()
+        return True
+
+    def remove(self, turn_id: str) -> bool:
+        """Safely remove a turn (anywhere in the queue). Idempotent."""
+        try:
+            self._queue.remove(turn_id)
+        except ValueError:
+            return False
+        self._notify()
+        return True
+
+    def advance(self) -> str | None:
+        """Pop the front of the queue (turn is done). Returns the removed id."""
+        if not self._queue:
+            return None
+        turn_id = self._queue.popleft()
+        self._notify()
+        return turn_id
+
+    def clear(self) -> None:
+        if not self._queue:
+            return
+        self._queue.clear()
+        self._notify()
+
+    # --- async wait -------------------------------------------------------
+    async def wait_for_turn(self, turn_id: str) -> bool:
+        """
+        Block until `turn_id` is at the front of the queue.
+
+        Returns True if it's now this turn's turn, False if the turn was
+        removed (or queue cleared) before reaching the front.
+        """
+        while True:
+            if not self._queue:
+                return False
+            if self._queue[0] == turn_id:
+                return True
+            if turn_id not in self._queue:
+                return False
+
+            # Snapshot the event AFTER the check. Because _notify swaps in a
+            # new Event before setting the old one, we cannot miss an update:
+            # either the condition is already false by the time we await, or
+            # our snapshot will be set by the next change.
+            event = self._changed
+            if self._queue and self._queue[0] == turn_id:
+                return True
+            if turn_id not in self._queue and self._queue:
+                return False
+            await event.wait()
+
+
+turn_queue = TurnQueue()
+
+
 def turn(turn_id: str | None = None):
     if turn_id:
-        return turn_id in bot.p_queue
-    return bot.p_queue
+        return turn_id in turn_queue
+    return turn_queue
 
 
-async def wait_for_turn(turn_id: str):
-    while turn(turn_id):
-        await asyncio.sleep(5)
-        if bot.p_queue[0] == turn_id:
-            return 1
+async def wait_for_turn(turn_id: str) -> int:
+    return await turn_queue.wait_for_turn(turn_id)
+    
 
 
-def waiting_for_turn():
-    return turn() and len(turn()) > 1
-
+def waiting_for_turn() -> bool:
+    return turn_queue.has_waiting
 
 def same_month(date, day_offset: int = 1, hour_offset: int = 0):
     """returns true if datetime object is part of the current month"""

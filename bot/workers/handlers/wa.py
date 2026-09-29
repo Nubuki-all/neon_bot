@@ -53,6 +53,7 @@ from bot.utils.bot_utils import (
 from bot.utils.db_utils import save2db2
 from bot.utils.events import SEQUENTIAL_AUTO, Event
 from bot.utils.log_utils import log, logger
+from bot.utils.modal_utils import upscale_batch
 from bot.utils.msg_store import (
     get_deleted_message_ids,
     get_messages,
@@ -1020,7 +1021,7 @@ async def send_deleted_msgs(event, chat_id, del_ids, verbose=False):
         await asyncio.sleep(3)
 
 
-async def upscale_image(event, args, client):
+async def upscale_image(event: Event, args: str, client):
     """
     Upscales replied image.
     Args:
@@ -1029,17 +1030,37 @@ async def upscale_image(event, args, client):
     status_msg = None
     turn_id = f"{event.chat.id}:{event.id}"
     user = event.from_user.id
+    cancel_handler_key = None
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
             return
         if not user_is_allowed(user):
             return await event.react("⛔")
+    async def _cancel(e: Event, __, client):
+        if not e.reaction:
+            return
+        if turn_id != f"{e.chat.id}:{e.id}":
+            return
+        if e.reaction.text != "❌":
+            return
+        canceller = e.from_user.id
+        if not ( user == canceller or user_is_privileged(canceller)):
+            group_info = await client.get_group_info(e.chat.jid)
+            if not user_is_admin(canceller, group_info.Participants):
+                return
+        if turn().current == turn_id:
+            return
+        turn().remove(turn_id)
+        await event.react("✖️")
+        if status_msg:
+            await status_msg("*Cancelled*")
+        
     try:
         if not event.reply_to_message:
             return await event.reply(
                 "*Command can only be used when replying to an image.*"
             )
-        if bot.disable_cic:
+        if not conf.MODAL_UPSCALE_API and bot.disable_cic:
             return await event.reply("*CPU heavy commands are currently disabled.*")
         replied = event.reply_to_message
         if replied.document:
@@ -1051,7 +1072,7 @@ async def upscale_image(event, args, client):
             )
         if replied.media.fileLength > 17939583:
             return await sticker_reply(event, args, client, True)
-        turn().append(turn_id)
+        turn().add(turn_id)
         status_msg = await event.reply("*…*")
         if replied.caption and replied.caption.startswith("Upscaled image:"):
             return await event.reply(
@@ -1061,25 +1082,44 @@ async def upscale_image(event, args, client):
 
         if waiting_for_turn():
             await event.react("⏰")
-            w_msg = await status_msg.edit(
+            await status_msg.edit(
                 "*Waiting till previous upscaling process gets completed.*"
             )
-            await wait_for_turn(turn_id)
+            cancel_handler_key = bot.add_handler(_cancel)
+            if not await wait_for_turn(turn_id):
+                return
             await event.react("")
         # async with heavy_proc_lock:
         # Lock works now but eh i like the current implementation better
         await status_msg.edit("*Upscaling please wait…*")
-        device = torch.device(
-            "cuda" if torch.cuda.is_available() and not conf.NO_GPU else "cpu"
-        )
-        model = RealESRGAN(device, scale=4)
-        model.load_weights("weights/RealESRGAN_x4.pth", download=True)
-        image = Image.open(io.BytesIO(file)).convert("RGB")
-        sr_image = await sync_to_async(model.predict, image)
-        output = io.BytesIO()
-        sr_image.save(output, format="png")
-        output.name = "upscaled_image.png"
-        raw = output.getvalue()
+
+        async def modal_upscale(img: bytes) -> bytes:
+            return await upscale_batch([img], 180)[0]
+        async def local_upscale(img: bytes) -> bytes:
+            device = torch.device(
+                "cuda" if torch.cuda.is_available() and not conf.NO_GPU else "cpu"
+            )
+            model = RealESRGAN(device, scale=4)
+            model.load_weights("weights/RealESRGAN_x4.pth", download=True)
+            image = Image.open(io.BytesIO(img)).convert("RGB")
+            sr_image = await sync_to_async(model.predict, image)
+            output = io.BytesIO()
+            sr_image.save(output, format="png")
+            output.name = "upscaled_image.png"
+            return output.getvalue()
+        if conf.MODAL_UPSCALE_API:
+            try:
+                raw = await modal_upscale(file)
+            except Exception as e:  # noqa: BLE001
+                log(Exception)
+                if bot.disable_cic:
+                    await event.react("❌")
+                    await status_msg.edit(f"*Error:*\n{e}")
+                    status_msg = None
+                    return
+                raw = await local_upscale(file)
+        else:
+            raw = await local_upscale(file)
         msg = await event.reply_photo(raw, "Upscaled image: Raw")
         raw = await png_to_jpg(raw)
         await msg.reply_photo(raw, "Upscaled image: Jpeg")
@@ -1089,10 +1129,12 @@ async def upscale_image(event, args, client):
         await status_msg.edit(f"*Error:*\n{e}")
         status_msg = None
     finally:
+        if cancel_handler_key:
+            bot.unregister(cancel_handler_key)
         if turn(turn_id):
-            turn().pop(0)
-        if status_msg:
-            await status_msg.delete()
+            turn().advance()
+            if status_msg:
+                await status_msg.delete()
 
 
 async def pick_random(event: Event, args: str, client):

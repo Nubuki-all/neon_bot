@@ -48,6 +48,8 @@ class Config:
             self.MSG_STORE = config(
                 "MSG_STORE", default="sqlite+aiosqlite:///msg_store.db"
             )
+            self.MODAL_UPSCALE_API = config("MODAL_UPSCALE_API", default="")
+            self.MODAL_UPSCALE_TOKEN = config("MODAL_UPSCALE_TOKEN", default="")
             self.NO_GPU = config("NO_GPU", default=False, cast=bool)
             self.RSS_CHAT = config(
                 "RSS_CHAT",

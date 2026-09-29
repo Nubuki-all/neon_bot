@@ -32,8 +32,8 @@ def get_logger_from_caller():
 
 
 async def group_logger(
-    Exception: Exception = None,
-    e: str = None,
+    Exception: Exception | None = None,
+    e: str | None = None,
     critical: bool = False,
     debug: bool = False,
     error: bool = False,
@@ -65,8 +65,8 @@ async def group_logger(
 
 
 def log(
-    Exception: Exception = None,
-    e: str = None,
+    Exception: Exception | None = None,
+    e: str | None = None,
     critical: bool = False,
     debug: bool = False,
     error: bool = False,
@@ -89,8 +89,8 @@ def log(
 
 
 async def logger(
-    Exception: Exception = None,
-    e: str = None,
+    Exception: Exception | None = None,
+    e: str | None = None,
     critical: bool = False,
     debug: bool = False,
     error: bool = False,
