@@ -1036,6 +1036,7 @@ async def upscale_image(event: Event, args: str, client):
             return
         if not user_is_allowed(user):
             return await event.react("⛔")
+
     async def _cancel(e: Event, __, client):
         if not e.reaction:
             return
@@ -1044,7 +1045,7 @@ async def upscale_image(event: Event, args: str, client):
         if e.reaction.text != "❌":
             return
         canceller = e.from_user.id
-        if not ( user == canceller or user_is_privileged(canceller)):
+        if not (user == canceller or user_is_privileged(canceller)):
             group_info = await client.get_group_info(e.chat.jid)
             if not user_is_admin(canceller, group_info.Participants):
                 return
@@ -1054,7 +1055,7 @@ async def upscale_image(event: Event, args: str, client):
         await event.react("✖️")
         if status_msg:
             await status_msg("*Cancelled*")
-        
+
     try:
         if not event.reply_to_message:
             return await event.reply(
@@ -1095,6 +1096,7 @@ async def upscale_image(event: Event, args: str, client):
 
         async def modal_upscale(img: bytes) -> bytes:
             return await upscale_batch([img], 180)[0]
+
         async def local_upscale(img: bytes) -> bytes:
             device = torch.device(
                 "cuda" if torch.cuda.is_available() and not conf.NO_GPU else "cpu"
@@ -1107,6 +1109,7 @@ async def upscale_image(event: Event, args: str, client):
             sr_image.save(output, format="png")
             output.name = "upscaled_image.png"
             return output.getvalue()
+
         if conf.MODAL_UPSCALE_API:
             try:
                 raw = await modal_upscale(file)

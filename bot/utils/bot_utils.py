@@ -262,7 +262,6 @@ async def image_to_png(img: bytes | str):
     return await ffmpeg.execute(input_)
 
 
-
 class TurnQueue:
     def __init__(self) -> None:
         self._queue: deque[str] = deque()
@@ -367,11 +366,11 @@ def turn(turn_id: str | None = None):
 
 async def wait_for_turn(turn_id: str) -> int:
     return await turn_queue.wait_for_turn(turn_id)
-    
 
 
 def waiting_for_turn() -> bool:
     return turn_queue.has_waiting
+
 
 def same_month(date, day_offset: int = 1, hour_offset: int = 0):
     """returns true if datetime object is part of the current month"""
