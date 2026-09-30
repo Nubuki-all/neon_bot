@@ -1126,7 +1126,13 @@ async def upscale_image(event: Event, args: str, client):
                 raw = await local_upscale(file)
         else:
             raw = await local_upscale(file)
-        msg = await event.reply_photo(raw, "Upscaled image: Raw")
+        sz = len(raw)
+        if sz > 2 << 30:
+            msg = await event.reply("Can not send raw; file too large")
+        elif sz > 100000000:
+            msg = await event.reply_document(raw, "upscaled.png" "Upscaled image: Raw")
+        else:
+            msg = await event.reply_photo(raw, "Upscaled image: Raw")
         raw = await upscaled_png_to_jpg(raw)
         await msg.reply_photo(raw, "Upscaled image: Jpeg")
     except Exception as e:
