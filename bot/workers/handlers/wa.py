@@ -45,6 +45,7 @@ from bot.utils.bot_utils import (
     split_text,
     sync_to_async,
     turn,
+    upscaled_png_to_jpg,
     video_timestamp_to_seconds,
     wait_for_turn,
     waiting_for_turn,
@@ -84,6 +85,8 @@ from bot.utils.parse_td_utils import parse_reminder_time_hybrid
 from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
 from bot.utils.ytdl_utils import is_valid_trim_args, trim_vid
 from bot.workers.auto.reminder import cancel_reminder, schedule_reminder_async
+
+Image.MAX_IMAGE_PIXELS = 400_000_000
 
 compress_cache = LimitedDict()
 sanitized_video_cache = LimitedDict()
@@ -1124,7 +1127,7 @@ async def upscale_image(event: Event, args: str, client):
         else:
             raw = await local_upscale(file)
         msg = await event.reply_photo(raw, "Upscaled image: Raw")
-        raw = await png_to_jpg(raw)
+        raw = await upscaled_png_to_jpg(raw)
         await msg.reply_photo(raw, "Upscaled image: Jpeg")
     except Exception as e:
         await logger(Exception)

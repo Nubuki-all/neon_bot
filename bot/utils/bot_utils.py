@@ -231,6 +231,23 @@ def is_video_file(filename: str):
         return True
 
 
+async def upscaled_png_to_jpg(png: bytes | str):
+    raw = not isinstance(png, str)
+    ffmpeg = (
+        FFmpeg()
+        .option("y")
+        .input("pipe:0" if raw else png)
+        .output(
+            "pipe:1",
+            f="mjpeg",
+            # Caps width at 3840 and height at 2160, maintaining aspect ratio.
+            vf="scale='min(3840,iw)':'-1':force_original_aspect_ratio=decrease" 
+        )
+    )
+    input_ = png if raw else None
+    return await ffmpeg.execute(input_)
+
+
 async def png_to_jpg(png: bytes | str):
     raw = not isinstance(png, str)
     ffmpeg = (
