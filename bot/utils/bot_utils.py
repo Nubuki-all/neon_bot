@@ -241,7 +241,7 @@ async def upscaled_png_to_jpg(png: bytes | str):
             "pipe:1",
             f="mjpeg",
             # Caps width at 3840 and height at 2160, maintaining aspect ratio.
-            vf="scale='min(3840,iw)':'-1':force_original_aspect_ratio=decrease" 
+            vf="scale='min(3840,iw)':'-1':force_original_aspect_ratio=decrease",
         )
     )
     input_ = png if raw else None
