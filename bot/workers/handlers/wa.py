@@ -1040,7 +1040,7 @@ async def upscale_image(event: Event, args: str, client):
     async def _cancel(e: Event, __, client):
         if not e.reaction:
             return
-        if turn_id != f"{e.chat.id}:{e.id}":
+        if turn_id != f"{e.chat.id}:{e.reaction.key.ID}":
             return
         if e.reaction.text != "❌":
             return
@@ -1095,7 +1095,7 @@ async def upscale_image(event: Event, args: str, client):
         await status_msg.edit("*Upscaling please wait…*")
 
         async def modal_upscale(img: bytes) -> bytes:
-            return (await upscale_batch([img], 180))[0]
+            return (await upscale_batch([img], 1800))[0]
 
         async def local_upscale(img: bytes) -> bytes:
             device = torch.device(
