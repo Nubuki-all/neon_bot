@@ -32,7 +32,7 @@ async def upscale_batch(
     timeout = httpx.Timeout(timeout_seconds)
 
     # Reuse a single AsyncClient connection pool for maximum performance
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
         tasks = [
             upscale_single_image(client, img_bytes, api_url, api_token)
             for img_bytes in images_bytes
