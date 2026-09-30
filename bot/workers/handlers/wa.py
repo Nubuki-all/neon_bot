@@ -1054,7 +1054,7 @@ async def upscale_image(event: Event, args: str, client):
         turn().remove(turn_id)
         await event.react("✖️")
         if status_msg:
-            await status_msg("*Cancelled*")
+            await status_msg.edit("*Cancelled*")
 
     try:
         if not event.reply_to_message:
