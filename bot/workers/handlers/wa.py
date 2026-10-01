@@ -2443,6 +2443,8 @@ async def tikmate(event: Event, args: str, client):
         if not urls:
             return await event.reply("*No link found in your message*")
         for url in urls:
+            if "www.tiktok.com/tiktoklite" in url:
+                continue
             async with event.react("📥"):
                 items = await TikmateAsync().download_tikmate(
                     url,
