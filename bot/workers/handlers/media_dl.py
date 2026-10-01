@@ -115,6 +115,8 @@ async def youtube_reply(event: Event, args: str, client):
             return
         supported_links = []
         for url in urls:
+            if "www.tiktok.com/tiktoklite" in url:
+                continue
             url = clean_url(url)
             extractors_checkers = [
                 is_supported,
