@@ -714,11 +714,6 @@ bot.register = register
 bot.unregister = unregister
 
 
-async def handler_helper(funcs):
-    await asyncio.sleep(0.1)
-    await asyncio.gather(*funcs)
-
-
 async def on_message(client: NewAClient, message: MessageEv):
     try:
         # await logger(e=message)
@@ -748,13 +743,19 @@ async def on_message(client: NewAClient, message: MessageEv):
                 await func(client, event)
         if not (concurrent_autos := function_dict[CONCURRENT_AUTO]):
             return
-        funcs = [func(client, event) for func in concurrent_autos]
-        await asyncio.gather(*funcs)
+        try:
+            async with asyncio.TaskGroup() as tg:
+                for func in concurrent_autos:
+                    tg.create_task(func(client, event))
+        except* StopHandlers as se:
+            raise se.exceptions[0]
+        except* Exception as se:
+            raise se.exceptions[0]
     except StopHandlers:
         pass
     except Exception:  # noqa: BLE001
         await logger(e="Unhandled Exception(s):", error=True)
-        await logger(Exception)
+        await logger(Exception) # why am i passing this again?
 
 
 def construct_event(message: MessageEv, add_replied=True) -> Event:
