@@ -755,7 +755,7 @@ async def on_message(client: NewAClient, message: MessageEv):
         pass
     except Exception:  # noqa: BLE001
         await logger(e="Unhandled Exception(s):", error=True)
-        await logger(Exception) # why am i passing this again?
+        await logger(Exception)  # why am i passing this again?
 
 
 def construct_event(message: MessageEv, add_replied=True) -> Event:
