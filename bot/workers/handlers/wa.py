@@ -1597,7 +1597,8 @@ async def tag_everyone(event: Event, args, client):
                 and not privileged
                 and user_is_admin(bot.client.me.JID.User, group_info.Participants)
             ):
-                return await event.delete()
+                await event.delete()
+                raise StopHandlers("event was deleted due to an all tag")
             return await event.react("👀")
         if not privileged:
             return
@@ -1610,6 +1611,8 @@ async def tag_everyone(event: Event, args, client):
             ghost_mentions=tags,
             mentions_are_lids=event.lid_address,
         )
+    except StopHandlers:
+        raise
     except Exception:
         await logger(Exception)
         await event.react("❌")
