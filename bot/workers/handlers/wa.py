@@ -2445,6 +2445,7 @@ async def tikmate(event: Event, args: str, client):
         urls = extractor.find_urls(txt)
         if not urls:
             return await event.reply("*No link found in your message*")
+        urls = list(dict.fromkeys(urls))
         for url in urls:
             if "www.tiktok.com/tiktoklite" in url:
                 continue

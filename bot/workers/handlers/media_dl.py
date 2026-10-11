@@ -118,6 +118,8 @@ async def youtube_reply(event: Event, args: str, client):
             if "www.tiktok.com/tiktoklite" in url:
                 continue
             url = clean_url(url)
+            if url in supported_links:
+                continue
             extractors_checkers = [
                 is_supported,
                 is_valid_instagram_url,
