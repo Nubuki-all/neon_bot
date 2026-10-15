@@ -734,7 +734,7 @@ async def kang_sticker(event, args, client):
             return await event.react("⛔")
     try:
         if not (replied := event.reply_to_message):
-            return await event.reply("*Reply to a sticker to a sticker to kang.*")
+            return await event.reply("*Reply to a sticker to kang.*")
         if not replied.sticker:
             return await event.reply("*Replied message is not a sticker.*")
 
@@ -836,7 +836,7 @@ async def stickerize_image(event: Event, args: str, client):
 
 async def stickerize_album(event: Event, args: str, client):
     """
-    Turns replied sticker to sticker-pack.
+    Turns replied album images to sticker-pack.
     Args:
         Name of stickerpack [Optional] [Recommended]
         -q: quality (1-100)
@@ -1178,6 +1178,8 @@ async def upscale_album(event: Event, args: str, client):
         if not conf.MODAL_UPSCALE_API:
             return await event.reply("*Modal api not configured*")
         replied = event.reply_to_message
+        if not replied:
+            return await event.reply("Kindly reply to an album of images to upscale.")
         if replied.short_name != "album":
             return await event.reply("Message is not an album.")
         async with event.react("🗂️"):
