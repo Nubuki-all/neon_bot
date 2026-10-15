@@ -85,7 +85,10 @@ async def save_messages(msgs: [Event]):
                 type=event.name,
                 user_id=event.user.id,
                 visible=(
-                    bool((event.media or event.text) and not (event.album or event.protocol))
+                    bool(
+                        (event.media or event.text)
+                        and not (event.album or event.protocol)
+                    )
                 ),
             )
             for event in msgs
@@ -96,7 +99,10 @@ async def save_messages(msgs: [Event]):
 
 
 async def get_messages(
-    chat_ids: list | str, msg_ids: list | str | None = None, limit: int | None = None, visible=True
+    chat_ids: list | str,
+    msg_ids: list | str | None = None,
+    limit: int | None = None,
+    visible=True,
 ) -> [Event]:
     try:
         await flush_messages()
@@ -177,7 +183,9 @@ async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None) -> [str]:
         raise
 
 
-async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100) -> [Event]:
+async def get_messages_by_album_id(
+    chat_id: str, album_id: str, limit: int = 100
+) -> [Event]:
     try:
         await flush_messages()
         chat_ids = [chat_id]

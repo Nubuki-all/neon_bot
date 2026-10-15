@@ -539,7 +539,11 @@ class YoutubeDLHelper:
 
         if qual.startswith("ba/b") and not self.is_playlist:
             self._listener.name = f"{base_name}{self._ext}"
-        elif not (self.is_playlist or self._listener.is_ytp or self._listener.name.endswith("mp4")):
+        elif not (
+            self.is_playlist
+            or self._listener.is_ytp
+            or self._listener.name.endswith("mp4")
+        ):
             self.opts["postprocessors"].append(
                 {
                     "key": "FFmpegVideoConvertor",

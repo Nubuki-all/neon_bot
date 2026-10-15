@@ -1153,17 +1153,17 @@ async def upscale_image(event: Event, args: str, client):
 def move_oversized_in_place(original_list, max_mb=100):
     MAX_SIZE_BYTES = max_mb * 1024 * 1024
     overflow_list = []
-    
+
     # keeps track of items that stay
     keep_index = 0
-    
+
     for item in original_list:
         if len(item) > MAX_SIZE_BYTES:
             overflow_list.append(item)
         else:
             original_list[keep_index] = item
             keep_index += 1
-            
+
     del original_list[keep_index:]
     return overflow_list
 
@@ -1185,7 +1185,11 @@ async def upscale_album(event: Event, args: str, client):
         if not messages:
             return await event.reply("*Replied album media(s) could not be retrieved.*")
         first = messages[0]
-        if first.image and first.caption and first.caption.startswith("Upscaled image:"):
+        if (
+            first.image
+            and first.caption
+            and first.caption.startswith("Upscaled image:")
+        ):
             return await event.reply(
                 "What?, initial upscale not good enough for you? 😒"
             )
@@ -1198,7 +1202,7 @@ async def upscale_album(event: Event, args: str, client):
         upscaled: [bytes] = []
         async with event.react("👩🏻‍🏭"):
             for i in range(0, len(files), 2):
-                pair = files[i:i+2]
+                pair = files[i : i + 2]
                 try:
                     raws = await upscale_batch(pair, 1800)
                 except Exception:
