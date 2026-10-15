@@ -118,6 +118,8 @@ async def tools(event, args, client):
             f"{pre}mp3 - *Convert Video to audio*{s}"
             f"{pre}sanitize_video - *Make some videos playable*{s}"
             f"{pre}tikmate - *Download tiktok videos*{s}"
+            f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}{s}"
+            f"{pre}batch_upscale - {'*Upscale replied album images*' if conf.MODAL_UPSCALE_API else '_Currently not available!_'}{s}"
             f"{s}"
             f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
             f"{pre}pin - *Pin a replied message*{s}"
@@ -148,7 +150,6 @@ async def tools(event, args, client):
             f"{pre}stick2img - *Turns stickers to images/gifs*{s}"
             f"{s}"
             f"{pre}undel - *Undelete a user messages*{s}"
-            f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}{s}"
         )
         await event.reply(msg)
     except Exception:
@@ -1147,6 +1148,78 @@ async def upscale_image(event: Event, args: str, client):
             turn().advance()
             if status_msg:
                 await status_msg.delete()
+
+
+def move_oversized_in_place(original_list, max_mb=100):
+    MAX_SIZE_BYTES = max_mb * 1024 * 1024
+    overflow_list = []
+    
+    # keeps track of items that stay
+    keep_index = 0
+    
+    for item in original_list:
+        if len(item) > MAX_SIZE_BYTES:
+            overflow_list.append(item)
+        else:
+            original_list[keep_index] = item
+            keep_index += 1
+            
+    del original_list[keep_index:]
+    return overflow_list
+
+
+async def upscale_album(event: Event, args: str, client):
+    """
+    Upscales replied images in album via Modal.
+    Args:
+        None yet
+    """
+    try:
+        if not conf.MODAL_UPSCALE_API:
+            return await event.reply("*Modal api not configured*")
+        replied = event.reply_to_message
+        if replied.short_name != "album":
+            return await event.reply("Message is not an album.")
+        async with event.react("🗂️"):
+            messages = await get_messages_by_album_id(event.chat.id, replied.id)
+        if not messages:
+            return await event.reply("*Replied album media(s) could not be retrieved.*")
+        first = messages[0]
+        if first.image and first.caption and first.caption.startswith("Upscaled image:"):
+            return await event.reply(
+                "What?, initial upscale not good enough for you? 😒"
+            )
+        medias = [m for m in messages if m.image and m.image.fileLength < 17939583]
+        if not medias:
+            return await event.reply("*Replied album had no upscale-able images.*")
+        funcs = [media.download() for media in medias]
+        async with event.react("📥"):
+            files = await asyncio.gather(*funcs)
+        upscaled: [bytes] = []
+        async with event.react("👩🏻‍🏭"):
+            for i in range(0, len(files), 2):
+                pair = files[i:i+2]
+                try:
+                    raws = await upscale_batch(pair, 1800)
+                except Exception:
+                    await logger()
+                    continue
+                upscaled.extend(raws)
+            if not upscaled:
+                return await event.reply("Upscaling failed")
+            jpegs = [await upscaled_png_to_jpg(raw) for raw in upscaled]
+            large_images = move_oversized_in_place(upscaled)
+        async with event.react("📤"):
+            u = await event.reply_album(upscaled, "Upscaled images: Raw")
+            for f in large_images:
+                if len(f) > 2 << 30:
+                    await event.reply("Can not send raw; file too large")
+                    continue
+                await u.reply_document(f, "upscaled.png", "Upscaled image: Raw")
+            await u.reply_album(jpegs, "Upscaled images: Jpeg")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
 
 
 async def pick_random(event: Event, args: str, client):
@@ -2890,6 +2963,7 @@ bot.add_handler(upscale_image, "upscale")
 bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
 bot.add_handler(sticker_to_image, "stick2img")
+bot.add_handler(upscale_album, "batch_upscale")
 bot.add_handler(list_reminders, "all_reminders")
 bot.add_handler(sanitize_video, "sanitize_video")
 

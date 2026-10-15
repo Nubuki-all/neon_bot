@@ -7,6 +7,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from bot import base_msg, msg_store_lock
 from bot.config import bot, conf
 from bot.utils.db_utils import save2db2
+from bot.utils.events import Event
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import construct_event
 
@@ -64,13 +65,13 @@ engine = create_async_engine(
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 
-def load_proto(data):
+def load_proto(data: bytes):
     msg = base_msg()
     msg.ParseFromString(data)
     return msg
 
 
-async def save_messages(msgs):
+async def save_messages(msgs: [Event]):
     async with async_session() as session:
         items = [
             Message(
@@ -84,12 +85,7 @@ async def save_messages(msgs):
                 type=event.name,
                 user_id=event.user.id,
                 visible=(
-                    True
-                    if (
-                        (event.media or event.text)
-                        and not (event.album or event.protocol)
-                    )
-                    else False
+                    bool((event.media or event.text) and not (event.album or event.protocol))
                 ),
             )
             for event in msgs
@@ -100,8 +96,8 @@ async def save_messages(msgs):
 
 
 async def get_messages(
-    chat_ids: list | str, msg_ids: list | str = None, limit: int = None, visible=True
-):
+    chat_ids: list | str, msg_ids: list | str | None = None, limit: int | None = None, visible=True
+) -> [Event]:
     try:
         await flush_messages()
         chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
@@ -127,13 +123,13 @@ async def get_messages(
             )
             results = (await session.scalars(stmt)).all()
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
-    except Exception as e:
-        raise e
+    except Exception:
+        raise
 
 
 async def get_messages_by_type(
-    chat_ids: list | str, types: list | str, limit: int = None
-):
+    chat_ids: list | str, types: list | str, limit: int | None = None
+) -> [Event]:
     try:
         await flush_messages()
         chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
@@ -147,11 +143,11 @@ async def get_messages_by_type(
             )
             results = (await session.scalars(stmt)).all()
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
-    except Exception as e:
-        raise e
+    except Exception:
+        raise
 
 
-async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
+async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None) -> [str]:
     try:
         await flush_messages()
         chat_ids = [chat_ids] if isinstance(chat_ids, str) else [*chat_ids]
@@ -177,11 +173,11 @@ async def get_deleted_message_ids(chat_ids, limit=None, user_ids=None):
             )
             results = (await session.scalars(stmt)).all()
         return [msg_data.revoked_id for msg_data in results]
-    except Exception as e:
-        raise e
+    except Exception:
+        raise
 
 
-async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100):
+async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100) -> [Event]:
     try:
         await flush_messages()
         chat_ids = [chat_id]
@@ -197,11 +193,11 @@ async def get_messages_by_album_id(chat_id: str, album_id: str, limit: int = 100
             )
             results = (await session.scalars(stmt)).all()
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
-    except Exception as e:
-        raise e
+    except Exception:
+        raise
 
 
-async def get_messages_between(chat_id: str, start_id: str, end_id: str):
+async def get_messages_between(chat_id: str, start_id: str, end_id: str) -> [Event]:
     try:
         await flush_messages()
         async with async_session() as session:
@@ -230,8 +226,8 @@ async def get_messages_between(chat_id: str, start_id: str, end_id: str):
             )
             results = (await session.scalars(stmt)).all()
         return [construct_event(load_proto(msg_data.raw)) for msg_data in results]
-    except Exception as e:
-        raise e
+    except Exception:
+        raise
 
 
 async def auto_save_msg():
