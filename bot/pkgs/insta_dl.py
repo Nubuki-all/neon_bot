@@ -808,7 +808,7 @@ async def try_snapsave(url: str) -> list:
             "https://snapsave.app/action.php",
             data={"url": url},
             headers=headers,
-            timeout=15.0,
+            timeout=30.0,
         )
 
         raw = r2.text if isinstance(r2.text, str) else json.dumps(r2.text)
