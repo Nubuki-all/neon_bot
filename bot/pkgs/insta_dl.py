@@ -789,7 +789,7 @@ async def deobfuscate_with_deno(raw_js: str) -> str:
 async def try_snapsave(url: str) -> list:
     async with httpx.AsyncClient() as client:
         await client.get(
-            "https://snapsave.app/", headers={"User-Agent": UA_BROWSER}, timeout=10.0
+            "https://snapsave.app/", headers={"User-Agent": UA_BROWSER}, timeout=15.0
         )
 
         cookie_str = "; ".join([f"{k}={v}" for k, v in client.cookies.items()])
