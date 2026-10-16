@@ -55,6 +55,28 @@ SHORTCODE_RE = re.compile(
 STORY_RE = re.compile(r"instagram\.com/stories/([^/]+)/(\d+)")
 SHARE_RE = re.compile(r"instagram\.com/share(?:/(?:reels?|video|s|p))?/(?P<id>[^/?]+)")
 
+MOBILE_HEADERS = {
+    "x-ig-app-locale": "en_US",
+    "x-ig-device-locale": "en_US",
+    "x-ig-mapped-locale": "en_US",
+    "user-agent": "Instagram 275.0.0.27.98 Android (33/13; 280dpi; 720x1423; Xiaomi; Redmi 7; onclite; qcom; en_US; 458229237)",
+    "accept-language": "en-US",
+    "x-fb-http-engine": "Liger",
+    "x-fb-client-ip": "True",
+    "x-fb-server-cluster": "True",
+}
+
+# must be the complete canonical string; shorter variants get an empty shell
+CRAWLER_HEADERS = {
+    "user-agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept-language": "en-US,en;q=0.9",
+}
+
+JSON_SCRIPT_RE = re.compile(
+    r'<script type="application/json"[^>]*>(.*?)</script>', re.DOTALL
+)
+
 
 @dataclass
 class DownloadResult:
@@ -533,6 +555,69 @@ def _parse_igram_items(raw_items: list) -> list[DownloadResult]:
     return results
 
 
+async def _get_media_id(client: httpx.AsyncClient, shortcode: str) -> str | None:
+    client.cookies.clear()
+    resp = await client.get(
+        "https://i.instagram.com/api/v1/oembed/",
+        params={"url": f"https://www.instagram.com/p/{shortcode}/"},
+        headers=MOBILE_HEADERS,
+    )
+    return resp.json().get("media_id")
+
+
+async def _get_mobile_media(client: httpx.AsyncClient, media_id: str) -> dict:
+    client.cookies.clear()
+    resp = await client.get(
+        f"https://i.instagram.com/api/v1/media/{media_id}/info/",
+        headers=MOBILE_HEADERS,
+    )
+    items = resp.json().get("items")
+    if not items:
+        raise RuntimeError("mobile API returned no items")
+    return items[0]
+
+
+async def _get_crawler_media(client: httpx.AsyncClient, shortcode: str) -> dict:
+    client.cookies.clear()  # googlebot UA + cookies would be incoherent
+    resp = await client.get(
+        f"https://www.instagram.com/p/{shortcode}/",
+        headers=CRAWLER_HEADERS,
+        follow_redirects=False,  # a redirect here means the login wall
+    )
+    resp.raise_for_status()
+
+    for blob in JSON_SCRIPT_RE.findall(resp.text):
+        if '"xig_polaris_media"' not in blob:
+            continue
+        try:
+            media = _traverse_json(json.loads(blob), "xig_polaris_media")
+        except json.JSONDecodeError:
+            continue
+        if isinstance(media, dict) and media.get("if_not_gated_logged_out"):
+            data = media["if_not_gated_logged_out"]
+            # described as a video but no url: don't hand back the cover image
+            if (
+                data.get("media_type") == 2
+                and not data.get("video_versions")
+                and not data.get("carousel_media")
+            ):
+                raise RuntimeError("crawler page has video without url")
+            return data
+
+    raise RuntimeError("xig_polaris_media not found in crawler page")
+
+
+async def _extract_mobile(client, shortcode):
+    media_id = await _get_media_id(client, shortcode)
+    if not media_id:
+        raise RuntimeError("no media_id from oembed")
+    return _parse_new_media(await _get_mobile_media(client, media_id))
+
+
+async def _extract_crawler(client, shortcode):
+    return _parse_new_media(await _get_crawler_media(client, shortcode))
+
+
 async def _download_file(
     client: httpx.AsyncClient,
     url: str,
@@ -632,58 +717,43 @@ async def download_instagram(
         if not quiet:
             print(f"[*] Shortcode: {shortcode}")
 
+        async def via_embed():
+            client.cookies.clear()  # don't carry cookies set by earlier steps
+            media = await _get_embed_media(client, shortcode)
+            found = _parse_gql_media(media)
+            if found and not found[0].source_url:
+                found = _result_to_items(await try_snapsave(url), found[0].caption)
+            return found
+
+        async def via_snapsave():
+            return _result_to_items(await try_snapsave(url))
+
+        steps = [
+            ("mobile API", lambda: _extract_mobile(client, shortcode)),
+            ("crawler page", lambda: _extract_crawler(client, shortcode)),
+            ("embed page", via_embed),
+            ("snapsave", via_snapsave),
+        ]
+
         items = []
-
-        # Extraction Method 1: GQL
-        if not quiet:
-            print("[1] Trying GQL Web API...")
-        try:
-            media = await _get_gql_media(client, shortcode)
-            items = _parse_new_media(media)
+        for n, (name, fn) in enumerate(steps, 1):
             if not quiet:
-                print("[1] Success")
-        except Exception as e:
-            _log_.error(traceback.format_exc())
-            if not quiet:
-                print(f"[1] Failed: {e}")
-
-        # Extraction Method 2: Embed
-        if not items:
-            if not quiet:
-                print("[2] Trying embed page...")
+                print(f"[{n}] Trying {name}...")
             try:
-                media = await _get_embed_media(client, shortcode)
-                items = _parse_gql_media(media)
-                if items and not items[0].source_url:
-                    res = await try_snapsave(url)
-                    caption = items[0].caption
-                    items = _result_to_items(res, caption)
-
+                items = await fn()
+                if items:
+                    if not quiet:
+                        print(f"[{n}] Success")
+                    break
                 if not quiet:
-                    print("[2] Success")
+                    print(f"[{n}] No media found")
             except Exception as e:
                 _log_.error(traceback.format_exc())
                 if not quiet:
-                    print(f"[2] Failed: {e}")
-
-        # Extraction Method 3
-        if not items:
-            if not quiet:
-                print("[3] Trying external extractor...")
-            try:
-                # raw = await _get_igram_media(client, url, shortcode, max_retries=2)
-                # items = _parse_igram_items(raw)
-                res = await try_snapsave(url)
-                items = _result_to_items(res)
-                if not quiet:
-                    print("[3] Success")
-            except Exception as e:
-                _log_.error(traceback.format_exc())
-                if not quiet:
-                    print(f"[3] Failed: {e}")
+                    print(f"[{n}] Failed: {e}")
 
         if not items:
-            raise RuntimeError("All three methods failed.")
+            raise RuntimeError("All extraction methods failed.")
 
         # Download each item
         for i, item in enumerate(items):
@@ -789,7 +859,7 @@ async def deobfuscate_with_deno(raw_js: str) -> str:
 async def try_snapsave(url: str) -> list:
     async with httpx.AsyncClient() as client:
         await client.get(
-            "https://snapsave.app/", headers={"User-Agent": UA_BROWSER}, timeout=15.0
+            "https://snapsave.app/", headers={"User-Agent": UA_BROWSER}, timeout=20.0
         )
 
         cookie_str = "; ".join([f"{k}={v}" for k, v in client.cookies.items()])
@@ -808,7 +878,7 @@ async def try_snapsave(url: str) -> list:
             "https://snapsave.app/action.php",
             data={"url": url},
             headers=headers,
-            timeout=30.0,
+            timeout=60.0,
         )
 
         raw = r2.text if isinstance(r2.text, str) else json.dumps(r2.text)
