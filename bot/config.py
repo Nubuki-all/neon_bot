@@ -35,7 +35,7 @@ class Config:
             self.DISABLE_CIP = config("DISABLE_CIP", default=False, cast=bool)
             self.PH_NUMBER = config("PH_NUMBER", default="")
             self.CB_DB = config("CHATBOT_DB", default=None)
-            self.CMD_PREFIX = config("CMD_PREFIX", default="")
+            self.CMD_PREFIX = config("CMD_PREFIX", default=".")
             self.DATABASE_URL = config("DATABASE_URL", default=None)
             self.DBNAME = config("DBNAME", default="Neon")
             self.DB_ID = config("DB_ID", default="0000")
