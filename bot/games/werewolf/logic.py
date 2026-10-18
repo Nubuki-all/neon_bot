@@ -2,10 +2,22 @@ import asyncio
 import random
 from datetime import datetime
 
-from bot.config import bot
-from bot.utils.sudo_button_utils import create_sudo_button, wait_for_button_response
+from bot import sudo_btn_lock
+from bot.config import conf
+from bot.utils.log_utils import logger
+from bot.utils.sudo_button_utils import (
+    active_poll_dict,
+    create_sudo_button,
+    wait_for_button_response,
+)
 
-from .defaults import COMMANDS_FOR_ROLE, SHAMAN_TOTEMS, WOLF_SHAMAN_TOTEMS, lang
+from .defaults import (
+    COMMANDS_FOR_ROLE,
+    SHAMAN_TOTEMS,
+    WOLF_SHAMAN_TOTEMS,
+    WOLFCHAT_ROLES,
+    lang,
+)
 
 
 def win_condition(game):
@@ -26,17 +38,13 @@ def win_condition(game):
     living_sk_num = len([p for p in players_alive if p.role == "serial killer"])
 
     for player in players_alive:
-        if player.is_injured:
-            if (
-                player.team == "wolf"
-                and player.role not in ["cultist", "minion"]
-                and "entranced" not in player.other
-            ):
-                continue
+        # injured villagers can't vote so they don't count against the wolves
+        if player.is_injured and player.actual_team != "wolf":
+            continue
         if (player.role in ["cultist", "minion"]) and game.mode != "evilvillage":
             teams["village"] += 1
         else:
-            teams[player.team] += 1
+            teams[player.actual_team] += 1
 
     winners, win_team, win_lore = [], "", ""
     all_lovers = (len(players_alive) > 1) and all(
@@ -187,43 +195,62 @@ def win_condition(game):
 
 
 async def game_loop(game):
-    await game.send_lobby(
-        f"Welcome to Werewolf! Using the *{game.mode}* game mode with *{game.total_players}* players."
-    )
-    game.assign_roles()
-    for p in game.players.values():
-        if p.role == "executioner":
-            villagers = [
-                v
-                for v in game.players.values()
-                if v.team == "villager" and v.user_id != p.user_id
-            ]
-            if villagers:
-                target = random.choice(villagers)
-                p.execution_target = target.user_id
-                await bot.client.send_message(
-                    p.user_id, f"Your target for lynch is *{target.name}*."
+    try:
+        await game.send_lobby(
+            f"Welcome to Werewolf! Using the *{game.mode}* game mode with *{game.total_players}* players."
+        )
+        for p in game.players.values():
+            if p.role == "executioner":
+                villagers = [
+                    v
+                    for v in game.players.values()
+                    if v.team == "villager" and v.user_id != p.user_id
+                ]
+                if villagers:
+                    target = random.choice(villagers)
+                    p.execution_target = target.user_id
+                    await game.send_pm(p, f"Your target for lynch is *{target.name}*.")
+        wolfchat = [p for p in game.players.values() if p.role in WOLFCHAT_ROLES]
+        for p in game.players.values():
+            msg = f"Your role is *{p.role}*.\n\n{p.description}"
+            if p.templates:
+                msg += f"\n\nTemplates: {', '.join(p.templates)}"
+            if p in wolfchat and len(wolfchat) > 1:
+                msg += "\n\nYour team: " + ", ".join(
+                    f"{w.name} ({w.role})" for w in wolfchat if w is not p
                 )
-    for p in game.players.values():
-        msg = f"Your role is *{p.role}*.\n\n{p.description}"
-        if p.templates:
-            msg += f"\n\nTemplates: {', '.join(p.templates)}"
-        try:
-            await bot.client.send_message(p.user_id, msg)
-        except Exception:
-            pass
-    await night_phase(game, is_night_zero=True)
-    game.day = True
-    while True:
-        win = win_condition(game)
-        if win:
-            await end_game(game, win)
-            break
-        if not game.day:
-            await night_phase(game)
-        else:
-            await day_phase(game)
-        game.day = not game.day
+            await game.send_pm(p, msg)
+        await night_phase(game, is_night_zero=True)
+        while not game.ended:
+            if win := win_condition(game):
+                await end_game(game, win)
+                break
+            if game.night:
+                await day_phase(game)
+            else:
+                await night_phase(game)
+    except Exception:
+        await logger(Exception)
+        await game.send_lobby("*An error occurred, the game has been stopped.*")
+    finally:
+        game.close()
+
+
+def has_night_action(game, p, is_night_zero):
+    if "hexed" in p.other:
+        return False
+    if is_night_zero:
+        return p.role in ["matchmaker", "clone"]
+    if p.role == "vengeful ghost":
+        return not p.is_alive and bool(getattr(p, "vengeance_against", None))
+    if not p.is_alive:
+        return False
+    if p.role == "hunter" and "hunted" in p.other:
+        return False
+    # the detective acts during the day
+    return any(
+        p.role in roles_ for cmd, roles_ in COMMANDS_FOR_ROLE.items() if cmd != "id"
+    )
 
 
 async def night_phase(game, is_night_zero=False):
@@ -231,10 +258,9 @@ async def night_phase(game, is_night_zero=False):
     if not is_night_zero:
         game.night_num += 1
     game.night_start_time = datetime.now()
-    await game.send_lobby(f"It is now **nighttime**.")
+    await game.send_lobby("It is now *nighttime*.")
     for p in game.players.values():
         p.target = ""
-        p.remove_other("hexed")
         p.remove_other("guarded")
         for t in SHAMAN_TOTEMS + WOLF_SHAMAN_TOTEMS:
             p.remove_other(t)
@@ -249,42 +275,19 @@ async def night_phase(game, is_night_zero=False):
                 p.totem = random.choice(WOLF_SHAMAN_TOTEMS)
             else:
                 p.totem = random.choice(SHAMAN_TOTEMS + WOLF_SHAMAN_TOTEMS)
-            await bot.client.send_message(
-                p.user_id, f"Your totem tonight is: **{p.totem.replace('_', ' ')}**."
+            await game.send_pm(
+                p, f"Your totem tonight is: *{p.totem.replace('_', ' ')}*."
             )
-    tasks = []
-    for p in (game.players_alive_list if not is_night_zero else game.players.values()):
-        if "hexed" in p.other:
-            continue
-        if (is_night_zero and p.role in ["matchmaker", "clone"]) or (
-            not is_night_zero
-            and any(
-                p.role in COMMANDS_FOR_ROLE.get(cmd, [])
-                for cmd in [
-                    "kill",
-                    "see",
-                    "give",
-                    "guard",
-                    "observe",
-                    "visit",
-                    "hex",
-                    "curse",
-                    "charm",
-                ]
-            )
-        ):
-            tasks.append(request_night_action(game, p, is_night_zero))
-        elif (
-            not is_night_zero
-            and p.role == "vengeful ghost"
-            and not p.is_alive
-            and getattr(p, "vengeance_against", None)
-        ):
-            tasks.append(request_night_action(game, p, False))
+    tasks = [
+        asyncio.create_task(request_night_action(game, p, is_night_zero))
+        for p in game.players.values()
+        if has_night_action(game, p, is_night_zero)
+    ]
     if tasks:
-        await asyncio.wait(
-            [asyncio.create_task(t) for t in tasks], timeout=game.night_timeout
-        )
+        _, pending = await asyncio.wait(tasks, timeout=game.night_timeout + 5)
+        # don't let late answers leak into the next phase
+        for task in pending:
+            task.cancel()
     if is_night_zero:
         await process_night_zero(game)
     else:
@@ -323,6 +326,8 @@ async def request_night_action(game, player, is_night_zero):
             ]:
                 continue
             options[p.user_id] = [f"{p.name} (#{p.id})"]
+    if not options:
+        return
     if player.role in [
         "hunter",
         "serial killer",
@@ -335,66 +340,78 @@ async def request_night_action(game, player, is_night_zero):
         options["pass"] = ["Pass"]
     prompt = f"Choose target ({player.role}):"
     if player.role == "matchmaker":
-        prompt = "Select 2 lovers:"
+        prompt = "Select 2 lovers, then Confirm:"
     elif player.role == "piper":
-        prompt = "Select up to 2 charmed:"
+        prompt = "Select up to 2 to charm, then Confirm:"
+    selectable, conf_btn = 1, None
+    if player.role in ["matchmaker", "piper"]:
+        # every vote change is a new poll update; wait for an explicit confirm
+        conf_btn = "Confirm"
+        options["confirm"] = [conf_btn]
+        selectable = 3
+    msg_id = None
     try:
-        selectable = 2 if player.role in ["matchmaker", "piper"] else 1
         _, msg_ = await create_sudo_button(
-            prompt, options, player.user_id, player.user_id, selectable=selectable
+            prompt,
+            options,
+            player.jid,
+            player.user_id,
+            selectable=selectable,
+            conf_btn=conf_btn,
         )
         msg_id = msg_.ID
-        response = await wait_for_button_response(msg_id)
-        if response:
-            player.target = ",".join(response)
-            if "pass" in response:
-                await bot.client.send_message(player.user_id, "Action: Passed.")
-                return
-            target_names = ", ".join(
-                [
-                    game.get_player_by_user_id(uid).name
-                    for uid in response
-                    if uid != "pass"
-                ]
+        response = await wait_for_button_response(msg_id, timeout=game.night_timeout)
+        response = [r for r in (response or []) if r and r != "confirm"]
+        if not response:
+            return
+        if "pass" in response:
+            player.target = "pass"
+            return await game.send_pm(player, "Action: Passed.")
+        if player.role == "matchmaker" and len(response) != 2:
+            return await game.send_pm(player, "You must select exactly 2 lovers.")
+        response = response[:2]
+        player.target = ",".join(response)
+        target_names = ", ".join(
+            game.get_player_by_user_id(uid).name for uid in response
+        )
+        await game.send_pm(player, f"Target set to: {target_names}")
+        if is_night_zero or not player.is_alive:
+            return
+        target = game.get_player_by_user_id(response[0])
+        if player.role == "seer":
+            await game.send_pm(
+                player,
+                f"Your vision reveals that {target.name} is a *{target.display_role}*.",
             )
-            await bot.client.send_message(
-                player.user_id, f"Target set to: {target_names}"
+        elif player.role == "oracle":
+            await game.send_pm(
+                player,
+                f"Your vision reveals that {target.name} is {'a wolf' if target.actual_team == 'wolf' else 'not a wolf'}.",
             )
-            if not is_night_zero and player.is_alive:
-                if player.role in ["seer", "oracle", "augur"]:
-                    target = game.get_player_by_user_id(response[0])
-                    if player.role == "seer":
-                        await bot.client.send_message(
-                            player.user_id,
-                            f"Your vision reveals that {target.name} is a **{target.display_role}**.",
-                        )
-                    elif player.role == "oracle":
-                        await bot.client.send_message(
-                            player.user_id,
-                            f"Your vision reveals that {target.name} is {'a wolf' if target.team == 'wolf' else 'not a wolf'}.",
-                        )
-                    elif player.role == "augur":
-                        aura = (
-                            "red"
-                            if target.team == "wolf"
-                            else ("grey" if target.team == "neutral" else "blue")
-                        )
-                        await bot.client.send_message(
-                            player.user_id, f"{target.name} has a {aura} aura."
-                        )
-                elif player.role == "sorcerer":
-                    target = game.get_player_by_user_id(response[0])
-                    is_info = (
-                        "an info role"
-                        if target.role in ["seer", "oracle", "augur"]
-                        else "not an info role"
-                    )
-                    await bot.client.send_message(
-                        player.user_id,
-                        f"Your observation reveals that {target.name} is {is_info}.",
-                    )
+        elif player.role == "augur":
+            aura = (
+                "red"
+                if target.actual_team == "wolf"
+                else ("grey" if target.actual_team == "neutral" else "blue")
+            )
+            await game.send_pm(player, f"{target.name} has a {aura} aura.")
+        elif player.role == "sorcerer":
+            is_info = (
+                "an info role"
+                if target.role in ["seer", "oracle", "augur"]
+                else "not an info role"
+            )
+            await game.send_pm(
+                player, f"Your observation reveals that {target.name} is {is_info}."
+            )
+    except asyncio.CancelledError:
+        raise
     except Exception:
-        pass
+        await logger(Exception)
+    finally:
+        if msg_id:
+            async with sudo_btn_lock:
+                active_poll_dict.pop(msg_id, None)
 
 
 async def process_night_zero(game):
@@ -406,52 +423,56 @@ async def process_night_zero(game):
                     uids[0]
                 ), game.get_player_by_user_id(uids[1])
                 if p1 and p2:
-                    p1.loves, p2.loves = [p2.user_id], [p1.user_id]
-                    await bot.client.send_message(
-                        p1.user_id,
-                        f"You are in love with **{p2.name}**. If they die, you will commit suicide.",
+                    p1.loves.append(p2.user_id)
+                    p2.loves.append(p1.user_id)
+                    await game.send_pm(
+                        p1,
+                        f"You are in love with *{p2.name}*. If they die, you will commit suicide.",
                     )
-                    await bot.client.send_message(
-                        p2.user_id,
-                        f"You are in love with **{p1.name}**. If they die, you will commit suicide.",
+                    await game.send_pm(
+                        p2,
+                        f"You are in love with *{p1.name}*. If they die, you will commit suicide.",
                     )
         elif p.role == "clone" and p.target:
             p.cloning_target = p.target
-            await bot.client.send_message(
-                p.user_id,
-                f"You are cloning **{game.get_player_by_user_id(p.target).name}**. If they die, you take their role.",
+            await game.send_pm(
+                p,
+                f"You are cloning *{game.get_player_by_user_id(p.target).name}*. If they die, you take their role.",
             )
+
+
+def _target(game, p):
+    """Returns the player targeted by p, if any."""
+    if not p.target or p.target == "pass":
+        return None
+    return game.get_player_by_user_id(p.target.split(",")[0])
 
 
 async def process_night(game):
     killed = []
+    # hexes only last for the night after they were cast
+    for p in game.players.values():
+        p.remove_other("hexed")
     for p in game.players_alive_list:
-        if p.role == "hag" and p.target:
-            game.get_player_by_user_id(p.target).add_other("hexed")
-        if p.role in ["shaman", "wolf shaman", "crazed shaman"] and p.target:
-            target = game.get_player_by_user_id(p.target)
+        if p.role == "hag" and (target := _target(game, p)):
+            target.add_other("hexed")
+        if p.role in ["shaman", "wolf shaman", "crazed shaman"] and (
+            target := _target(game, p)
+        ):
             target.add_other(p.totem)
             if p.totem == "silence_totem":
                 target.add_other("hexed")
     for p in game.players_alive_list:
-        if p.role == "werecrow" and p.target:
-            status = (
-                "out of bed"
-                if game.get_player_by_user_id(p.target).target
-                else "in bed"
-            )
-            await bot.client.send_message(
-                p.user_id,
-                f"Your observation reveals that {game.get_player_by_user_id(p.target).name} was {status} last night.",
+        if p.role == "werecrow" and (target := _target(game, p)):
+            status = "out of bed" if target.target else "in bed"
+            await game.send_pm(
+                p,
+                f"Your observation reveals that {target.name} was {status} last night.",
             )
     protected_uids = []
     for p in game.players_alive_list:
-        if (
-            p.role in ["guardian angel", "bodyguard"]
-            and p.target
-            and p.target != "pass"
-        ):
-            protected_uids.append(p.target)
+        if p.role in ["guardian angel", "bodyguard"] and (target := _target(game, p)):
+            protected_uids.append(target.user_id)
         if "protection_totem" in p.other:
             protected_uids.append(p.user_id)
     wolf_targets = {}
@@ -461,8 +482,8 @@ async def process_night(game):
         if p.team == "wolf" and p.role in COMMANDS_FOR_ROLE["kill"]
     ]
     for w in wolves:
-        if w.target and w.target != "pass":
-            wolf_targets[w.target] = wolf_targets.get(w.target, 0) + 1
+        if target := _target(game, w):
+            wolf_targets[target.user_id] = wolf_targets.get(target.user_id, 0) + 1
     if wolf_targets:
         target_uid = max(wolf_targets, key=wolf_targets.get)
         if target_uid in protected_uids:
@@ -473,54 +494,38 @@ async def process_night(game):
         else:
             killed.append(target_uid)
     for p in game.players_alive_list:
-        if p.role == "serial killer" and p.target and p.target != "pass":
-            if p.target not in protected_uids:
-                killed.append(p.target)
+        if p.role in ["serial killer", "hunter"] and (target := _target(game, p)):
+            if p.role == "hunter":
+                p.add_other("hunted")
+            if target.user_id not in protected_uids:
+                killed.append(target.user_id)
         if "death_totem" in p.other:
             killed.append(p.user_id)
-        if p.role == "harlot" and p.target and p.target != "pass":
-            target = game.get_player_by_user_id(p.target)
-            if target.team == "wolf" or target.user_id in killed:
+    for p in game.players_alive_list:
+        if p.role == "harlot" and (target := _target(game, p)):
+            if target.actual_team == "wolf" or target.user_id in killed:
                 killed.append(p.user_id)
     for p in game.players_alive_list:
-        if p.role == "succubus" and p.target and p.target != "pass":
-            target = game.get_player_by_user_id(p.target)
+        if p.role == "succubus" and (target := _target(game, p)):
             if "bishop" not in target.templates:
                 target.add_other("entranced")
         if p.role == "piper" and p.target and p.target != "pass":
             for t_id in p.target.split(","):
-                game.get_player_by_user_id(t_id).add_other("charmed")
+                if target := game.get_player_by_user_id(t_id):
+                    target.add_other("charmed")
     for p in game.players.values():
-        if not p.is_alive and p.role == "vengeful ghost" and p.target:
-            killed.append(p.target)
+        if not p.is_alive and p.role == "vengeful ghost" and (target := _target(game, p)):
+            killed.append(target.user_id)
     killed_msg = ""
-    for uid in set(killed):
+    for uid in dict.fromkeys(killed):
         p = game.get_player_by_user_id(uid)
         if p and p.is_alive:
             if p.role == "lycan" or "lycanthropy_totem" in p.other:
                 p.role, p.team = "wolf", "wolf"
-                await bot.client.send_message(
-                    p.user_id, "HOOOOOOOOOWL. You have become... a wolf!"
-                )
+                await game.send_pm(p, "HOOOOOOOOOWL. You have become... a wolf!")
                 continue
-            p.is_alive = False
-            killed_msg += f"The dead body of **{p.name}**, a **{p.role}**, was found.\n"
-            if p.role == "vengeful ghost":
-                p.vengeance_against = "wolf"
-            for cloner in game.players_alive_list:
-                if cloner.role == "clone" and cloner.cloning_target == p.user_id:
-                    cloner.role, cloner.team = p.role, p.team
-                    await bot.client.send_message(
-                        cloner.user_id,
-                        f"Your clone target died. You are now a **{cloner.role}**!",
-                    )
-            if p.loves:
-                for l_id in p.loves:
-                    lover = game.get_player_by_user_id(l_id)
-                    if lover and lover.is_alive:
-                        lover.is_alive = False
-                        killed_msg += f"**{
-                            lover.name}** committed suicide out of grief for their lover.\n"
+            killed_msg += f"The dead body of *{p.name}*, a *{p.role}*, was found.\n"
+            killed_msg += await game.kill(p, "night")
     if not killed_msg:
         killed_msg = random.choice(lang["nokills"]) + "\n"
     await game.send_lobby(
@@ -530,12 +535,26 @@ async def process_night(game):
 
 async def day_phase(game):
     game.night, game.day, game.detective_acted = False, True, False
+    game.day_start_time = datetime.now()
     for p in game.players.values():
         p.vote = ""
     await game.send_lobby(
-        f"It is now **daytime**. Use `{bot.conf.CMD_PREFIX}lynch <player>` to vote to lynch."
+        f"It is now *daytime*. Use `{conf.CMD_PREFIX}lynch <player>` to vote to lynch."
     )
-    await asyncio.sleep(game.day_timeout)
+    elapsed, warned = 0, False
+    # end the day early once everyone alive has voted
+    while elapsed < game.day_timeout:
+        if win_condition(game):
+            return
+        if all(p.vote for p in game.players_alive_list):
+            break
+        if not warned and elapsed >= game.day_warning:
+            warned = True
+            await game.send_lobby(
+                f"*{game.day_timeout - elapsed}s* left to vote before the day ends!"
+            )
+        await asyncio.sleep(5)
+        elapsed += 5
     vote_counts = {}
     for p in game.players_alive_list:
         v_weight = 1
@@ -543,56 +562,55 @@ async def day_phase(game):
             v_weight += 1
         if "pacifism_totem" in p.other:
             v_weight -= 1
-        if p.vote:
+        target = game.get_player_by_user_id(p.vote)
+        if (p.vote == "abstain" or (target and target.is_alive)) and v_weight > 0:
             vote_counts[p.vote] = vote_counts.get(p.vote, 0) + v_weight
-    if vote_counts:
-        lynched_uid = max(vote_counts, key=vote_counts.get)
-        if lynched_uid != "abstain":
-            p = game.get_player_by_user_id(lynched_uid)
-            if p:
-                if "mayor" in p.templates and "revealed_mayor" not in p.other:
-                    p.add_other("revealed_mayor")
-                    await game.send_lobby(
-                        f"While being dragged to the gallows, **{p.name}** reveals that they are the **mayor**. The village agrees to let them live for now."
-                    )
-                else:
-                    p.is_alive, p.is_lynched = False, True
-                    p.add_other("lynched")
-                    await game.send_lobby(
-                        random.choice(lang["lynched"]).format(p.name, p.role)
-                    )
-                    for exe in game.players_alive_list:
-                        if (
-                            exe.role == "executioner"
-                            and exe.execution_target == p.user_id
-                        ):
-                            exe.add_other("won")
-                    if p.role == "fool":
-                        await end_game(
-                            game,
-                            (
-                                "fool",
-                                "The fool has been lynched, causing them to win!",
-                                [p.user_id],
-                            ),
-                        )
-                        return
-        else:
-            await game.send_lobby("The village has agreed to not lynch anyone today.")
-    else:
-        await game.send_lobby("Not enough votes were cast to lynch a player.")
+    if not vote_counts:
+        return await game.send_lobby("Not enough votes were cast to lynch a player.")
+    top = max(vote_counts.values())
+    leaders = [uid for uid, count in vote_counts.items() if count == top]
+    if len(leaders) > 1:
+        return await game.send_lobby("The vote was tied, nobody was lynched today.")
+    lynched_uid = leaders[0]
+    if lynched_uid == "abstain":
+        return await game.send_lobby("The village has agreed to not lynch anyone today.")
+    p = game.get_player_by_user_id(lynched_uid)
+    if "mayor" in p.templates and "revealed_mayor" not in p.other:
+        p.add_other("revealed_mayor")
+        return await game.send_lobby(
+            f"While being dragged to the gallows, *{p.name}* reveals that they are the *mayor*. The village agrees to let them live for now."
+        )
+    p.is_lynched = True
+    p.add_other("lynched")
+    msg = random.choice(lang["lynched"]).format(p.name, p.role)
+    extra = await game.kill(p, "lynch")
+    await game.send_lobby(f"{msg}\n{extra}" if extra else msg)
+    for exe in game.players_alive_list:
+        if exe.role == "executioner" and exe.execution_target == p.user_id:
+            exe.add_other("won")
+    if p.role == "fool":
+        await end_game(
+            game,
+            (
+                "fool",
+                "The fool has been lynched, causing them to win!",
+                [p.user_id],
+            ),
+        )
+    await game.check_traitor()
 
 
 async def end_game(game, win_data):
+    game.ended = True
     win_team, win_lore, winners_ids = win_data
-    msg = f"**GAME OVER!**\n\n{win_lore}\n\n**Winners:**\n"
+    msg = f"*GAME OVER!*\n\n{win_lore}\n\n*Winners:*\n"
     for uid in winners_ids:
         p = game.get_player_by_user_id(uid)
         msg += f"- {p.name} ({p.role})\n"
-    msg += "\n**Final player list:**\n"
+    if not winners_ids:
+        msg += "- Nobody\n"
+    msg += "\n*Final player list:*\n"
     for p in game.players.values():
         msg += f"- {p.name}: {p.role} ({'Alive' if p.is_alive else 'Dead'})\n"
     await game.send_lobby(msg)
-    bot.current_games_dict.get("werewolf", {}).pop(game.chat_id, None)
-    if game.game_id in bot.current_games_dict.get("werewolf_ids", []):
-        bot.current_games_dict["werewolf_ids"].remove(game.game_id)
+    game.close()

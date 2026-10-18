@@ -1,3 +1,4 @@
+import asyncio
 import math
 import random
 from datetime import datetime
@@ -5,11 +6,13 @@ from datetime import datetime
 from bot.config import bot
 
 from .defaults import (
+    ACTUAL_WOLVES,
     DEFAULT_DAY_TIMEOUT,
     DEFAULT_DAY_WARNING,
     DEFAULT_NIGHT_TIMEOUT,
     DEFAULT_NIGHT_WARNING,
     GUNNER_MULTIPLIER,
+    MAX_PLAYERS,
     MIN_PLAYERS,
     SHARPSHOOTER_MULTIPLIER,
     WOLFCHAT_ROLES,
@@ -29,6 +32,7 @@ class Game:
 
         self.player_ids = [event.from_user.id]
         self.player_names = {event.from_user.id: event.from_user.name}
+        self.player_jids = {event.from_user.id: event.from_user.jid}
         self.players = {}  # user_id: Player object
         self.newly_killed = []  # user_ids
 
@@ -37,6 +41,9 @@ class Game:
         self.waiting = True
         self.in_progress = False
         self.restricted = False
+        self.ended = False
+        # set whenever someone joins/leaves, used by the lobby auto start
+        self.activity = asyncio.Event()
 
         self.start_time = None
         self.night_start_time = None
@@ -129,7 +136,9 @@ class Game:
         for i, user_id in enumerate(to_assign):
             role = self.role_pool[i]
             player_name = self.player_names.get(user_id, "Unknown")
-            player = Player(role, i + 1, user_id, player_name)
+            player = Player(
+                role, i + 1, user_id, player_name, self.player_jids.get(user_id)
+            )
             self.players[user_id] = player
 
         for template in self.template_pool:
@@ -139,10 +148,10 @@ class Game:
             random.shuffle(eligible_players)
             for player in eligible_players:
                 if template == "cursed villager":
-                    if player.role in ["wolf", "seer", "fool"]:
+                    if player.role in ACTUAL_WOLVES + ["seer", "fool"]:
                         continue
                 elif template == "assassin":
-                    if player.role in ["wolf", "oracle", "seer"]:
+                    if player.role in ACTUAL_WOLVES + ["oracle", "seer", "augur"]:
                         continue
                 elif template in ["mayor", "bishop"]:
                     if player.team != "villager":
@@ -166,30 +175,68 @@ class Game:
     async def send_lobby(self, message):
         await bot.client.send_message(self.chat_jid, message)
 
+    async def send_pm(self, player, message):
+        try:
+            await bot.client.send_message(player.jid, message)
+        except Exception:
+            pass
+
     async def wolfchat(self, message):
         for p in self.players.values():
             if p.is_alive and p.role in WOLFCHAT_ROLES:
-                try:
-                    await bot.client.send_message(p.user_id, f"[WOLFCHAT] {message}")
-                except Exception:
-                    pass
+                await self.send_pm(p, f"[WOLFCHAT] {message}")
+
+    async def kill(self, player, cause="night"):
+        """
+        Kills a player and handles everything tied to their death;
+        returns a message describing deaths caused as a side effect.
+        """
+        msg = ""
+        if not player.is_alive:
+            return msg
+        player.is_alive = False
+        if player.role == "vengeful ghost":
+            # the ghost haunts the team that killed it
+            player.vengeance_against = "village" if cause == "lynch" else "wolf"
+        for cloner in self.players_alive_list:
+            if cloner.role == "clone" and cloner.cloning_target == player.user_id:
+                cloner.role, cloner.team = player.role, player.team
+                await self.send_pm(
+                    cloner, f"Your clone target died. You are now a *{cloner.role}*!"
+                )
+        for l_id in player.loves:
+            lover = self.get_player_by_user_id(l_id)
+            if lover and lover.is_alive:
+                msg += f"*{lover.name}* committed suicide out of grief for their lover.\n"
+                msg += await self.kill(lover, "suicide")
+        return msg
+
+    def close(self):
+        """Removes the game from the running games."""
+        games = bot.current_games_dict.get("werewolf", {})
+        if games.get(self.chat_id) is self:
+            games.pop(self.chat_id)
+        if self.game_id in bot.current_games_dict.get("werewolf_ids", []):
+            bot.current_games_dict["werewolf_ids"].remove(self.game_id)
 
     async def join(self, event, notify=False):
         if not self.waiting:
             return await event.reply("The game has already started!")
         if event.from_user.id in self.player_ids:
             return await event.reply("You've already joined the game!")
-        if len(self.player_ids) >= 24:
+        if len(self.player_ids) >= MAX_PLAYERS:
             return await event.reply("The game is full!")
         self.player_ids.append(event.from_user.id)
         self.player_names[event.from_user.id] = event.from_user.name
+        self.player_jids[event.from_user.id] = event.from_user.jid
+        self.activity.set()
         return (
             await event.reply(
-                f"{event.from_user.name} has joined the game. ({self.total_players}/24)"
+                f"{event.from_user.name} has joined the game. ({self.total_players}/{MAX_PLAYERS})"
             )
             if not notify
             else await event.reply(
-                f"@{event.user.id} has joined the game. ({self.total_players}/24)",
+                f"@{event.user.id} has joined the game. ({self.total_players}/{MAX_PLAYERS})",
                 quote=False,
             )
         )
@@ -200,14 +247,19 @@ class Game:
         if event.from_user.id not in self.player_ids:
             return await event.reply("You've not joined the game!")
         self.player_ids.remove(event.from_user.id)
-        self.player_names.pop(event.from_user.id)
+        self.player_names.pop(event.from_user.id, None)
+        self.player_jids.pop(event.from_user.id, None)
+        self.activity.set()
+        if not self.player_ids:
+            self.close()
+            return await event.reply("Everyone left, the game lobby has been closed.")
         return (
             await event.reply(
-                f"{event.from_user.name} has left the game. ({self.total_players}/24)"
+                f"{event.from_user.name} has left the game. ({self.total_players}/{MAX_PLAYERS})"
             )
             if not notify
             else await event.reply(
-                f"@{event.user.id} has left the game. ({self.total_players}/24)",
+                f"@{event.user.id} has left the game. ({self.total_players}/{MAX_PLAYERS})",
                 quote=False,
             )
         )
@@ -234,18 +286,13 @@ class Game:
             await event.reply(msg)
 
     async def check_traitor(self):
-        wolves = [
-            p
-            for p in self.players_alive_list
-            if p.team == "wolf" and p.role != "traitor"
-        ]
+        wolves = [p for p in self.players_alive_list if p.role in ACTUAL_WOLVES]
         if not wolves:
             traitors = [p for p in self.players_alive_list if p.role == "traitor"]
             for t in traitors:
                 t.role = "wolf"
                 t.team = "wolf"
-                await bot.client.send_message(
-                    t.user_id,
-                    "All other wolves are dead! You have turned into a *wolf*!",
+                await self.send_pm(
+                    t, "All other wolves are dead! You have turned into a *wolf*!"
                 )
                 await self.wolfchat(f"{t.name} has turned into a wolf!")

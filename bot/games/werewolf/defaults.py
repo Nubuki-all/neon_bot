@@ -59,6 +59,7 @@ COMMANDS_FOR_ROLE = {
     "guard": ["guardian angel", "bodyguard"],
     "observe": ["werecrow", "sorcerer"],
     "id": ["detective"],
+    "charm": ["piper"],
 }
 
 lang = {
@@ -68,17 +69,17 @@ lang = {
         "The villagers awaken to a peaceful morning.",
     ],
     "lynched": [
-        "The village has decided to lynch **{}**, a **{}**.",
-        "**{}** was dragged to the gallows and revealed to be a **{}**.",
-        "After much debate, the villagers lynch **{}**. They were a **{}**.",
+        "The village has decided to lynch *{}*, a *{}*.",
+        "*{}* was dragged to the gallows and revealed to be a *{}*.",
+        "After much debate, the villagers lynch *{}*. They were a *{}*.",
     ],
     "lynchednoreveal": [
-        "The village has decided to lynch **{}**.",
-        "**{}** was dragged to the gallows.",
+        "The village has decided to lynch *{}*.",
+        "*{}* was dragged to the gallows.",
     ],
-    "hastotem": ["**{}** has a totem!"],
-    "hastotem2": ["**{}** and **{}** have totems!"],
-    "hastotems": ["**{}**, and **{}** have totems!"],
+    "hastotem": ["*{}* has a totem!"],
+    "hastotem2": ["*{}* and *{}* have totems!"],
+    "hastotems": ["*{}*, and *{}* have totems!"],
 }
 
 SHAMAN_TOTEMS = [
