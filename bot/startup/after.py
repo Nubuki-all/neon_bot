@@ -10,7 +10,7 @@ from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger
 from bot.utils.msg_rank import scheduler2
 from bot.utils.msg_store import Base as sql_base
-from bot.utils.msg_store import auto_save_msg, engine
+from bot.utils.msg_store import auto_clean_msg, auto_save_msg, engine, migrate_msg_store
 from bot.utils.msg_utils import send_presence
 from bot.utils.rss_utils import scheduler
 from bot.utils.runtime import shutdown_services
@@ -117,6 +117,7 @@ async def on_startup():
             )
         async with engine.begin() as conn:
             await conn.run_sync(sql_base.metadata.create_all)
+        await migrate_msg_store()
         while not bot.is_connected:
             await asyncio.sleep(1)
         await update_owner_lid()
@@ -131,6 +132,7 @@ async def on_startup():
         asyncio.create_task(update_presence())
         asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())
+        asyncio.create_task(auto_clean_msg())
         LOGS.info("Bot has started.")
     except Exception:
         await logger(Exception)

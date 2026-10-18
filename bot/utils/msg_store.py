@@ -1,6 +1,17 @@
 import asyncio
+import time
 
-from sqlalchemy import Index, Integer, LargeBinary, String, and_, select
+from sqlalchemy import (
+    BigInteger,
+    Index,
+    LargeBinary,
+    String,
+    and_,
+    delete,
+    inspect,
+    select,
+    text,
+)
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -34,7 +45,7 @@ class Message(Base):
     raw: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     revoked_id: Mapped[str | None] = mapped_column(String(30))
     album_id: Mapped[str | None] = mapped_column(String(30))
-    timestamp: Mapped[int] = mapped_column(Integer)
+    timestamp: Mapped[int] = mapped_column(BigInteger)
     type: Mapped[str] = mapped_column(String(30))
     user_id: Mapped[str] = mapped_column(String(30))
     visible: Mapped[bool]
@@ -63,6 +74,25 @@ engine = create_async_engine(
     connect_args={"timeout": 10},
 )
 async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+
+async def migrate_msg_store():
+    """Widen the timestamp column of tables created when it was an Integer."""
+    if engine.dialect.name != "postgresql":
+        # sqlite integers are already 64-bit
+        return
+    async with engine.begin() as conn:
+        columns = await conn.run_sync(
+            lambda sync_conn: inspect(sync_conn).get_columns(Message.__tablename__)
+        )
+        col = next((c for c in columns if c["name"] == "timestamp"), None)
+        if col and not isinstance(col["type"], BigInteger):
+            await conn.execute(
+                text(
+                    f'ALTER TABLE "{Message.__tablename__}" '
+                    "ALTER COLUMN timestamp TYPE BIGINT"
+                )
+            )
 
 
 def load_proto(data: bytes):
@@ -289,3 +319,29 @@ async def flush_messages():
     bot.flush_waiters.append(fut)
     bot.flush_event.set()
     await fut
+
+
+async def clean_stale_messages() -> int:
+    """Delete messages older than conf.MSG_STORE_STALE seconds."""
+    # neonize stores message timestamps in milliseconds
+    cutoff = int((time.time() - conf.MSG_STORE_STALE) * 1000)
+    async with async_session() as session:
+        async with session.begin():
+            result = await session.execute(
+                delete(Message).where(Message.timestamp < cutoff)
+            )
+        return result.rowcount or 0
+
+
+async def auto_clean_msg(interval: int = 3600):
+    if conf.MSG_STORE_STALE <= 0:
+        return
+    while True:
+        try:
+            async with msg_store_lock:
+                count = await clean_stale_messages()
+            if count:
+                await logger(e=f"Cleaned {count} stale messages from msg store.")
+        except Exception:
+            await logger(Exception)
+        await asyncio.sleep(interval)
