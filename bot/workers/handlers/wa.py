@@ -403,7 +403,6 @@ async def vinfo(event: Event, args: str, client):
             return True
 
         async def _process(info: VideoInfo) -> bool:
-            x = _send(info)
             if (
                 args == "fps"
                 and info.fps
@@ -412,7 +411,7 @@ async def vinfo(event: Event, args: str, client):
                 or args == "media_info_link"
                 and info.media_info_link
             ):
-                return await x
+                return await _send(info)
             else:
                 return False
 
@@ -2410,7 +2409,7 @@ async def to_media(event: Event, _, client):
             else:
                 await target.reply_photo(file, caption)
     except Exception:
-        logger(Exception)
+        await logger(Exception)
 
 
 async def repeat(event: Event, args: str, client):

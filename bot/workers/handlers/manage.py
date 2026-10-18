@@ -687,7 +687,7 @@ async def sudoers(event, args, client):
             )
         elif arg.c:
             if not (s := bot.user_dict.get("sudoers")):
-                return event.reply("No sudoers found.")
+                return await event.reply("No sudoers found.")
             for user in s:
                 bot.user_dict.setdefault(user, {}).update(sudoer=False)
             s.clear()

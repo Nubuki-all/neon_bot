@@ -2,10 +2,9 @@ import signal
 
 import aiohttp
 
-from bot import LOGS, Message, asyncio, bot, conf, jid, sys, version_file
+from bot import LOGS, Message, asyncio, bot, conf, jid, sys
 from bot.fun.emojis import enmoji, enmoji2
 from bot.fun.quips import enquip, enquip2
-from bot.utils.bot_utils import read_binary
 from bot.utils.db_utils import backup_wa_db
 from bot.utils.log_utils import logger
 from bot.utils.msg_rank import scheduler2
@@ -25,8 +24,7 @@ async def onrestart():
         elif sys.argv[1].startswith("update"):
             s = sys.argv[1].split()[1]
             if s == "True":
-                v = read_binary(version_file)
-                msg = f"*Updated to >>>* {v}"
+                msg = f"*Updated to >>>* {bot.version}"
             else:
                 msg = "*No major update found!*\n" f"Bot restarted! {enmoji()}"
         else:
@@ -80,7 +78,7 @@ async def update_owner_lid():
         try:
             lid = await bot.client.get_lid_from_pn(jid_)
         except Exception:
-            logger(Exception)
+            await logger(Exception)
             continue
         lids.add(lid.User)
     conf.OWNER = lids
