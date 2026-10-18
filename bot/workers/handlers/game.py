@@ -4,7 +4,7 @@ import random
 from bot import sudo_btn_lock
 from bot.config import bot, conf
 from bot.games.register import register_for_a_game
-from bot.games.werewolf.defaults import DETECTIVE_REVEAL_CHANCE
+from bot.games.werewolf.defaults import DETECTIVE_REVEAL_CHANCE, MAX_PLAYERS
 from bot.games.werewolf.game import Game
 from bot.games.werewolf.logic import game_loop
 from bot.games.werewolf.roles import gamemodes
@@ -25,6 +25,12 @@ async def werewolf_handler(event, args, client):
     --mode <mode> : Set game mode
     -r : Enable restricted mode
     """
+    cmd = event.text.split()[0].removeprefix(conf.CMD_PREFIX).casefold()
+    if cmd in ("lynch", "id", "shoot"):
+        game = bot.current_games_dict.get("werewolf", {}).get(event.chat.id)
+        if game and not isinstance(game, dict) and not game.waiting:
+            return await handle_game_command(game, event, cmd)
+        return
     if not args:
         return await were_info(event, args, client)
     arg, args = get_args(
@@ -41,16 +47,10 @@ async def werewolf_handler(event, args, client):
     if not res:
         return
     if res == "started":
-        current_games = bot.current_games_dict.get("werewolf", {})
-        game = current_games.get(event.chat.id)
-        if game and not game.waiting:
-            if event.text.startswith(f"{conf.CMD_PREFIX}lynch"):
-                return await handle_game_command(game, event, "lynch")
-            if event.text.startswith(f"{conf.CMD_PREFIX}id"):
-                return await handle_game_command(game, event, "id")
-            if event.text.startswith(f"{conf.CMD_PREFIX}shoot"):
-                return await handle_game_command(game, event, "shoot")
-        return
+        game = bot.current_games_dict.get("werewolf", {}).get(event.chat.id)
+        if arg.s:
+            return await game.status(event)
+        return await event.reply("A game is already in progress in this chat.")
 
     current_games = bot.current_games_dict.setdefault("werewolf", {})
     game = current_games.get(event.chat.id)
@@ -87,29 +87,26 @@ async def werewolf_handler(event, args, client):
         if arg.r:
             game.restricted = True
 
-        game.set_each_role_numbers_and_pool()
-        if game.total_players < game.min_players:
-            return await event.reply(
-                f"Not enough players for mode *{game.mode}*! Need at least {game.min_players}."
-            )
-
-        asyncio.create_task(game_loop(game))
-        return await event.reply(
-            f"Game starting with mode *{game.mode}*! Restricted: {game.restricted}. Check your PMs for roles."
-        )
+        return await start_game(event, game)
 
     if arg.mode:
         if game and not isinstance(game, dict) and not game.waiting:
             return await event.reply("Cannot change mode after game started.")
 
-        mode_name = arg.mode
-        if mode_name.casefold() == "all":
+        mode_name = arg.mode.casefold()
+        if mode_name == "all":
             msg = "*Available Gamemodes:*\n"
             for m, data in gamemodes.items():
-                msg += f"- *{m}*: {data['description']}\n"
+                if not data.get("roles"):
+                    continue
+                msg += f"- *{m}* ({
+                    data['min_players']}-{
+                    data['max_players']} players): {
+                    data['description']}\n"
             return await event.reply(msg)
 
-        if mode_name not in gamemodes:
+        # modes without roles aren't implemented and would end instantly
+        if not gamemodes.get(mode_name, {}).get("roles"):
             return await event.reply(f"Mode *{mode_name}* not found.")
 
         if not game or isinstance(game, dict):
@@ -126,6 +123,34 @@ async def werewolf_handler(event, args, client):
             return await event.reply(f"Mode set to *{mode_name}*.")
 
 
+async def start_game(event, game):
+    """Validates the lobby, assigns roles and starts the game loop."""
+    game.set_each_role_numbers_and_pool()
+    if game.total_players < game.min_players:
+        return await event.reply(
+            f"Not enough players for mode *{game.mode}*! Need at least {game.min_players}."
+        )
+    max_players = gamemodes[game.mode].get("max_players", MAX_PLAYERS)
+    if game.total_players > max_players:
+        return await event.reply(
+            f"Too many players for mode *{game.mode}*! Maximum is {max_players}."
+        )
+    # assign before the task starts so the game can't be started twice
+    game.assign_roles()
+    game.activity.set()  # wake the lobby manager so it can clean up
+    asyncio.create_task(game_loop(game))
+    return await event.reply(
+        f"Game starting with mode *{game.mode}*! Restricted: {game.restricted}. Check your PMs for roles."
+    )
+
+
+def find_target(game, target_str):
+    return game.get_player_by_id(target_str.lstrip("#")) or next(
+        (p for p in game.players_alive_list if target_str.lower() in p.name.lower()),
+        None,
+    )
+
+
 async def handle_game_command(game, event, cmd_type):
     player = game.get_player_by_user_id(event.from_user.id)
     if not player or not player.is_alive:
@@ -138,16 +163,9 @@ async def handle_game_command(game, event, cmd_type):
         if not game.day:
             return await event.reply("You can only lynch during the day!")
         if not target_str:
-            return await event.reply("Usage: .lynch <id or name>")
+            return await event.reply(f"Usage: {conf.CMD_PREFIX}lynch <id or name>")
 
-        target = game.get_player_by_id(target_str) or next(
-            (
-                p
-                for p in game.players_alive_list
-                if target_str.lower() in p.name.lower()
-            ),
-            None,
-        )
+        target = find_target(game, target_str)
         if not target or not target.is_alive:
             return await event.reply("Invalid target.")
 
@@ -162,22 +180,15 @@ async def handle_game_command(game, event, cmd_type):
         if game.detective_acted:
             return await event.reply("You have already used your ability today.")
         if not target_str:
-            return await event.reply("Usage: .id <id or name>")
+            return await event.reply(f"Usage: {conf.CMD_PREFIX}id <id or name>")
 
-        target = game.get_player_by_id(target_str) or next(
-            (
-                p
-                for p in game.players_alive_list
-                if target_str.lower() in p.name.lower()
-            ),
-            None,
-        )
+        target = find_target(game, target_str)
         if not target or not target.is_alive:
             return await event.reply("Invalid target.")
 
         game.detective_acted = True
-        await bot.client.send_message(
-            player.user_id,
+        await game.send_pm(
+            player,
             f"Your investigation reveals that {target.name} is a *{target.role}*.",
         )
         if random.random() < DETECTIVE_REVEAL_CHANCE:
@@ -193,16 +204,9 @@ async def handle_game_command(game, event, cmd_type):
         if player.bullet_count <= 0:
             return await event.reply("You are out of bullets!")
         if not target_str:
-            return await event.reply("Usage: .shoot <id or name>")
+            return await event.reply(f"Usage: {conf.CMD_PREFIX}shoot <id or name>")
 
-        target = game.get_player_by_id(target_str) or next(
-            (
-                p
-                for p in game.players_alive_list
-                if target_str.lower() in p.name.lower()
-            ),
-            None,
-        )
+        target = find_target(game, target_str)
         if not target or not target.is_alive:
             return await event.reply("Invalid target.")
 
@@ -212,17 +216,20 @@ async def handle_game_command(game, event, cmd_type):
         )
 
         hit_chance = 1.0 if "sharpshooter" in player.templates else 0.8
+        # wolves intentionally miss other wolves
+        if player.actual_team == "wolf" and target.actual_team == "wolf":
+            hit_chance = 0
         if random.random() < hit_chance:
-            if target.team == "wolf":
-                target.is_alive = False
+            if target.actual_team == "wolf":
+                extra = await game.kill(target, "shot")
                 await game.send_lobby(
-                    f"Bullseye! *{target.name}* was a *wolf* and has been shot dead."
+                    f"Bullseye! *{target.name}* was a *{target.role}* and has been shot dead.\n{extra}"
                 )
             else:
                 if random.random() < 0.5:
-                    target.is_alive = False
+                    extra = await game.kill(target, "shot")
                     await game.send_lobby(
-                        f"Oh no! *{target.name}* was an innocent villager but has been shot dead."
+                        f"Oh no! *{target.name}* was an innocent *{target.role}* but has been shot dead.\n{extra}"
                     )
                 else:
                     target.is_injured = True
@@ -239,6 +246,8 @@ async def werewolf_restriction_handler(client, event):
     current_games = bot.current_games_dict.get("werewolf", {})
     game = current_games.get(event.chat.id)
     if not game or isinstance(game, dict) or game.waiting or not game.restricted:
+        return
+    if game.ended or not game.players:
         return
     player = game.get_player_by_user_id(event.from_user.id)
     if not player or not player.is_alive:
@@ -264,7 +273,6 @@ async def auto_start_manager(event, game):
         "join": ("Join",),
         "leave": ("Leave",),
     }
-    e = asyncio.Event()
 
     async def btn_callback(event, poll_msg_key):
         selected = await bot.client.decrypt_poll_vote(event.message)
@@ -272,44 +280,46 @@ async def auto_start_manager(event, game):
             return
         actions = [poll_info.get(s.hex()) for s in selected.selectedOptions]
         if "join" in actions:
-            e.set()
             return await game.join(event, notify=True)
         elif "leave" in actions:
-            e.set()
             return await game.leave(event, notify=True)
 
-    _, msg = await create_sudo_button(
-        name="Werewolf Game Lobby",
-        options=options,
-        chat_jid=event.chat.jid,
-        user_id="",
-        selectable=1,
-        callback=btn_callback,
-    )
+    msg = None
     try:
-        while True:
-            if not game.waiting:  # Already started elsewhere
+        _, msg = await create_sudo_button(
+            name="Werewolf Game Lobby",
+            options=options,
+            chat_jid=event.chat.jid,
+            user_id="",
+            selectable=1,
+            callback=btn_callback,
+        )
+        # start once nobody has joined/left for a while
+        while game.waiting and len(game.player_ids) < MAX_PLAYERS:
+            if not game.player_ids:  # everyone left
                 return
-            if len(game.player_ids) >= 24:
-                break
             try:
-                await asyncio.wait_for(e.wait(), timeout=180)
+                await asyncio.wait_for(game.activity.wait(), timeout=180)
             except asyncio.TimeoutError:
                 break
-            e.clear()
-        await bot.client.revoke_message(event.chat.jid, bot.client.me.JID, msg.ID)
+            game.activity.clear()
         if not game.waiting:  # Already started elsewhere
             return
-        if game.total_players < game.min_players:
-            return await event.reply(
-                f"Not enough players for mode *{game.mode}*! Need at least {game.min_players}."
-            )
-        asyncio.create_task(game_loop(game))
-        return await event.reply(
-            f"Game starting with mode *{game.mode}*! Restricted: {game.restricted}. Check your PMs for roles."
-        )
+        if not game.player_ids:
+            return
+        await start_game(event, game)
+        if game.waiting:  # couldn't start
+            game.close()
+            await event.reply("The game lobby has been closed.")
     except Exception:
         await logger(Exception)
     finally:
-        async with sudo_btn_lock:
-            active_poll_dict.pop(msg.ID, None)
+        if msg:
+            async with sudo_btn_lock:
+                active_poll_dict.pop(msg.ID, None)
+            try:
+                await bot.client.revoke_message(
+                    event.chat.jid, bot.client.me.JID, msg.ID
+                )
+            except Exception:
+                pass
