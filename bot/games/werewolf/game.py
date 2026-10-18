@@ -207,7 +207,9 @@ class Game:
         for l_id in player.loves:
             lover = self.get_player_by_user_id(l_id)
             if lover and lover.is_alive:
-                msg += f"*{lover.name}* committed suicide out of grief for their lover.\n"
+                msg += (
+                    f"*{lover.name}* committed suicide out of grief for their lover.\n"
+                )
                 msg += await self.kill(lover, "suicide")
         return msg
 

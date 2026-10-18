@@ -514,7 +514,11 @@ async def process_night(game):
                 if target := game.get_player_by_user_id(t_id):
                     target.add_other("charmed")
     for p in game.players.values():
-        if not p.is_alive and p.role == "vengeful ghost" and (target := _target(game, p)):
+        if (
+            not p.is_alive
+            and p.role == "vengeful ghost"
+            and (target := _target(game, p))
+        ):
             killed.append(target.user_id)
     killed_msg = ""
     for uid in dict.fromkeys(killed):
@@ -573,7 +577,9 @@ async def day_phase(game):
         return await game.send_lobby("The vote was tied, nobody was lynched today.")
     lynched_uid = leaders[0]
     if lynched_uid == "abstain":
-        return await game.send_lobby("The village has agreed to not lynch anyone today.")
+        return await game.send_lobby(
+            "The village has agreed to not lynch anyone today."
+        )
     p = game.get_player_by_user_id(lynched_uid)
     if "mayor" in p.templates and "revealed_mayor" not in p.other:
         p.add_other("revealed_mayor")

@@ -99,7 +99,10 @@ async def werewolf_handler(event, args, client):
             for m, data in gamemodes.items():
                 if not data.get("roles"):
                     continue
-                msg += f"- *{m}* ({data['min_players']}-{data['max_players']} players): {data['description']}\n"
+                msg += f"- *{m}* ({
+                    data['min_players']}-{
+                    data['max_players']} players): {
+                    data['description']}\n"
             return await event.reply(msg)
 
         # modes without roles aren't implemented and would end instantly
