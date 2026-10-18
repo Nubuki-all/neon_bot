@@ -2,40 +2,44 @@ name: pyLint
 
 on: push
 
+# a newer push to the same branch supersedes the running lint
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write  # needed to push the auto-fix commit
+
 jobs:
   linting_and_formatting:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7
 
       - name: Setup Python with caching
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v7
         with:
           python-version: 3.12
           cache: 'pip'
+          cache-dependency-path: .github/lint-requirements.txt
 
-      - name: Install Lint & Formatting Libraries (including BasedPyright)
-        run: |
-          pip install autopep8 autoflake isort black basedpyright setuptools
-          pip install -r requirements.txt
+      # only the lint tools are needed; the bot's own requirements aren't
+      - name: Install Lint & Formatting Libraries
+        run: pip install -r .github/lint-requirements.txt
 
-      - name: Run BasedPyright (Reports all errors in annotations)
-        run: |
-          basedpyright .
-          
       - name: Check for showstoppers (autopep8)
         run: autopep8 --verbose --in-place --recursive --aggressive --aggressive .
-      
+
       - name: Remove unused imports and variables (autoflake)
         run: autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables --ignore-init-module-imports .
-      
+
       - name: lint with isort and black
         run: |
           isort bot
           black --fast bot
-          
+
       # commit changes
-      - uses: stefanzweifel/git-auto-commit-action@v4
+      - uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'pyLint: auto-fixes'
           commit_options: '--no-verify'
@@ -44,3 +48,8 @@ jobs:
           commit_user_email: 121189493+Nubuki-all@users.noreply.github.com
           commit_author: Nubuki-all <121189493+Nubuki-all@users.noreply.github.com>
 
+      # fails the run on syntax errors and undefined names; runs even if a
+      # formatter failed above so the errors are annotated on the code
+      - name: Check for errors (ruff)
+        if: ${{ !cancelled() }}
+        run: ruff check --no-cache --select E9,F63,F7,F82 --output-format github bot
