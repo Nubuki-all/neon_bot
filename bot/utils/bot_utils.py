@@ -404,7 +404,7 @@ def same_week(date, day_offset: int = 1, hour_offset: int = 0):
     d2 = datetime.datetime.today() + datetime.timedelta(
         days=day_offset, hours=hour_offset
     )
-    return d1.isocalendar()[1] == d2.isocalendar()[1] and d1.year == d2.year
+    return d1.isocalendar()[:2] == d2.isocalendar()[:2]
 
 
 def get_sha256(string: str):
