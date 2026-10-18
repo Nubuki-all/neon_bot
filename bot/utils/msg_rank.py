@@ -13,12 +13,18 @@ from .log_utils import logger
 
 async def auto_rank():
     groups = bot.group_dict
-    write_week = False
-    write_month = False
+    today = datetime.datetime.today()
+    tomorrow = today + datetime.timedelta(days=1)
 
     # Weekly window (evaluate once)
     weekly_clear = groups.get("last_rank_clear")
     weekly_window = not weekly_clear or not same_week(weekly_clear, 1)
+
+    # Monthly window: first weekly window whose new week starts in a new month
+    monthly_clear = groups.get("last_monthly_rank_clear")
+    monthly_window = weekly_window and (
+        not same_month(monthly_clear, 1) if monthly_clear else tomorrow.day <= 7
+    )
 
     for group in list(groups):
         try:
@@ -54,21 +60,11 @@ async def auto_rank():
             await asyncio.sleep(3)
 
             # ---------- RESET LOGIC ----------
-            if period == "weekly":
-                if not (last_clear := groups.get("last_rank_clear")):
-                    groups["last_rank_clear"] = datetime.datetime.today()
-                elif not weekly_window:
-                    continue
+            if period == "weekly" and not weekly_window:
+                continue
+            if period == "monthly" and not monthly_window:
+                continue
 
-                write_week = True
-
-            else:  # monthly
-                if not (last_clear := groups.get("last_monthly_rank_clear")):
-                    groups["last_monthly_rank_clear"] = datetime.datetime.today()
-                elif same_month(last_clear, 1):
-                    continue
-
-                write_month = True
             saved_config = {
                 "period": ranking.get("period", "weekly"),
                 "server": ranking.get("server"),
@@ -92,16 +88,12 @@ async def auto_rank():
             await logger(Exception)
 
     try:
-        if write_week:
-            groups["last_rank_clear"] = datetime.datetime.today() + datetime.timedelta(
-                days=2
-            )
-        if write_month:
-            groups["last_monthly_rank_clear"] = (
-                datetime.datetime.today() + datetime.timedelta(days=2)
-            )
+        if weekly_window:
+            groups["last_rank_clear"] = today + datetime.timedelta(days=2)
+        if monthly_window:
+            groups["last_monthly_rank_clear"] = tomorrow
 
-        if write_week or write_month:
+        if weekly_window or monthly_window:
             await save2db2(bot.group_dict, "groups")
 
     except Exception:
