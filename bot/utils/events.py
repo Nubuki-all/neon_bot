@@ -622,7 +622,8 @@ class Event(BaseEvent):
         msg = copy.deepcopy(self.message)
         msg.Info.ID = response.ID
         msg.Info.Pushname = bot.client.me.PushName
-        msg.Info.Timestamp = response.Timestamp
+        # SendResponse timestamps are in seconds, MessageInfo uses milliseconds
+        msg.Info.Timestamp = response.Timestamp * 1000
         patch_msg(msg, response.Message)
         if private:
             msg.Info.MessageSource.Chat.User = self.from_user.id
