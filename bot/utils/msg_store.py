@@ -7,8 +7,8 @@ from sqlalchemy import (
     LargeBinary,
     String,
     and_,
-    inspect,
     delete,
+    inspect,
     select,
     text,
 )
