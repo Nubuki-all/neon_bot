@@ -35,10 +35,11 @@ _log_ = logging.getLogger(__name__)
 
 
 def chat_is_allowed(event: Event):
-    if conf.ALLOWED_CHATS:
-        return event.chat.id in conf.ALLOWED_CHATS
+    if conf.ALLOWED_CHATS and event.chat.id not in conf.ALLOWED_CHATS:
+        return False
     if not event.chat.is_group:
-        return not bot.ignore_pm
+        # IGNORE_PM doesn't apply to chats listed in ALLOWED_CHATS
+        return bool(conf.ALLOWED_CHATS) or not bot.ignore_pm
     else:
         return not bot.group_dict.get(event.chat.id, {}).get("disabled", False)
 

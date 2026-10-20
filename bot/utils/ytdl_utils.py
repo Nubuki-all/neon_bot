@@ -75,7 +75,7 @@ def extract_info(link, options=None):
 
 def is_valid_trim_args(args: str, total_dur: float | None = None) -> bool:
     s_args = args.split("-")
-    if len(s_args) > 2:
+    if len(s_args) != 2:
         return False
     for x in s_args:
         if not (x.isdigit() or is_valid_video_timestamp(x)):

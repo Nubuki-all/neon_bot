@@ -236,7 +236,10 @@ class MediaHelper:
             raise RuntimeError(f"ffmpeg trim failed: {stderr}")
 
     async def _apply_trim(self, file_path: str, trim_args: str):
-        s_time_str, e_time_str = trim_args.split("-")
+        parts = trim_args.split("-")
+        if len(parts) != 2:
+            return False
+        s_time_str, e_time_str = parts
         for x in [s_time_str, e_time_str]:
             if not (x.isdigit() or is_valid_video_timestamp(x)):
                 return False

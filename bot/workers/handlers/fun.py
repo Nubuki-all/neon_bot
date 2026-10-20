@@ -1,4 +1,5 @@
 import random
+from urllib.parse import quote_plus
 
 from bot.config import bot, conf
 from bot.utils.bot_utils import get_json, png_to_jpg
@@ -17,17 +18,21 @@ meme_list = []
 
 
 async def fun(event, args, client):
-    """Help Function for the fun module"""
+    """
+    Shows the list of fun commands.
+
+    Arguments: None
+    """
     try:
         pre = conf.CMD_PREFIX
         s = "\n"
         msg = (
-            f"{pre}cat - *Get a random cat gif/pic*{s}"
-            f"{pre}coub - *Fetches a random short video*{s}"
+            f"{pre}cat - *Get a random cat pic/gif*{s}"
+            f"{pre}coub [topic] - *Get a random coub video link (default: Anime)*{s}"
             f"{pre}dog - *Get a random dog pic/video*{s}"
-            f"{pre}gif - *Get a random GIF from search results*{s}"
-            f"{pre}gsticker - *Get a random sticker from search results*{s}"
-            f"{pre}meme - *Get a random meme*"
+            f"{pre}gif [search] - *Get a random GIF matching search (default: anime)*{s}"
+            f"{pre}gsticker [search] - *Get a random sticker matching search (default: anime)*{s}"
+            f"{pre}meme [subreddit] - *Get a random reddit meme*"
         )
         await event.reply(msg)
     except Exception:
@@ -70,11 +75,11 @@ async def gen_meme(link, pm=False):
 
 async def getmeme(event, args, client):
     """
-    Fetches a random meme from reddit
-    Uses meme-api.com
+    Fetches a random reddit meme via meme-api.com and sends it as a photo or gif.
+    NSFW memes are blocked in groups when NSFW blocking is on; otherwise in groups they are sent as view-once.
 
     Arguments:
-    subreddit - custom subreddit
+        subreddit: [Optional] subreddit to fetch from (default: random; numeric input is ignored)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -114,7 +119,11 @@ async def getmeme(event, args, client):
 
 
 async def cat(event, args, client):
-    "Fetches a random cat gif/pic."
+    """
+    Fetches a random cat pic or gif from thecatapi.com.
+
+    Arguments: None
+    """
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -142,9 +151,11 @@ async def cat(event, args, client):
 
 async def coub(event, args, client):
     """
-    Fetches a random short video from coub;
+    Searches coub for a topic and replies with the title and link of a random result.
+    If the group has ytdl enabled and the coub has a download link, the video is also uploaded.
+
     Arguments:
-        Topic to search for.
+        topic: [Optional] what to search for (default: Anime)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -169,14 +180,14 @@ async def coub_helper(event, args, client):
         if page:
             random_ = f"&page={page}"
         result = await get_json(
-            f"https://coub.com/api/v2/search/coubs?q={args}{random_}"
+            f"https://coub.com/api/v2/search/coubs?q={quote_plus(args)}{random_}"
         )
         if not result:
             return await event.reply("*Request Failed!*")
         if page:
             break
-        total_pages = result["total_pages"]
-        page = random.choice(range(1, total_pages))
+        total_pages = max(result["total_pages"] or 1, 1)
+        page = random.randint(1, total_pages)
 
     try:
         content = random.choice(result["coubs"])
@@ -201,7 +212,11 @@ async def coub_helper(event, args, client):
 
 
 async def dog(event, args, client):
-    """Fetches a random dog pic/video"""
+    """
+    Fetches a random dog pic or video from random.dog.
+
+    Arguments: None
+    """
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -214,7 +229,6 @@ async def dog(event, args, client):
             if not result:
                 return await event.reply("*Request Failed!*")
             url = result["url"]
-            await logger(e=url)
             if url.casefold().endswith(".mp4"):
                 return await event.reply_video(
                     url,
@@ -228,9 +242,11 @@ async def dog(event, args, client):
 
 async def gif(event, args, client):
     """
-    Fetches a random gif that matches the search result
-    Argument:
-        search_term: what to search for.
+    Sends a random GIF from Klipy matching a search term; requires KLIPY_API_KEY.
+    If used as a reply, the GIF is sent in reply to the replied message.
+
+    Arguments:
+        search_term: [Optional] what to search for (default: anime)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -246,6 +262,35 @@ async def gif(event, args, client):
         await event.react("❌")
 
 
+async def klipy_search(query, pages=2, **params):
+    """
+    Search Klipy's Tenor-compatible API, following `next` for up to `pages`
+    pages (50 results each) so random picks have a bigger pool.
+    Klipy stops at 2 pages (100 results) per query.
+    Returns None if the first request fails.
+    """
+    url = (
+        f"https://api.klipy.com/v2/search?"
+        f"key={conf.KLIPY_API_KEY}"
+        f"&q={quote_plus(query)}"
+        f"&limit=50"
+        f"&client_key=neon"
+    ) + "".join(f"&{k}={v}" for k, v in params.items())
+    results, seen, pos = [], set(), None
+    for _ in range(pages):
+        result = await get_json(f"{url}&pos={quote_plus(pos)}" if pos else url)
+        if not result:
+            return None if not results else results
+        for item in result.get("results") or []:
+            if item.get("id") not in seen:
+                seen.add(item.get("id"))
+                results.append(item)
+        # an empty or "0" next means there are no more results
+        if not (pos := result.get("next")) or pos == "0":
+            break
+    return results
+
+
 async def gif_helper(event, args, client):
     """Prevents indentation hell"""
     if not conf.KLIPY_API_KEY:
@@ -254,23 +299,15 @@ async def gif_helper(event, args, client):
     if not args:
         args = "anime"
 
-    url = (
-        f"https://api.klipy.com/v2/search?"
-        f"key={conf.KLIPY_API_KEY}"
-        f"&q={args}"
-        f"&limit=50"
-        f"&client_key=neon"
-    )
+    results = await klipy_search(args)
 
-    result = await get_json(url)
-
-    if not result:
+    if results is None:
         return await event.reply("*Request Failed!*")
 
-    if not result.get("results"):
+    if not results:
         return await event.reply("*No results!*")
 
-    gif_link = random.choice(result["results"])["media_formats"]["gif"]["url"]
+    gif_link = random.choice(results)["media_formats"]["gif"]["url"]
 
     await clean_reply(
         event,
@@ -282,9 +319,11 @@ async def gif_helper(event, args, client):
 
 async def sticker(event, args, client):
     """
-    Fetches a random sticker that matches the search result
-    Argument:
-        search_term: what to search for.
+    Sends a random sticker from Klipy matching a search term; requires KLIPY_API_KEY.
+    If used as a reply, the sticker is sent in reply to the replied message.
+
+    Arguments:
+        search_term: [Optional] what to search for (default: anime)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -308,24 +347,15 @@ async def sticker_helper(event, args, client):
     if not args:
         args = "anime"
 
-    url = (
-        f"https://api.klipy.com/v2/search?"
-        f"key={conf.KLIPY_API_KEY}"
-        f"&q={args}"
-        f"&limit=50"
-        f"&client_key=neon"
-        f"&searchfilter=sticker"
-    )
+    results = await klipy_search(args, searchfilter="sticker")
 
-    result = await get_json(url)
-
-    if not result:
+    if results is None:
         return await event.reply("*Request Failed!*")
 
-    if not result.get("results"):
+    if not results:
         return await event.reply("*No results!*")
 
-    sticker = random.choice(result["results"])
+    sticker = random.choice(results)
 
     duration = sticker["media_formats"]["gif"].get("duration", 0)
     animated = bool(duration)

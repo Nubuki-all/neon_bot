@@ -25,11 +25,15 @@ role_action_msg = "{0} role with name: *{1}* successfully!"
 
 async def create_role(event, args, client):
     """
-    Creates a role within a group
+    Creates a role in the group. [Group Only]
+
     Arguments:
-        Name of role: {cannot contain spaces, dots or quotes}
-        -r : [Optional] restricts users who can join the role
-        -cr : [Optional] same as -r but restricts sudoers too
+        role_name: name of the role; case-insensitive, cannot contain spaces, dots or quotes,
+            cannot start with admin/mod/owner/sudoer or be all/everyone
+        -r : [Optional] restricted role; only admins, owner and sudoers can join, tag or manage it
+            (flag usable by admins, owner and sudoers only)
+        -cr : [Optional] locked role; like -r but joining and managing it is limited to the owner
+            (flag usable by owner only)
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -94,9 +98,12 @@ async def create_role(event, args, client):
 
 async def delete_role(event, args, client):
     """
-    Delete a created role.
+    Deletes a role. [Group Only]
+    Only the role's creator, owner or sudoers can delete it; restricted roles also need
+    admin/owner/sudoer and locked roles need the owner.
+
     Arguments:
-        Name of role to delete
+        role_name: name of the role to delete
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -136,12 +143,16 @@ async def delete_role(event, args, client):
 
 async def edit_role(event, args, client):
     """
-    Edit a role within a group
+    Edits or renames a role. [Group Only]
+    Only the role's creator, owner or sudoers can edit it; restricted roles also need
+    admin/owner/sudoer and locked roles need the owner.
+    The restriction is reset on every edit: omitting -r/-cr makes the role unrestricted.
+
     Arguments:
-        Name of role to edit
-        -r : [Optional] restricts users who can join the role
-        -cr : [Optional] same as -r but restricts sudoers too
-        -n : [Optional] New name for role {cannot contain spaces, dots or quotes}
+        role_name: name of the role to edit
+        -r : [Optional] make the role restricted (admins, owner and sudoers only)
+        -cr : [Optional] make the role locked (owner only)
+        -n <new_name> : [Optional] rename the role; same naming rules as new_role
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -180,7 +191,7 @@ async def edit_role(event, args, client):
             return await event.reply("Insufficient permissions to edit this role")
         new_name = None
         if arg.n:
-            new_name = arg.n
+            new_name = arg.n.casefold()
             if any(x in new_name for x in blocked_char):
                 return await event.reply(
                     f"Renaming of role with name: *{args}* to: *{new_name}* failed!\n*Reason:* New Role name contained invalid character(s)."
@@ -194,8 +205,12 @@ async def edit_role(event, args, client):
                     f"Renaming of role with name: *{args}* to: *{new_name}* failed!\n*Reason:*Role already exists!"
                 )
         if arg.r and not user_is_privileged(user):
-            await event.reply("-r: Flag can only be used by owner/sudoer, ignoring…")
-            arg.r = False
+            group_info = await client.get_group_info(event.chat.jid)
+            if not user_is_admin(user, group_info.Participants):
+                await event.reply(
+                    "-r: Flag can only be used by admins/owner/sudoer, ignoring…"
+                )
+                arg.r = False
         if arg.cr and not user_is_owner(user):
             await event.reply("-cr: Flag can only be used by owner, ignoring…")
             arg.cr = False
@@ -215,9 +230,10 @@ async def edit_role(event, args, client):
 
 async def exit_role(event, args, client):
     """
-    Exit an existing role
+    Leaves a role you are a member of. [Group Only]
+
     Arguments:
-        Name of role to leave
+        role_name: name of the role to leave
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -248,9 +264,11 @@ async def exit_role(event, args, client):
 
 async def join_role(event, args, client):
     """
-    Join an existing role
+    Joins an existing role. [Group Only]
+    Restricted roles can only be joined by admins, owner and sudoers; locked roles by the owner.
+
     Arguments:
-        Name of role to join
+        role_name: name of the role to join
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -293,10 +311,17 @@ async def join_role(event, args, client):
 
 async def add_to_role(event, args, client):
     """
-    Add user(s) to an existing role
+    Adds users to a role. [Group Only]
+    Only the role's creator, owner or sudoers can do this; restricted roles also need
+    admin/owner/sudoer and locked roles need the owner.
+
+    Usage:
+        add2role -r <role_name> @user1 @user2 ...
+        add2role <role_name> (as a reply to the user to add)
+
     Arguments:
-        mentions of user to add or reply user to add
-        -r : role name
+        -r <role_name> : role to add to; when replying without -r, the whole argument is the role name
+        mentions : users to add (the replied user is also added)
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -362,10 +387,17 @@ async def add_to_role(event, args, client):
 
 async def remove_from_role(event, args, client):
     """
-    Remove user(s) to an existing role
+    Removes users from a role. [Group Only]
+    Only the role's creator, owner or sudoers can do this; restricted roles also need
+    admin/owner/sudoer and locked roles need the owner.
+
+    Usage:
+        rm_from_role -r <role_name> @user1 @user2 ...
+        rm_from_role <role_name> (as a reply to the user to remove)
+
     Arguments:
-        mentions of user or reply user message to remove
-        -r : role name
+        -r <role_name> : role to remove from; when replying without -r, the whole argument is the role name
+        mentions : users to remove (the replied user is also removed)
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -432,9 +464,9 @@ async def remove_from_role(event, args, client):
 
 async def tag_roles(event, _, client):
     """
-    Tags everyone in a role
-    Arguments:
-        Role_name
+    Automatic handler (not a command): tags all members of every role mentioned as @role_name
+    in a group message or caption. If the message is a reply, the tag replies to that message.
+    Restricted roles can only be tagged by admins, owner and sudoers; locked roles by the owner.
     """
     try:
         if not (event.text or event.caption):
@@ -457,7 +489,7 @@ async def tag_roles(event, _, client):
                 group_info = await client.get_group_info(event.chat.jid)
                 if not user_is_admin(user, group_info.Participants):
                     continue
-            if role.get("locked") and not user_is_admin(user):
+            if role.get("locked") and not user_is_owner(user):
                 continue
             if not role.get("lid") and event.lid_address:
                 await event.reply(
@@ -479,7 +511,7 @@ async def tag_roles(event, _, client):
 
 
 async def list_roles(event, args, client):
-    """List all roles in a group"""
+    """Lists all roles in the group with their creators. [Group Only]"""
     if not event.chat.is_group:
         return await event.react("🚫")
     msg = ""
@@ -509,7 +541,7 @@ async def list_roles(event, args, client):
 
 
 async def role_info(event, args, client):
-    """Get role info of a particular role"""
+    """Shows a role's creator, restriction/lock status and members."""
     gc_roles = bot.group_dict.setdefault(event.chat.id, {}).setdefault("roles", {})
     role = gc_roles.get(args)
     users = ""
@@ -526,19 +558,18 @@ async def role_info(event, args, client):
         f"*Members:*{users}"
     )
     if not role.get("lid") and event.lid_address:
-        msg += f"\n\n*Status:* Currently unusable due to migration of group to lid. Kindly delete & recreate the role!"
+        msg += "\n\n*Status:* Currently unusable due to migration of group to lid. Kindly delete & recreate the role!"
     await event.reply(msg)
 
 
 async def roles(event, args, client):
     """
-    Help function for the role module
-    Arguments:
-        No argument : list all available roles commands
-        -l/--list : list all roles in a group
-        role_name : Get information of a particular role.
+    Shows the role commands, lists the group's roles, or shows info on a role.
 
-    *Both arguments cannot be used together.
+    Arguments:
+        None : show the list of role commands
+        -l/--list : list all roles in the group [Group Only]
+        role_name : show info on that role (unknown names show the command list)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -557,17 +588,18 @@ async def roles(event, args, client):
             if gc_roles.get(args):
                 return await role_info(event, args, client)
         pre = conf.CMD_PREFIX
-        msg = f"""{pre}new_role - *Create a new role in a group*
-{pre}del_role - *Delete a created role*
-{pre}edit_role - *Edit a created role*
-{pre}exit_role - *Leave a role*
-{pre}join_role - *Join a role*
-{pre}add2role - *Batch add users to role*
-{pre}rm_from_role - *Batch remove users from role*
+        msg = f"""{pre}new_role <name> [-r|-cr] - *Create a role (-r: restricted, admins+; -cr: locked, owner only)*
+{pre}del_role <name> - *Delete a role (creator/owner/sudoer)*
+{pre}edit_role <name> [-n <new_name>] [-r|-cr] - *Rename or change restriction of a role (creator/owner/sudoer)*
+{pre}join_role <name> - *Join a role*
+{pre}exit_role <name> - *Leave a role*
+{pre}add2role -r <name> @users - *Add users to a role (or reply with: add2role <name>)*
+{pre}rm_from_role -r <name> @users - *Remove users from a role (or reply with: rm_from_role <name>)*
+{pre}roles -l - *List all roles in the group*
+{pre}roles <name> - *Show info on a role*
 {pre}roles - *Get this message again*
-{pre}roles* - *List all roles in group*
 
-*requires the argument -l/--list"""
+Tag a role's members by writing @<name> in a group message."""
         await event.reply(msg)
     except Exception:
         await logger(Exception)

@@ -26,7 +26,12 @@ unafk_message = "*Welcome back, {0}.*\nYou were AFK for: *{1}*"
 
 async def afk_helper(event, args, client):
     """
-    Helper for AFK!
+    Auto handler for AFK (groups only, not a command).
+    When an AFK user sends a message in a group, their AFK status is cleared and
+    they are welcomed back (the first group message after setting AFK in a group
+    is skipped). When someone replies to or mentions an AFK user, the bot replies
+    with the user's AFK notice (and attached media, if any) and forwards the
+    message to the AFK user's DM.
     """
     try:
         if not event.chat.is_group:
@@ -158,10 +163,13 @@ async def afk_helper(event, args, client):
 
 async def activate_afk(event: Event, args, client):
     """
-    Marks you as AFK;
-    while AFK I will send, messages that either tags or mentions you to your DM
+    Mark yourself as AFK. You must have sent the bot a message in DM first.
+    While AFK, messages in groups that reply to or mention you get an AFK notice
+    and are forwarded to your DM. Your next group message clears AFK.
+    Reply to a media message to attach it to your AFK notice.
+
     Arguments:
-    - [Optional] Your reason for being AFK
+        reason - [Optional] Your reason for being AFK
     """
     user = event.from_user.id
     if not user_is_privileged(user):

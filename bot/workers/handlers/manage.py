@@ -27,7 +27,11 @@ from bot.utils.runtime import shutdown_services
 
 
 async def restart_handler(event, args, client):
-    """Restarts bot. (To avoid issues use /update instead.)"""
+    """
+    [Owner | Sudo] Restart the bot.
+    Prefer update, which also pulls the latest changes before restarting.
+    Arguments: None
+    """
     user = event.from_user.id
     if not user_is_owner(user):
         if not user_is_sudoer(user):
@@ -43,7 +47,10 @@ async def restart_handler(event, args, client):
 
 
 async def update_handler(event, args, client):
-    """Fetches latest update for bot"""
+    """
+    [Owner | Sudo] Pull the latest bot update and restart.
+    Arguments: None
+    """
     user = event.from_user.id
     if not user_is_owner(user):
         if not user_is_sudoer(user):
@@ -60,11 +67,11 @@ async def update_handler(event, args, client):
 
 async def pause_handler(event, args, client):
     """
-    Pauses bot/ bot ignores Non-owner queries
+    [Owner] Pause or unpause the bot. While paused, the bot ignores non-owners.
     Arguments:
-        -: on/enable <str> pauses bot
-        -: off/disable <str> unpauses bot
-        -: no argument <str> checks state
+        on/enable - Pause the bot
+        off/disable - Unpause the bot
+        (none) - Show whether the bot is paused
     """
     try:
         if not user_is_owner(event.from_user.id):
@@ -82,6 +89,8 @@ async def pause_handler(event, args, client):
                 return await event.reply("Bot already unpaused.")
             bot.paused = False
             return await event.reply("Bot has been unpaused.")
+        else:
+            return await event.reply(f"{pause_handler.__doc__}")
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -89,16 +98,15 @@ async def pause_handler(event, args, client):
 
 async def rss_handler(event, args, client):
     """
-    Base command for rss:
-        *Arguments:
-            -d (TITLE): To delete already an subscribed feed.
-            -e (TITLE): To edit configurations for already subscribed rss feed.
-            -g (TITLE, AMOUNT): To get previous feeds for given TITLE. (Amount corresponds to AMOUNT)
-            -l (NO REQUIRED ARGS) To list subscribed feeds.
-            -s (TITLE, LINK): To subscribe an rss feed.
+    [Owner | Sudo] Manage RSS feed subscriptions.
+    Arguments (only the first matching flag is used, in this order):
+        -d TITLE - Delete a subscribed feed
+        -e TITLE [options] - Edit a subscribed feed
+        -g TITLE AMOUNT - Get the latest AMOUNT items of a feed
+        -l - List subscribed feeds
+        -s LINK -t TITLE [options] - Subscribe to a feed
 
-        for additional help send the above arguments with -h/--help or without additional params.
-        *listed in the order priority.
+    Send a flag alone or with -h for its help.
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -131,11 +139,8 @@ async def rss_handler(event, args, client):
 
 async def rss_list(event, args, client):
     """
-    Get list of subscribed rss feeds
-        Args:
-            None.
-        Returns:
-            List of subscribed rss feeds.
+    [Owner | Sudo] List subscribed RSS feeds with their settings.
+    Arguments: None
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -172,10 +177,11 @@ async def rss_list(event, args, client):
 
 async def rss_get(event, args, client):
     """
-    Get the links of titles in rss:
+    [Owner | Sudo] Get the links of the latest items in a subscribed RSS feed.
+    Usage: rss -g TITLE AMOUNT
     Arguments:
-        [Title] - Title used in subscribing rss
-        -a [Amount] - Amount of links to grab
+        TITLE - Title used when subscribing
+        AMOUNT - Number of items to get (or pass it with -a AMOUNT, needed if TITLE has spaces)
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -232,24 +238,20 @@ async def rss_get(event, args, client):
 
 async def rss_editor(event, args, client):
     """
-    Edit subscribed rss feeds!
-    simply pass the rss title with the following arguements:
-        Additional args:
-            --exf (what_to_exclude): keyword of words to fiter out*
-            --inf (what_to_include): keywords to include*
-            --chat (chat_id) chat to send rss overides RSS_CHAT pass 'default' to reset.
-            --pin () to pin each feed msg as they are sent
-            --nopin () disables pinning messages
-            -p () to pause the rss feed
-            -r () to resume the rss feed
+    [Owner | Sudo] Edit a subscribed RSS feed.
+    Usage: rss -e TITLE [options]
+    Options (at least one required):
+        -l LINK - Change the feed link
+        --chat CHATS - Chat ids to send feeds to, space separated. Use . for this chat and default for RSS_CHAT
+        --inf FILTER - Only send items matching these keywords*
+        --exf FILTER - Skip items matching these keywords*
+        --pin - Pin each feed message when sent
+        --nopin - Stop pinning feed messages
+        -p - Pause the feed
+        -r - Resume the feed
 
-        *format = "x or y|z"
-        *to unset pass 'disable' or 'off'
-        where:
-            or - means either of both values
-            | - means and
-        Returns:
-            success message on successfully editing the rss configuration
+    *Filter format: "x or y|z" (or = either value, | = and). Pass disable or off to clear a filter.
+    Wrap values containing spaces in double quotes.
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -272,8 +274,10 @@ async def rss_editor(event, args, client):
         return await event.reply(f"Please pass the title of the rss item to edit")
     if not (data := bot.rss_dict.get(args)):
         return await event.reply(f"Could not find rss with title - {args}.")
-    if not (arg.l or arg.exf or arg.inf or arg.p or arg.r or arg.chat):
-        return await event.reply("Please supply at least one additional arguement.")
+    if not (
+        arg.l or arg.exf or arg.inf or arg.p or arg.r or arg.chat or arg.pin or arg.nopin
+    ):
+        return await event.reply("Please supply at least one additional argument.")
 
     if arg.l:
         data["link"] = arg.l
@@ -326,14 +330,10 @@ async def rss_editor(event, args, client):
 
 async def del_rss(event, args, client):
     """
-    Removes feed with designated title from list of subscribed feeds
-        Args:
-            TITLE (str): subscribed rss feed title to remove
-
-
-        Returns:
-            Success message on successfull removal
-            Not found message if TITLE passed was not found
+    [Owner | Sudo] Unsubscribe from an RSS feed.
+    Usage: rss -d TITLE
+    Arguments:
+        TITLE - Title of the subscribed feed to remove
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -350,23 +350,19 @@ async def del_rss(event, args, client):
 
 async def rss_sub(event, args, client):
     """
-    Subscribe rss feeds!
-    simply pass the rss link with the following arguements:
-        Args:
-            -t (TITLE): New Title of the subscribed rss feed [Required]
-            --exf (what_to_exclude): keyword of words to fiter out*
-            --inf (what_to_include): keywords to include*
-            --pin () to pin each feed msg as they are sent
-            -p () to pause the rss feed
-            -r () to resume the rss feed
-            --chat (chat_id) chat to send feeds
+    [Owner | Sudo] Subscribe to an RSS feed.
+    Usage: rss -s LINK -t TITLE [options]
+    Arguments:
+        LINK - RSS feed link [required]
+        -t TITLE - Unique title for the feed [required]
+        --chat CHATS - Chat ids to send feeds to, space separated. Use . for this chat and default for RSS_CHAT (default: RSS_CHAT)
+        --inf FILTER - Only send items matching these keywords*
+        --exf FILTER - Skip items matching these keywords*
+        --pin - Pin each feed message when sent
+        -p - Add the feed paused
 
-        *format = "x or y|z"
-        where:
-            or - means either of both values
-            | - means and
-        Returns:
-            success message on successfully subscribing to an rss feed
+    *Filter format: "x or y|z" (or = either value, | = and)
+    Wrap values containing spaces in double quotes.
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -461,7 +457,7 @@ async def rss_sub(event, args, client):
         )
     except (IndexError, AttributeError) as e:
         emsg = f"The link: {feed_link} doesn't seem to be a RSS feed or it's region-blocked!"
-        await event.reply(emsg + "\nError: " + str(e))
+        return await event.reply(emsg + "\nError: " + str(e))
     except Exception as e:
         await logger(Exception)
         return await event.reply("Error: " + str(e))
@@ -479,12 +475,12 @@ async def rss_sub(event, args, client):
 
 async def ban(event: Event, args, client):
     """
-    Ban the user from using the bot:
-    Argument:
-        *user_id/@mentions
-        or reply to the user's message
+    [Owner | Sudo] Ban a user from using the bot.
+    Sudoers cannot ban the owner or other sudoers.
+    Arguments:
+        user_id/@mention - User to ban, or reply to the user's message
 
-    *user_id: user's phone number with country code and the initial '+' without spaces or lid if known
+    user_id: phone number with country code (with leading +, no spaces) or lid if known
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -498,7 +494,7 @@ async def ban(event: Event, args, client):
             )
         _id = ban_id = args or event.reply_to_message.from_user.id
         if (args and args.startswith("+")) or not event.lid_address:
-            _id = args.lstrip("+")
+            _id = _id.lstrip("+")
             lid = await bot.client.get_lid_from_pn(jid.build_jid(_id, "s.whatsapp.net"))
             ban_id = lid.User
         if user_is_owner(ban_id):
@@ -528,12 +524,12 @@ async def ban(event: Event, args, client):
 
 async def unban(event: Event, args, client):
     """
-    Unban previously banned user:
-    Argument:
-        *user_id/@mentions
-        or reply to the user's message
+    [Owner | Sudo] Lift a user's ban from using the bot.
+    Only the owner can unban users banned by the owner.
+    Arguments:
+        user_id/@mention - User to unban, or reply to the user's message
 
-    *user_id: user's phone number with country code and the initial '+' without spaces or lid if known
+    user_id: phone number with country code (with leading +, no spaces) or lid if known
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -545,7 +541,7 @@ async def unban(event: Event, args, client):
             return await event.reply(
                 "*Reply to a message or supply an id to unban the user from using the bot.*"
             )
-        _id = ban_id = args or event.reply_to_message.from_user.hid
+        _id = ban_id = args or event.reply_to_message.from_user.id
         if (args and args.startswith("+")) or not event.lid_address:
             _id = _id.lstrip("+")
             lid = await bot.client.get_lid_from_pn(jid.build_jid(_id, "s.whatsapp.net"))
@@ -573,7 +569,7 @@ async def unban(event: Event, args, client):
             bot.user_dict.setdefault(ban_id, {}).update(banned=False, bannedby="")
         await save2db2(bot.user_dict, "users")
         return await event.reply(
-            f"@{_id} *ban has been lifted.*",
+            f"@{ban_id} *ban has been lifted.*",
             mentions_are_lids=True,
         )
     except Exception:
@@ -582,7 +578,10 @@ async def unban(event: Event, args, client):
 
 
 async def disable(event, args, client):
-    "Disable bot replies in a group chat."
+    """
+    [Owner | Sudo | Admin] Disable bot replies in this group. Group only.
+    Arguments: None
+    """
     if not event.chat.is_group:
         return await event.react("🚫")
     try:
@@ -611,7 +610,10 @@ async def disable(event, args, client):
 
 
 async def enable(event, args, client):
-    "Enable bot replies in a group chat."
+    """
+    [Owner | Sudo | Admin] Re-enable bot replies in this group. Group only.
+    Arguments: None
+    """
     if not event.chat.is_group:
         return await event.react("🚫")
     try:
@@ -638,7 +640,9 @@ async def enable(event, args, client):
 
 
 async def list_sudoers(event, args, client):
-    "Lists the sudoers."
+    """
+    List the names of all sudoers.
+    """
     msg = ""
     for user in bot.user_dict.get("sudoers", set()):
         info = await get_user_info(user, "lid")
@@ -655,14 +659,14 @@ async def list_sudoers(event, args, client):
 
 async def sudoers(event, args, client):
     """
-    Modify sudoers
+    [Owner] View or modify the sudoers list. With no arguments, lists sudoers.
     Arguments:
-        -a:  Add user to sudoers
-        -rm: Remove user from sudoers
-        -c:  clear all sudoers
-        {user_id}: ID* of user of user to add to sudoers (can also be specified through a tag); Replying the user message also works
+        -a user_id/@mention - Add a user to sudoers
+        -rm user_id/@mention - Remove a user from sudoers
+        -c - Clear all sudoers
+    With -a or -rm you can reply to the user's message instead of passing an id.
 
-    *ID: user's phone number with country code and initial '+' without spaces or lid if known
+    user_id: phone number with country code (with leading +, no spaces) or lid if known
     """
     user = event.from_user.id
     if not user_is_owner(user):
@@ -734,8 +738,9 @@ async def sudoers(event, args, client):
 
 async def delete(event: Event, args, client):
     """
-    Delete (bot's) message in group
-    Arguments: Reply to message to delete
+    [Owner | Sudo | Admin] Delete the replied message. Group only; reply required.
+    If the bot is not a group admin, only its own messages can be deleted.
+    Arguments: None
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -760,7 +765,11 @@ async def delete(event: Event, args, client):
 
 
 async def ytdl_enable(event, args, client):
-    "Enables automatic YouTube/Media downloads in a chat."
+    """
+    Enable automatic YouTube/media link downloads in this chat.
+    In groups, only Owner, Sudo or group admins can use it.
+    Arguments: None
+    """
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -795,7 +804,11 @@ async def ytdl_enable(event, args, client):
 
 
 async def ytdl_disable(event, args, client):
-    "Disables automatic YouTube/Media downloads in a chat."
+    """
+    Disable automatic YouTube/media link downloads in this chat.
+    In groups, only Owner, Sudo or group admins can use it.
+    Arguments: None
+    """
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -830,7 +843,10 @@ async def ytdl_disable(event, args, client):
 
 
 async def disable_amr(event, args, client):
-    "Disables auto message ranking in a group chat."
+    """
+    [Owner | Sudo | Admin] Disable automatic message ranking in this group. Group only.
+    Arguments: None
+    """
     if not event.chat.is_group:
         return await event.react("🚫")
     try:
@@ -863,10 +879,10 @@ async def disable_amr(event, args, client):
 
 async def enable_amr(event, args, client):
     """
-    Enables auto message ranking in a group chat.
-    Argument:
-        weekly, monthly :- Reset Time
-        defaults to weekly.
+    [Owner | Sudo | Admin] Enable automatic message ranking in this group. Group only.
+    The ranking is posted and reset each week (weekly), or posted weekly and reset in the first week of each month (monthly).
+    Arguments:
+        weekly/monthly - Reset period (default: weekly). Pass it again to change the period.
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -888,7 +904,7 @@ async def enable_amr(event, args, client):
             return await event.reply(
                 "This Group chat already has auto message ranking enabled."
             )
-        if args and args.casefold() not in ("weekly", "monthly"):
+        if not args or args.casefold() not in ("weekly", "monthly"):
             args = "weekly"
         group_info = bot.group_dict.setdefault(chat_id, {})
         group_info.update(msg_chat=True)
@@ -906,10 +922,10 @@ async def enable_amr(event, args, client):
 
 async def grt_toggle(event, args, client):
     """
-    Toggle greetings in a group chat.
+    [Owner | Sudo | Admin] Turn greetings on or off in this group. Group only.
     Arguments:
-        on/enable - Enables greetings in group chat
-        off/disable - Disables greetings in group chat
+        on/enable - Enable greetings
+        off/disable - Disable greetings
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -950,7 +966,8 @@ async def grt_toggle(event, args, client):
 
 async def enable_auto_delete_all_tags(event, args, client):
     """
-    Enables auto deletion of all tags in group chat.
+    [Owner | Sudo | Admin] Auto-delete @all/@everyone tags sent by non-admins in this group. Group only; the bot must be a group admin.
+    Arguments: None
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -989,7 +1006,8 @@ async def enable_auto_delete_all_tags(event, args, client):
 
 async def disable_auto_delete_all_tags(event, args, client):
     """
-    Disables auto deletion of all tags in group chat.
+    [Owner | Sudo | Admin] Stop auto-deleting @all/@everyone tags in this group. Group only.
+    Arguments: None
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -1032,14 +1050,16 @@ def members_to_set(members) -> set:
 
 async def auto_del_as_mute(event: Event, args: str, client):
     """
-    Modify the ADAM (Auto Delete As Mute) list
+    [Owner | Sudo | Admin] Mute members by auto-deleting their messages in this group. Group only.
+    With no arguments, lists muted members.
     Arguments:
-        -a:  Add user to the muted list
-        -rm: Remove user from the muted list
-        -c:  Clear muted list
-        {user_id}: ID* of user of user to add to the muted list (can also be specified through a tag); Replying the user message also works
+        -a user_id/@mention ... - Mute one or more members (the bot must be a group admin)
+        -rm user_id/@mention ... - Unmute one or more members
+        -c - Clear the muted list
+    With -a or -rm you can reply to the member's message instead of passing ids.
+    Owner, sudoers and group admins cannot be muted.
 
-    *ID: user's phone number with country code and initial '+' without spaces or lid if known
+    user_id: phone number with country code (with leading +, no spaces) or lid if known
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -1093,7 +1113,10 @@ async def auto_del_as_mute(event: Event, args: str, client):
                 )
                 mu_id = lid.User
             if mu_id not in members:
-                return await event.reply(f"@{mu_id} in not a member of this group")
+                return await event.reply(
+                    f"@{mu_id} *is not a member of this group.*",
+                    mentions_are_lids=True,
+                )
             if user_is_privileged(mu_id) or user_is_admin(
                 mu_id, group_info.Participants
             ):
