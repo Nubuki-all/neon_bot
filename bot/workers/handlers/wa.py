@@ -95,61 +95,62 @@ purge_sessions = {}
 
 
 async def tools(event, args, client):
-    """Help Function for the wa module"""
+    """Show the list of available tools/commands."""
     try:
         pre = conf.CMD_PREFIX
         s = "\n"
         msg = (
             f"*Filters:*{s}"
-            f"{pre}del_filter - *Delete filters*{s}"
-            f"{pre}filter - *Filter given word with replied message*{s}"
-            f"{pre}filters - *List filters*{s}"
+            f"{pre}del_filter - *Delete a filter, or all filters*{s}"
+            f"{pre}filter - *[Owner | Sudo | Admin] Reply with the replied message when a word is sent*{s}"
+            f"{pre}filters - *List the group's filters*{s}"
             f"{s}"
             f"*Notes:*{s}"
-            f"{pre}del_note - *Delete a saved item*{s}"
-            f"{pre}get - *Get previously saved item*{s}"
-            f"{pre}save - *Save a replied text/media*{s}"
+            f"{pre}del_note - *Delete a saved note, or all notes*{s}"
+            f"{pre}get - *Get a saved note or list all notes*{s}"
+            f"{pre}save - *Save a replied text/media as a note*{s}"
             f"{s}"
             f"*Videos & Images*{s}"
-            f"{pre}compress - *Compress a replied video*{s}"
-            f"{pre}doc - *Convert videos/images/stickers to document*{s}"
-            f"{pre}fps - *Get the fps of a replied video*{s}"
-            f"{pre}mediainfo - *Get the mediainfo of a replied video*{s}"
-            f"{pre}mp3 - *Convert Video to audio*{s}"
-            f"{pre}sanitize_video - *Make some videos playable*{s}"
-            f"{pre}tikmate - *Download tiktok videos*{s}"
+            f"{pre}compress - *Compress a replied video (AV1/HEVC)*{s}"
+            f"{pre}doc - *Convert a replied video/image/sticker to a document*{s}"
+            f"{pre}fps - *Get the fps of a replied video/gif*{s}"
+            f"{pre}mediainfo - *Get the mediainfo of a replied video/gif*{s}"
+            f"{pre}mp3 - *Convert a replied video to mp3, optionally trimmed*{s}"
+            f"{pre}sanitize_video - *Re-encode a replied video that won't play*{s}"
+            f"{pre}tikmate - *Download TikTok videos/images*{s}"
             f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}{s}"
             f"{pre}batch_upscale - {'*Upscale replied album images*' if conf.MODAL_UPSCALE_API else '_Currently not available!_'}{s}"
             f"{s}"
-            f"{pre}msg_ranking - *Get a group's msg ranking*{s}"
-            f"{pre}pin - *Pin a replied message*{s}"
-            f"{pre}unpin - *Unpin a replied message*{s}"
-            f"{pre}purge - *Mass delete messages.*{s}"
-            f"{pre}random - *Get a random choice*{s}"
+            f"{pre}msg_ranking - *Get the group's message leaderboard*{s}"
+            f"{pre}pin - *[Owner | Sudo | Admin] Pin a replied message*{s}"
+            f"{pre}unpin - *[Owner | Sudo | Admin] Unpin a replied message*{s}"
+            f"{pre}purge - *[Owner | Admin] Mass delete messages*{s}"
+            f"{pre}random - *Pick random item(s) from a replied list*{s}"
             f"{pre}repeat - *Repeat a replied message*{s}"
-            f"{pre}sanitize - *Sanitize link or message*{s}"
-            f"{pre}screenshot - *Generate a screenshot from a url*{s}"
+            f"{pre}sanitize - *Remove tracking from links in a message*{s}"
+            f"{pre}screenshot - *Screenshot webpage(s) from link(s)*{s}"
             f"{s}"
             f"*Reminders:*{s}"
-            f"{pre}remindme - *Tag user to replied message at a specified time*{s}"
-            f"{pre}all_reminders - *List all your reminders*{s}"
-            f"{pre}del_reminder - *Delete all or specified reminders*{s}"
+            f"{pre}remindme - *Get reminded of a (replied) message at a set time*{s}"
+            f"{pre}all_reminders - *List your reminders in this chat*{s}"
+            f"{pre}del_reminder - *Delete one or all of your reminders*{s}"
             f"{s}"
             f"*Greetings:*{s}"
-            f"{pre}greetings - *[Owner, Sudo, Admin] Enable/Disable greetings in group chats*{s}"
-            f"{pre}setwelcome - *Set custom greetings in a group chat*{s}"
-            f"{pre}unsetwelcome - *Unset custom greetings in a group chat*{s}"
+            f"{pre}greetings - *[Owner | Sudo | Admin] Enable/Disable greetings in group chats*{s}"
+            f"{pre}setwelcome - *[Admins Only] Set a custom welcome message*{s}"
+            f"{pre}unsetwelcome - *[Admins Only] Unset the custom welcome message*{s}"
+            f"{s}"
             f"*Rules:*{s}"
-            f"{pre}rules - *Get Group Rules in PM/DM*{s}"
-            f"{pre}setrules - *[Admins Only] Set Group Rules*{s}"
-            f"{pre}delrules - *[Admins Only] Delete Group Rules*{s}"
+            f"{pre}rules - *Get group rules in PM/DM*{s}"
+            f"{pre}setrules - *[Admins Only] Set group rules*{s}"
+            f"{pre}delrules - *[Admins Only] Delete group rules*{s}"
             f"{s}"
             f"*Stickers:*{s}"
-            f"{pre}kang - *Kangs a sticker*{s}"
-            f"{pre}sticker - *Turns images/vids/gifs to stickers*{s}"
-            f"{pre}stick2img - *Turns stickers to images/gifs*{s}"
+            f"{pre}kang - *Kang a replied sticker*{s}"
+            f"{pre}sticker - *Turn images/videos/gifs/albums into stickers*{s}"
+            f"{pre}stick2img - *Turn a sticker into an image/gif*{s}"
             f"{s}"
-            f"{pre}undel - *Undelete a user messages*{s}"
+            f"{pre}undel - *Resend recently deleted messages*{s}"
         )
         await event.reply(msg)
     except Exception:
@@ -159,7 +160,8 @@ async def tools(event, args, client):
 
 async def to_doc(event, args, client):
     """
-    Convert replied image, video or sticker to document.
+    Convert a replied image, video or sticker to a document.
+    Must be used as a reply; the original caption is kept.
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -196,8 +198,11 @@ async def to_doc(event, args, client):
 
 async def sanitize_video(event: Event, args: str, client):
     """
-    Sanitize videos that cannot be opened due to the:
-    "The video is not available because something is wrong with the video file" error
+    Re-encode a replied video (or video document) so it plays again.
+    Fixes the "The video is not available because something is wrong
+    with the video file" error.
+    Videos over 100MB are sent back as documents.
+    Arguments: None
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -274,10 +279,11 @@ async def sanitize_video(event: Event, args: str, client):
 
 async def to_mp3(event, args, client):
     """
-    Convert replied video to mp3
+    Convert a replied video (or video document) to mp3.
     Arguments:
-        -s Start Time
-        -t End Time
+        -s: start time to trim from (default: start)
+        -t: end time to trim to (default: end)
+    Invalid trim times are ignored and the full audio is sent.
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -339,15 +345,16 @@ async def to_mp3(event, args, client):
 
 
 async def getfps(event, args, client):
-    "Gets the fps of a replied video."
+    "Get the fps of a replied video, video/gif document or animated sticker."
     return await vinfo(event, "fps", client)
 
 
 async def getminfo(event, args, client):
     """
-    Get the mediainfo of a replied video
-    Argument:
-        -f: get mediainfo as document
+    Get the mediainfo of a replied video, video/gif document or animated sticker.
+    Sent as a Telegraph link by default.
+    Arguments:
+        -f: send the full mediainfo as a text document instead
     """
     if args == "-f":
         return await vinfo(event, "media_info", client)
@@ -470,10 +477,11 @@ comp_sem = asyncio.Semaphore(4)
 
 async def compress(event, args, client):
     """
-    Compress a replied video.
-    Returns an Av1 Video in document format...
-    Argument:
-        480p (default), 720p, 1080p
+    Compress a replied video (or video document).
+    Returns an AV1 (or HEVC) mkv as a document.
+    Arguments:
+        480p (default), 720p or 1080p: output resolution
+        --hevc: encode with HEVC (x265) instead of AV1
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -507,7 +515,7 @@ async def compress(event, args, client):
             replied.media.fileSHA256 + args.encode("utf-8")
             if args
             else replied.media.fileSHA256
-        )
+        ) + (b"--hevc" if hevc else b"")
         if media := compress_cache.get(comp_sha):
             try:
                 async with event.react("📥"):
@@ -616,9 +624,11 @@ async def sticker_reply(event, args, client, overide=False):
 
 async def sanitize_url(event, args, client):
     """
-    Checks and sanitizes all links in replied message
+    Remove tracking parameters from all links in a replied message
+    and resend the message with the cleaned links.
 
-    Can also receive a link as argument
+    Usage:
+        Reply to a message, or pass link(s) as the argument.
     """
     status_msg = None
     user = event.from_user.id
@@ -652,7 +662,7 @@ async def sanitize_url(event, args, client):
             return await event.reply("*No link found in your message to sanitize*")
         msg = "*Sanitized link(s):*"
         for url in urls:
-            msg += f"\n\n{url}"
+            msg += f"\n\n{clean_url(url)}"
         return await clean_reply(event, replied, "reply", msg)
     except Exception:
         await logger(Exception)
@@ -664,13 +674,12 @@ async def sanitize_url(event, args, client):
 
 async def screenshot(event, args, client):
     """
-    Generate screenshots from all links in replied message
-
-    Can also receive a link as argument
+    Screenshot every link in a replied message.
+    Without a reply, screenshots the link(s) given as argument.
     Arguments:
-      -l low quality image
-      -d force darkmode (default True)
-      -f Full screenshot of webpage (scrolling screenshot)
+      -l: low quality image
+      -d: disable dark mode (dark mode is on by default)
+      -f: full-page (scrolling) screenshot
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -721,9 +730,9 @@ async def screenshot(event, args, client):
 
 async def kang_sticker(event, args, client):
     """
-    Kangs replied sticker.
-    Args:
-        Name of sticker [Optional] [Recommended]
+    Kang a replied sticker (resend it under the bot's pack name).
+    Arguments:
+        name: sticker name [Optional]; random if not given
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -756,11 +765,15 @@ async def kang_sticker(event, args, client):
 
 async def stickerize_image(event: Event, args: str, client):
     """
-    Turns replied album/image/gif/video/ to sticker.
-    Args:
-        Name of sticker [Optional] [Recommended]
-        -q: quality (1-100)
-        -cl: compression_level (1-6)
+    Turn a replied image/gif/video (or image/video document) into a sticker.
+    Replying to an album makes a sticker pack instead.
+    Arguments:
+        name: sticker (or pack) name [Optional]; random if not given
+        -q: quality (1-100), default 75
+        -cl: compression level (1-6), default 4
+        -c: crop
+        -f: force animated gif mode
+        -nl: skip the not-broken check (single stickers only)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -835,11 +848,13 @@ async def stickerize_image(event: Event, args: str, client):
 
 async def stickerize_album(event: Event, args: str, client):
     """
-    Turns replied album images to sticker-pack.
-    Args:
-        Name of stickerpack [Optional] [Recommended]
-        -q: quality (1-100)
-        -cl: compression_level (1-6)
+    Turn a replied album into a sticker pack.
+    Arguments:
+        name: pack name [Optional]; random if not given
+        -q: quality (1-100), default 75
+        -cl: compression level (1-6), default 4
+        -c: crop
+        -f: force animated gif mode
     """
     try:
         quality = 75
@@ -848,6 +863,7 @@ async def stickerize_album(event: Event, args: str, client):
             arg, args = get_args(
                 "-q",
                 "-cl",
+                ["-nl", "store_false"],  # single stickers only; ignored here
                 ["-c", "store_true"],
                 ["-f", "store_true"],
                 to_parse=args,
@@ -895,7 +911,7 @@ async def stickerize_album(event: Event, args: str, client):
 
 
 async def sticker_to_image(event, args, client):
-    "Converts replied sticker back to media"
+    "Convert a replied sticker to an image (png), or a gif if animated."
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):
@@ -938,11 +954,10 @@ async def sticker_to_image(event, args, client):
 
 async def undelete(event, args, client):
     """
-    Undeletes a message;
-    Argument:
-      @mention : Specific user whose deleted messages should be retrieved; defaults to anyone
-    Optional Parameter(s):
-        -a : amount of deleted messages to fetch; defaults to 1 (one)
+    Resend recently deleted messages in this group. Group only.
+    Arguments:
+        @mention(s): only fetch deleted messages from these users; default anyone
+        -a: number of deleted messages to fetch (per user), default 1
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -1026,9 +1041,11 @@ async def send_deleted_msgs(event, chat_id, del_ids, verbose=False):
 
 async def upscale_image(event: Event, args: str, client):
     """
-    Upscales replied image.
-    Args:
-        None yet.
+    Upscale a replied image (or image document) and send it back
+    as a raw png and as a jpeg.
+    Requests are queued; react with ❌ to the command to cancel
+    a queued request (requester, Owner, Sudo or Admin).
+    Arguments: None
     """
     status_msg = None
     turn_id = f"{event.chat.id}:{event.id}"
@@ -1130,7 +1147,7 @@ async def upscale_image(event: Event, args: str, client):
         if sz > 2 << 30:
             msg = await event.reply("Can not send raw; file too large")
         elif sz > 100000000:
-            msg = await event.reply_document(raw, "upscaled.png" "Upscaled image: Raw")
+            msg = await event.reply_document(raw, "upscaled.png", "Upscaled image: Raw")
         else:
             msg = await event.reply_photo(raw, "Upscaled image: Raw")
         raw = await upscaled_png_to_jpg(raw)
@@ -1138,7 +1155,8 @@ async def upscale_image(event: Event, args: str, client):
     except Exception as e:
         await logger(Exception)
         await event.react("❌")
-        await status_msg.edit(f"*Error:*\n{e}")
+        if status_msg:
+            await status_msg.edit(f"*Error:*\n{e}")
         status_msg = None
     finally:
         if cancel_handler_key:
@@ -1169,10 +1187,17 @@ def move_oversized_in_place(original_list, max_mb=100):
 
 async def upscale_album(event: Event, args: str, client):
     """
-    Upscales replied images in album via Modal.
-    Args:
-        None yet
+    Upscale the images in a replied album via Modal and send them back
+    as raw png and jpeg albums.
+    Only available when the Modal upscale API is configured.
+    Arguments: None
     """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
     try:
         if not conf.MODAL_UPSCALE_API:
             return await event.reply("*Modal api not configured*")
@@ -1229,13 +1254,11 @@ async def upscale_album(event: Event, args: str, client):
 
 async def pick_random(event: Event, args: str, client):
     """
-    A randomizer;
-    Select a random or multiple random values from a list (replied message).
+    Pick random item(s) from a list in the replied message.
     Arguments:
-        -a: Amount of values to select
-        -m: Message header for returned values; can add without specifying -m
-        -s: Change delimiter, default="\\n" (new lines)
-
+        -a: number of items to pick, default 1
+        -m: header for the result; plain text without -m also works
+        -s: item separator, default is a new line
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -1245,7 +1268,7 @@ async def pick_random(event: Event, args: str, client):
             return await event.react("⛔")
     try:
         replied = event.reply_to_message
-        if not (replied or replied.text or replied.caption):
+        if not (replied and (replied.text or replied.caption)):
             return await event.reply(
                 "*Reply to a message with list of items to choose from.*"
             )
@@ -1282,8 +1305,9 @@ def list_items(items, ini):
 
 async def list_notes(event, args, client):
     """
-    Fetches the list of notes in a chat:
-    Arguments: [None]
+    List the notes saved in this chat.
+    Arguments:
+        me / my notes: list only your notes
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -1333,11 +1357,13 @@ async def list_notes(event, args, client):
 
 async def save_notes(event: Event, args: str | None, client, silent=False):
     """
-    Saves a replied Text/media message to bot database;
-    Can be retrieved with get {note_name}
-    Argument:
-        note_name: name to save note as
-        -c: clean caption
+    Save a replied text/media message as a note in this chat.
+    Retrieve with: get <note_name> or #note_name
+    Arguments:
+        note_name: name to save the note as (required)
+        -c: remove the media caption
+    Only the note's creator or an Owner can overwrite it.
+    In groups, "rules" and "welcome" can only be set by admins.
     """
     chat = event.chat.id
     user = event.from_user.id
@@ -1379,6 +1405,8 @@ async def save_notes(event: Event, args: str | None, client, silent=False):
                 return await event.reply(
                     f"Note with name '{args}' already exists and can't be overwritten; Most likely because *you* did not add it."
                 )
+        if not (replied.text or replied.image or replied.media):
+            return await event.reply("Can only save replied text or media.")
         status_msg = await event.reply("…") if not silent else None
         # note gen:
         note_type = str
@@ -1420,12 +1448,11 @@ async def save_notes(event: Event, args: str | None, client, silent=False):
 
 async def get_notes(event, args, client):
     """
-    Get saved notes;
+    Get a saved note, or list the notes in this chat.
     Arguments:
-        None: Get all saved notes
-        any: (note_name) Get a particular saved note*
-
-    *Can also get notes through #note_name
+        note_name: get that note (also works as #note_name)
+        none / all / notes: list all notes
+        me: list only your notes
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -1434,7 +1461,7 @@ async def get_notes(event, args, client):
         if not user_is_allowed(user):
             return await event.react("⛔")
     try:
-        if not args or (args and args.casefold() in ("all", "me", "notes", "my note")):
+        if not args or (args and args.casefold() in ("all", "me", "notes", "my notes")):
             return await list_notes(event, args, client)
         chat = event.chat.id
         chat_name = (
@@ -1483,10 +1510,10 @@ async def get_notes(event, args, client):
 
 async def delete_notes(event, args, client):
     """
-    Delete saved notes:
+    Delete a saved note in this chat.
     Arguments:
-        note_name: name of note to delete
-        all: (Owner) delete all notes for this chat
+        note_name: note to delete (your own, or any if Owner/Admin)
+        all: delete all notes in this chat (Owner/Admin in groups)
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -1533,7 +1560,9 @@ async def delete_notes(event, args, client):
 
 async def get_notes2(event, args, client):
     """
-    Alias for get_notes
+    Get notes with #: #note_name gets a note, #notes lists all notes,
+    #my notes lists your notes.
+    AUTO FUNCTION
     """
     try:
         if not event.text:
@@ -1559,7 +1588,9 @@ async def get_notes2(event, args, client):
 
 async def tag_all_admins(event, args, client):
     """
-    Tags all admins in a group
+    Tag group admins when a message contains @admin(s) or @mod(s).
+    Plural form tags all admins; singular tags only the first.
+    AUTO FUNCTION
     """
     try:
         if not (text := (event.text or event.caption)):
@@ -1591,7 +1622,9 @@ async def tag_all_admins(event, args, client):
 
 async def tag_all_sudoers(event, args, client):
     """
-    Tags all sudoers in a group
+    Tag bot sudoers when a group message contains @sudoer(s).
+    Plural form tags all sudoers; singular tags only the first.
+    AUTO FUNCTION
     """
     try:
         if not (text := (event.text or event.caption)):
@@ -1623,7 +1656,9 @@ async def tag_all_sudoers(event, args, client):
 
 async def tag_all_owners(event, args, client):
     """
-    Tags all owners in a group
+    Tag bot owners when a group message contains @owner(s).
+    Plural form tags all owners; singular tags only the first.
+    AUTO FUNCTION
     """
     try:
         if not (text := (event.text or event.caption)):
@@ -1655,7 +1690,10 @@ async def tag_all_owners(event, args, client):
 
 async def tag_everyone(event: Event, args, client):
     """
-    Tags everyone in a group
+    Tag everyone in a group when an Owner/Sudo/Admin sends @all or @everyone.
+    WhatsApp's own @all tags get a reaction, or are deleted from
+    non-admins if auto_del_all_tags is on and the bot is admin.
+    AUTO FUNCTION
     """
     try:
         if not (text := (event.text or event.caption)):
@@ -1697,7 +1735,11 @@ async def tag_everyone(event: Event, args, client):
 
 
 async def pin_message(event, args, client):
-    "Pin a replied message"
+    """
+    [Owner | Sudo | Admin] Pin a replied message. Group only.
+    Arguments:
+        seconds: pin duration [Optional], default 7 days
+    """
     if not event.chat.is_group:
         return await event.react("🚫")
     try:
@@ -1725,7 +1767,7 @@ async def pin_message(event, args, client):
 
 
 async def unpin_message(event, args, client):
-    "Unpin a replied message"
+    "[Owner | Sudo | Admin] Unpin a replied message. Group only."
     if not event.chat.is_group:
         return await event.react("🚫")
     try:
@@ -1752,10 +1794,11 @@ async def unpin_message(event, args, client):
 
 async def purge_messages(event, args, client):
     """
-    Purges messages:
-      Arguments:
-        --start: start point for purge (reply again without argument to mark endpoint)
-        --all: purge all messages from this point
+    [Owner | Admin] Delete a range of messages. Group only; bot must be admin.
+    Usage (always as a reply):
+        --start: mark the replied message as the start point, then reply
+                 to the end message with purge (session expires in 5 mins)
+        --all: delete everything from the replied message up to this one
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -1860,8 +1903,9 @@ async def rec_msg_ranking(event, args, client):
 
 async def msg_ranking(event, args, client):
     """
-    Get the Message Leaderboard of a particular group chat.
-    Argument: -f/full (Get full ranking)
+    Get this group's message leaderboard. Group only.
+    Arguments:
+        -f / --full: show the full ranking
     """
     if not event.chat.is_group:
         return
@@ -2095,13 +2139,14 @@ def s_welcome_msg(gc_event, group_info):
 
 async def save_filter(event: Event, args: str, client):
     """
-    Saves a replied Text/media message to bot database;
-    Can be retrieved when a message content matches {filter_name}
-    Argument:
-        filter_name: name to save filter as & text to match in received messages
-        -a: match any word
-        -c: clean caption
-        -m: match only words
+    [Owner | Sudo | Admin] Save a replied text/media message as a filter. Group only.
+    The bot replies with it whenever a message contains filter_name.
+    Arguments:
+        filter_name: text to match (min 3 characters unless -a or -m)
+        -a: match if all words of filter_name appear anywhere, in any order
+        -m: match filter_name only as whole word(s)
+        -c: remove the media caption
+    Only the filter's creator or an Owner can overwrite it.
     """
     chat = event.chat.id
     user = event.from_user.id
@@ -2189,8 +2234,9 @@ async def save_filter(event: Event, args: str, client):
 
 async def list_filters(event, args, client):
     """
-    Fetches the list of filters in a chat:
-    Arguments: [None]
+    List the filters saved in this group. Group only.
+    Arguments:
+        me / my filters: list only your filters
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2239,10 +2285,10 @@ async def list_filters(event, args, client):
 
 async def delete_filters(event, args, client):
     """
-    Delete saved filters:
+    Delete a saved filter in this group. Group only.
     Arguments:
-        filter_name: name of filter to delete
-        all: (Owner | Admin) delete all filters for this chat
+        filter_name: filter to delete (your own, or any if Owner/Admin)
+        all: (Owner | Admin) delete all filters in this group
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2287,7 +2333,7 @@ async def delete_filters(event, args, client):
 
 async def detect_filters(event, args, client):
     """
-    Get saved filters;
+    Reply with saved filters that match a group message (max 2 per message).
     AUTO FUNCTION
     """
     user = event.from_user.id
@@ -2365,7 +2411,9 @@ async def get_filters(event, args, client):
 
 async def to_media(event: Event, _, client):
     """
-    if a document's caption contains (asm) converts the document to media
+    If an image/video/gif document's caption contains (asm),
+    resend it as media with (asm) removed from the caption.
+    AUTO FUNCTION
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -2414,18 +2462,18 @@ async def to_media(event: Event, _, client):
 
 async def repeat(event: Event, args: str, client):
     """
-    Repeat a replied message
+    Repeat a replied message. Group only.
     Arguments:
-        -nq (don't quote)
-        -x (repeat a number of times, max 5)
-        -uv (undo view once)
-        -vo (force view once)
-        -cc (clean caption)
-        -C (custom caption)
-        -f (add forwarded)
-        -rf (remove forwarded)
-        -ff (add forwarded many times)
-        -asm (if document; as video or image)
+        -nq: don't quote
+        -x: repeat a number of times, max 5 (Owner/Sudo/Admin only)
+        -uv: remove view once
+        -vo: force view once
+        -cc: clear caption
+        -C: custom caption
+        -f: mark as forwarded
+        -ff: mark as forwarded many times
+        -rf: remove forwarded mark
+        -asm: resend an image/video/gif document as media
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2502,9 +2550,9 @@ async def repeat(event: Event, args: str, client):
 
 async def tikmate(event: Event, args: str, client):
     """
-    Download tiktok videos/images from tikmate
-    Argument:
-        tiktok url
+    Download TikTok videos/images via Tikmate.
+    Usage:
+        Pass TikTok link(s) as argument, or reply to a message containing them.
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -2533,7 +2581,8 @@ async def tikmate(event: Event, args: str, client):
                     base_dir,
                 )
             if not items:
-                return await event.reply("Tikmate returned no media")
+                await event.reply(f"Tikmate returned no media for:\n{url}")
+                continue
             caption = items[0].caption
             caption = f"*{caption}*" if caption else caption
             groups = defaultdict(list)
@@ -2562,9 +2611,10 @@ async def tikmate(event: Event, args: str, client):
 
 async def set_rules(event, args, client):
     """
-    Set Groups Rules
-    Arguments:
-        Reply to a Message intended to be used as Da rules.
+    [Admins Only] Set the group rules. Group only.
+    Usage:
+        Reply to a text or media message to use as the rules.
+        Media rules are saved as the "rules" note.
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2603,8 +2653,8 @@ async def set_rules(event, args, client):
 
 async def delete_rules(event, args, client):
     """
-    Delete Groups Rules
-    Note: Does not delete the rules note if one was set!
+    [Admins Only] Delete the group rules. Group only.
+    Note: Does not delete the "rules" note if one was set!
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2620,7 +2670,7 @@ async def delete_rules(event, args, client):
         if not admin_user:
             return await event.reply("*Command can only be used by an admin.*")
         gc = bot.group_dict.get(event.chat.id, {})
-        if not gc["rules"]:
+        if not gc.get("rules"):
             return await event.reply("*No rules were set.*")
         else:
             gc["rules"] = None
@@ -2632,9 +2682,10 @@ async def delete_rules(event, args, client):
 
 async def set_welcome(event, args, client):
     """
-    Set Groups welcome message
-    Arguments:
-        Reply to a Message intended to be used as a welcome message.
+    [Admins Only] Set the group welcome message. Group only.
+    Usage:
+        Reply to a text or media message to use as the welcome message.
+        Media is saved as the "welcome" note.
         Extra Formatting:
           {0} tag user
           {1} group name
@@ -2677,8 +2728,8 @@ async def set_welcome(event, args, client):
 
 async def unset_welcome(event, args, client):
     """
-    Unset groups welcome message
-    Note: Does not delete the welcome note if one was set!
+    [Admins Only] Unset the group welcome message. Group only.
+    Note: Does not delete the "welcome" note if one was set!
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2694,8 +2745,8 @@ async def unset_welcome(event, args, client):
         if not admin_user:
             return await event.reply("*Command can only be used by an admin.*")
         gc = bot.group_dict.get(event.chat.id, {})
-        if not gc["welcome_msg"]:
-            return await event.reply("*No rules were set.*")
+        if not gc.get("welcome_msg"):
+            return await event.reply("*No welcome message was set.*")
         else:
             gc["welcome_msg"] = None
             await save2db2(bot.group_dict, "groups")
@@ -2706,7 +2757,7 @@ async def unset_welcome(event, args, client):
 
 async def get_rules(event, args, client):
     """
-    Get Groups Rules in PM
+    Get this group's rules sent to you in PM. Group only.
     """
     user = event.from_user.id
     if not event.chat.is_group:
@@ -2785,8 +2836,10 @@ async def s_rules(event, pm=True):
 
 async def save_reminder(event: Event, args: str, client):
     """
-    Remind user of a replied message at a future time
-    Argument: Future Time
+    Get reminded of the replied message (or this one) at a future time.
+    Arguments:
+        time: when to remind, e.g. "2hrs 30mins", "in 3 days",
+              "next friday at noon"
     """
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -2819,7 +2872,7 @@ async def save_reminder(event: Event, args: str, client):
 
 async def list_reminders(event, args, client):
     """
-    List all your reminders
+    List your reminders in this chat, with their IDs.
     """
     user = event.from_user.id
     if not (user_is_privileged(user)):
@@ -2847,11 +2900,11 @@ async def list_reminders(event, args, client):
 
 async def delete_reminders(event, args, client):
     """
-    Delete your reminders by id
-    Get the id by listing all reminders
+    Delete your reminders in this chat.
+    Get IDs with: all_reminders
     Arguments:
-        id: id of reminder to delete
-        "all": delete all reminders
+        id: ID of the reminder to delete
+        all: delete all your reminders in this chat
     """
     user = event.from_user.id
     if not (user_is_privileged(user)):

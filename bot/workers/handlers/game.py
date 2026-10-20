@@ -15,15 +15,23 @@ from bot.utils.sudo_button_utils import active_poll_dict, create_sudo_button
 
 async def werewolf_handler(event, args, client):
     """
-    Werewolf Game Handler
+    Plays a game of Werewolf in the chat; without arguments shows the game help.
+    A lobby auto-starts after 3 minutes without joins/leaves, or once it is full.
 
-    Commands:
-    -j : Join game
-    -l : Leave game
-    -s : Game status
-    --start : Start game
-    --mode <mode> : Set game mode
-    -r : Enable restricted mode
+    Arguments (only the first of -j, -l, -s, --start, --mode given is used):
+        -j : create a lobby (you join it) or join the existing one
+        -l : leave the lobby or game
+        -s : show lobby or game status
+        --start : start the lobby now (needs the mode's minimum players)
+        --mode <mode> : set the lobby's mode, creating a lobby if none exists (default: chosen by chance)
+        --mode all : list available modes
+        -r : restricted mode; while the game runs, messages from dead players and non-players are deleted
+            (can be combined with -j, --start or --mode, or used alone on an existing lobby)
+
+    In-game commands (alive players only):
+        lynch <id or name> : vote to lynch a player, during the day
+        id <id or name> : detective only, learn a player's role, once per day
+        shoot <id or name> : gunner/sharpshooter only, shoot a player during the day
     """
     cmd = event.text.split()[0].removeprefix(conf.CMD_PREFIX).casefold()
     if cmd in ("lynch", "id", "shoot"):
@@ -72,6 +80,8 @@ async def werewolf_handler(event, args, client):
     if arg.r and game and not isinstance(game, dict):
         game.restricted = True
         await event.reply("will restrict dead/non-players")
+    elif arg.r and not (arg.s or arg.start or arg.mode):
+        return await event.reply("No game lobby created. Use `-j` to start one.")
 
     if arg.s:
         if not game or isinstance(game, dict):
@@ -152,6 +162,7 @@ def find_target(game, target_str):
 
 
 async def handle_game_command(game, event, cmd_type):
+    """Runs the in-game lynch, id and shoot commands for alive players."""
     player = game.get_player_by_user_id(event.from_user.id)
     if not player or not player.is_alive:
         return
@@ -237,7 +248,7 @@ async def handle_game_command(game, event, cmd_type):
                         f"*{target.name}* has been injured by the shot!"
                     )
         else:
-            await game.send_lobby(f"The shot missed!")
+            await game.send_lobby("The shot missed!")
 
 
 async def werewolf_restriction_handler(client, event):
@@ -258,13 +269,20 @@ async def werewolf_restriction_handler(client, event):
 
 
 async def were_info(event, args, client):
+    """Replies with the werewolf help message."""
     msg = "*Werewolf Game*\n\n"
-    msg += f"To join/create: `{conf.CMD_PREFIX}werewolf -j`\n"
+    msg += f"To create/join a lobby: `{conf.CMD_PREFIX}werewolf -j`\n"
     msg += f"To leave: `{conf.CMD_PREFIX}werewolf -l`\n"
     msg += f"To see status: `{conf.CMD_PREFIX}werewolf -s`\n"
-    msg += f"To start: `{conf.CMD_PREFIX}werewolf --start [-r]`\n"
+    msg += f"To start now: `{conf.CMD_PREFIX}werewolf --start`\n"
     msg += f"To set mode: `{conf.CMD_PREFIX}werewolf --mode <mode>`\n"
-    msg += f"To see modes: `{conf.CMD_PREFIX}werewolf --mode all`"
+    msg += f"To see modes: `{conf.CMD_PREFIX}werewolf --mode all`\n"
+    msg += "Restricted mode (deletes messages from dead/non-players): add `-r` to `-j`, `--start` or `--mode`\n"
+    msg += "Lobbies auto-start after 3 minutes without joins/leaves.\n\n"
+    msg += "*In-game (during the day):*\n"
+    msg += f"Vote to lynch: `{conf.CMD_PREFIX}lynch <id or name>`\n"
+    msg += f"Detective, once per day: `{conf.CMD_PREFIX}id <id or name>`\n"
+    msg += f"Gunner/sharpshooter: `{conf.CMD_PREFIX}shoot <id or name>`"
     return await event.reply(msg)
 
 

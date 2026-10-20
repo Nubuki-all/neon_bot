@@ -11,8 +11,13 @@ ani_client = anilist.AsyncClient()
 
 async def airing(event, args, client):
     """
-    Get airing schedule for anime.
-    To use simply pass the anime title as argument
+    Get the airing schedule of an anime from AniList.
+    If a title matches several anime, a poll is sent to pick one.
+
+    Arguments:
+        anime_title - Title of the anime
+                or:
+        anime_id - AniList id of the anime
     """
     if not user_is_allowed(event.from_user.id):
         return await event.react("⛔")
@@ -33,12 +38,14 @@ async def airing(event, args, client):
 
 async def anime(event, args, client):
     """
-    Fetch anime info from Anilist
+    Fetch anime info from AniList.
+    If a title matches several anime, a poll is sent to pick one.
 
     Arguments:
-        anime_title - Title of anime
+        anime_title - Title of the anime
                 or:
-        anime_id (-m) Add the -m flag if you're searching with a mal_id
+        anime_id - AniList id of the anime
+        -m - Treat anime_id as a MyAnimeList id
     """
     if not user_is_allowed(event.from_user.id):
         return await event.react("⛔")

@@ -11,6 +11,13 @@ from bot.utils.os_utils import read_n_to_last_line, s_remove
 
 
 async def get_logs(event, args, client):
+    """
+    [Owner] Send the bot's log file as a document.
+
+    Arguments:
+        -t N - Send the last N lines of the log as text instead
+               (if N is missing, 0 or not a number, the file is sent)
+    """
     if not user_is_owner(event.from_user.id):
         return
     try:
@@ -24,7 +31,7 @@ async def get_logs(event, args, client):
         arg = get_args("-t", to_parse=args)
         if arg.t and arg.t.isdigit() and (ind := int(arg.t)):
             msg = ""
-            for i in reversed(range(1, ind)):
+            for i in reversed(range(1, ind + 1)):
                 msg += read_n_to_last_line(log_file_name, i)
                 msg += "\n"
             msg = "Nothing Here.\nTry with a higher number" if not msg else msg
@@ -43,12 +50,11 @@ async def get_logs(event, args, client):
 
 async def bash(event, cmd, client):
     """
-    Run bash/system commands in bot
-    Much care must be taken especially on Local deployment
+    [Owner | Dev] Run a shell command on the bot's host and reply with its stderr and stdout.
+    Output longer than 4000 characters is sent as a file. Use with care.
 
-    USAGE:
-    Command requires executables as argument
-    For example "/bash ls"
+    Arguments:
+        command - Shell command to run (required), e.g. bash ls
     """
     if not user_is_owner(event.from_user.id):
         if not user_is_dev(event.from_user.id):
@@ -94,13 +100,14 @@ async def aexec(code, client, event):
 
 async def eval_message(event, cmd, client):
     """
-    Evaluate and execute code within bot.
-    Global namespace has been cleaned so you'll need to manually import modules
+    [Owner | Dev] Execute Python code inside the bot and reply with the result.
+    The code runs as the body of an async function (await is allowed) with
+    client, message and event available, plus this module's globals; import
+    anything else you need. Replies with the traceback, stderr or stdout (in that
+    order of priority), or "Success". Long output is sent as a file.
 
-    USAGE:
-    Command requires code to execute as arguments.
-    For example /peval print("Hello World!")
-    Kindly refrain from adding whitelines and newlines between command and argument.
+    Arguments:
+        code - Python code to run (required), e.g. eval print("Hello World!")
     """
     if not user_is_owner(event.from_user.id):
         if not user_is_dev(event.from_user.id):

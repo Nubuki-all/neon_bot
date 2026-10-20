@@ -25,12 +25,11 @@ class Config:
             self.ALWAYS_DEPLOY_LATEST = config(
                 "ALWAYS_DEPLOY_LATEST", default=False, cast=bool
             )
-            self.ALLOWED_CHATS = config("ALLOWED_CHATS", default="")
+            allowed_chats: str = config("ALLOWED_CHATS", default="")
+            self.ALLOWED_CHATS = set(allowed_chats.split())
             self.BACKUP_WA_DB = config("BACKUP_WA_DB", default="")
-            self.BANNED_USERS = config(
-                "BANNED_USERS",
-                default="",
-            )
+            banned_users: str = config("BANNED_USERS", default="")
+            self.BANNED_USERS = set(banned_users.split())
             self.BLOCK_NSFW = config("BLOCK_NSFW", default=True, cast=bool)
             self.DISABLE_CIP = config("DISABLE_CIP", default=False, cast=bool)
             self.PH_NUMBER = config("PH_NUMBER", default="")

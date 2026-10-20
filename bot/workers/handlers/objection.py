@@ -11,15 +11,26 @@ from bot import conf, heavy_proc_lock
 from bot.utils.events import Event
 from bot.utils.log_utils import logger
 from bot.utils.msg_store import get_messages_between
+from bot.utils.msg_utils import chat_is_allowed, user_is_allowed, user_is_privileged
 
 objection_sessions = {}
 
 
 async def insession(event: Event, args: str, client):
     """
-    Starts an objection session by marking the current message (or the replied message) as the starting point.
-    Usage: /insession
+    Start an Ace Attorney objection session in this chat.
+    The replied message (or this message, if not replying) is the starting point.
+    The session expires after 300 seconds and replaces any existing one; finish it
+    with renderobj.
+
+    Arguments: None
     """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
     chat_id = event.chat.id
     start_msg_id = event.reply_to_message.id if event.reply_to_message else event.id
 
@@ -34,9 +45,20 @@ async def insession(event: Event, args: str, client):
 
 async def render_objection(event: Event, args: str, client):
     """
-    Renders the objection video for the messages between the start point and the replied message.
-    Usage: /renderobj (replying to the end message)
+    Render an Ace Attorney objection video for the current session and end it.
+    Uses the messages from the session's starting point to the replied message
+    (or this message, if not replying). Needs a session started with insession
+    in the last 300 seconds. Text messages are used with emoji removed; images
+    are shown as evidence.
+
+    Arguments: None
     """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
     chat_id = event.chat.id
     session = objection_sessions.get(chat_id)
 
@@ -56,6 +78,7 @@ async def render_objection(event: Event, args: str, client):
 
     del objection_sessions[chat_id]
 
+    temp_dir = None
     async with event.react("🎬"):
         try:
             messages = await get_messages_between(chat_id, start_id, end_msg_id)
@@ -130,5 +153,5 @@ async def render_objection(event: Event, args: str, client):
             await logger(e)
             await event.reply(f"An error occurred: {e}")
         finally:
-            if os.path.exists(temp_dir):
+            if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)

@@ -14,10 +14,10 @@ from bot.utils.msg_utils import (
 
 async def getcmds(event, args, client):
     """
-    Get list of commands
+    List the bot's main commands.
+    Tools, fun and role commands are listed by tools, fun and roles.
 
-    Arguments:
-        None
+    Arguments: None
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -28,32 +28,35 @@ async def getcmds(event, args, client):
     try:
         pre = conf.CMD_PREFIX
         msg = f"""{pre}start - *Hi!*
+{pre}ping - *Check if bot is alive*
 {pre}afk - *Enable AFK mode*
 {pre}anime - *Fetch anime info from anilist*
 {pre}airing - *Fetch anime airing info from anilist*
+{pre}insession - *Start an Ace Attorney objection session*
+{pre}renderobj - *Render an objection session into a video*
+{pre}werewolf - *Play a game of Werewolf*
 {pre}fun - *Get fun commands*
 {pre}tools - *Get tools commands*
-{pre}ping - *Check if bot is alive*
-{pre}bash - *[Dev.] Run bash commands*
-{pre}eval - *[Dev.] Evaluate python commands*
-{pre}ban - *[Owner] prevent a user from using bot*
-{pre}unban - *[Owner] unban a user*
-{pre}sudo - *[Owner] Promote a user to sudoers*
+{pre}roles - *Get commands for roles*
+{pre}sudo - *[Owner] View/Modify sudoers*
+{pre}pause - *[Owner] Pauses/Unpauses bot*
+{pre}logs - *[Owner] Get bot logs*
+{pre}ban - *[Owner | Sudo] Prevent a user from using bot*
+{pre}unban - *[Owner | Sudo] Unban a user*
 {pre}rss - *[Owner | Sudo] Setup bot to auto post RSS feeds*
 {pre}update - *[Owner | Sudo] Update & restarts bot*
 {pre}restart - *[Owner | Sudo] Restarts bot*
-{pre}ytdl_* - *[Owner | Sudo] Disables/Enables Ytdl*
-{pre}amr_* - *[Owner | Sudo] Disables/Enables Auto msg ranking
-{pre}mute - *[Owner | Admin | Sudo] Enables Auto deletion of a user's message
-{pre}enable_atd - *[Owner | Admin | Sudo] Enables Auto deletion of @all tags
-{pre}disable_atd - *[Owner | Admin | Sudo] Disables Auto deletion of @all tags
-{pre}roles - *Get commands for roles*
-{pre}insession - *Starts an Ace attorney objection session*
-{pre}disable - *[Owner | Sudo] Disable bot in a GC*
-{pre}enable - *[Owner | Sudo] Enable bot in a GC*
-{pre}del - *[Owner | Sudo] Delete bot's messages*
-{pre}gc_info - *[Owner | Sudo] Get group info*
-{pre}pause - *[Owner] Pauses bot*
+{pre}ytdl_* - *[Owner | Sudo | Admin] Disables/Enables auto media download (anyone in PM)*
+{pre}amr_* - *[Owner | Sudo | Admin] Disables/Enables Auto msg ranking*
+{pre}mute - *[Owner | Sudo | Admin] Enables Auto deletion of a user's message*
+{pre}enable_atd - *[Owner | Sudo | Admin] Enables Auto deletion of @all tags*
+{pre}disable_atd - *[Owner | Sudo | Admin] Disables Auto deletion of @all tags*
+{pre}disable - *[Owner | Sudo | Admin] Disable bot in a GC*
+{pre}enable - *[Owner | Sudo | Admin] Enable bot in a GC*
+{pre}del - *[Owner | Sudo | Admin] Delete the replied message*
+{pre}gc_info - *[Owner | Sudo | Admin] Get group info*
+{pre}bash - *[Owner | Dev] Run bash commands*
+{pre}eval - *[Owner | Dev] Evaluate python code*
 
 * expands to _ytdl_enable/ytdl_disable_
 * expands to _amr_enable/amr_disable_"""
@@ -65,8 +68,10 @@ async def getcmds(event, args, client):
 
 async def gc_info(event, args, client):
     """
-    Get the group chats Owner
-    Arguments: [None]
+    [Owner | Sudo | Admin] Show group info. Group only.
+    Replies with the group owner, creation date, group id and a list of admins.
+
+    Arguments: None
     """
     if not event.chat.is_group:
         return await event.react("🚫")
@@ -90,9 +95,15 @@ async def gc_info(event, args, client):
         )
     except Exception:
         await logger(Exception)
+        await event.react("❌")
 
 
 async def hello(event, args, client):
+    """
+    Reply with "Hi!".
+
+    Arguments: None
+    """
     try:
         await event.reply("Hi!")
     except Exception:
@@ -101,7 +112,11 @@ async def hello(event, args, client):
 
 
 async def up(event, args, client):
-    """ping bot!"""
+    """
+    Check if the bot is alive; replies with two response times in ms.
+
+    Arguments: None
+    """
     user = event.from_user.id
     if not user_is_privileged(user):
         if not chat_is_allowed(event):

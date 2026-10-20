@@ -93,7 +93,20 @@ async def get_audio_thumbnail(file):
 
 async def youtube_reply(event: Event, args: str, client):
     """
-    Download and upload sent video from sent YouTube link
+    Auto downloader (not a command). Only runs in chats where ytdl is enabled
+    (see ytdl_enable); ignores edited messages.
+    Downloads and uploads media from supported links in a message: any site
+    supported by yt-dlp (generic pages only for facebook.com), plus Instagram,
+    Pinterest, TikTok and Twitter/X, which use dedicated downloaders first and
+    fall back to yt-dlp. YouTube Music links are sent as mp3, YouTube posts as
+    images, playlists as a folder upload. Files over 100MB are sent as documents.
+
+    Message options:
+        #no_ytdl - Skip this message
+        #yt-dlp-only - Only use yt-dlp (no dedicated downloaders)
+        (1080p), (480p), (360p), (270p), (240p), (144p) - Video quality (default 720p)
+        [start-end] - At the start of the message, trim the video,
+                      e.g. [00:30-01:15] or [30-75]
     """
     try:
         if not event.text:
@@ -171,6 +184,7 @@ async def youtube_reply(event: Event, args: str, client):
                 await folder_upload(ytdl.folder, event, audio, image, ytdl._listener)
 
         while job:
+            ytdl = None
             try:
                 alt_listener = listener = MediaListener(job[0])
                 tryAlt = False
@@ -258,7 +272,7 @@ async def youtube_reply(event: Event, args: str, client):
                     if not is_valid_trim_args(t_args, total_dur=result.get("duration")):
                         (
                             await event.reply(f"{t_args} is not a valid trim argument!")
-                            if "-" in t_args
+                            if "-" in t_args or t_args.replace(":", "").isdigit()
                             else None
                         )
                         t_args = None
@@ -305,7 +319,8 @@ async def youtube_reply(event: Event, args: str, client):
             except Exception:
                 await logger(Exception)
                 await event.react("🙊")
-                await ytdl.clean_up()
+                if ytdl:
+                    await ytdl.clean_up()
                 job.pop(0)
     except Exception:
         await logger(Exception)
