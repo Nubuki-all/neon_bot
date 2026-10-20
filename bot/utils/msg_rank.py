@@ -40,7 +40,8 @@ async def auto_rank():
 
             ranking = group_info.setdefault("msg_ranking", {})
             period = ranking.get("period")
-            # groups enabled without a period stored ""; treat anything unknown as weekly
+            # groups enabled without a period stored ""; treat anything unknown
+            # as weekly
             if period not in ("weekly", "monthly"):
                 period = ranking["period"] = "weekly"
 

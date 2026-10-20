@@ -275,7 +275,14 @@ async def rss_editor(event, args, client):
     if not (data := bot.rss_dict.get(args)):
         return await event.reply(f"Could not find rss with title - {args}.")
     if not (
-        arg.l or arg.exf or arg.inf or arg.p or arg.r or arg.chat or arg.pin or arg.nopin
+        arg.l
+        or arg.exf
+        or arg.inf
+        or arg.p
+        or arg.r
+        or arg.chat
+        or arg.pin
+        or arg.nopin
     ):
         return await event.reply("Please supply at least one additional argument.")
 
