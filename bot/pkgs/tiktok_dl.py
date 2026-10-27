@@ -69,6 +69,8 @@ class DownloadResult:
     thumbnail_url: str
     width: int | None = None
     height: int | None = None
+    # Set when source_url is a video-only DASH stream; muxed in after download
+    audio_url: str = ""
 
 
 def is_valid_tiktok_url(url: str) -> bool:
@@ -350,13 +352,34 @@ def _parse_universal_data(html: str) -> dict:
     return item_struct
 
 
-def _pick_best_video_addr(video: dict) -> dict | None:
+def _is_dash(variant: dict) -> bool:
+    return (variant.get("Format") or "").lower() == "dash"
+
+
+def _pick_best_audio_url(video: dict) -> str | None:
+    """Return the highest-bitrate audio-only DASH URL, if any."""
+    tracks = [a for a in video.get("bitrateAudioInfo") or [] if a.get("UrlList")]
+    if not tracks:
+        return None
+    best = max(tracks, key=lambda a: a.get("Bitrate") or 0)
+    urls = best["UrlList"]
+    return urls.get("MainUrl") or urls.get("BackupUrl")
+
+
+def _pick_best_video_addr(video: dict) -> tuple[dict | None, str | None]:
     """
     Pick the best available video variant.
+
+    Returns (PlayAddr, audio_url). DASH variants carry no audio, so audio_url
+    is the separate track to mux in; it is None for muxed variants.
     """
     variants = video.get("bitrateInfo") or []
+    audio_url = _pick_best_audio_url(video)
+    if not audio_url:
+        # A DASH variant would come out silent
+        variants = [v for v in variants if not _is_dash(v)]
     if not variants:
-        return None
+        return None, None
 
     def bitrate(v: dict) -> int:
         return v.get("Bitrate") or 0
@@ -364,7 +387,7 @@ def _pick_best_video_addr(video: dict) -> dict | None:
     originals = [v for v in variants if "original" in (v.get("GearName") or "").lower()]
     pool = originals or variants
     best = max(pool, key=bitrate)
-    return best.get("PlayAddr")
+    return best.get("PlayAddr"), audio_url if _is_dash(best) else None
 
 
 def _direct_url(play_addr: dict) -> str | None:
@@ -400,9 +423,9 @@ def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
     if not video:
         return []
 
-    play_addr = _pick_best_video_addr(video)
+    play_addr, audio_url = _pick_best_video_addr(video)
 
-    # Fallback: if no HEVC variant exists at all, use PlayAddrStruct
+    # Fallback: if no usable variant exists at all, use PlayAddrStruct
     if play_addr is None:
         play_addr = video.get("PlayAddrStruct") or video.get("playAddr")
 
@@ -425,6 +448,7 @@ def _parse_tiktok_item(item: dict) -> list[DownloadResult]:
             thumbnail_url="",
             width=width,
             height=height,
+            audio_url=audio_url or "",
         )
     ]
 
@@ -462,6 +486,37 @@ async def _download_media(
                     done += len(chunk)
                     if progress_callback:
                         await progress_callback(done, total, dest)
+
+
+async def _mux_audio(video_path: str, audio_path: str, output_path: str) -> None:
+    """Combine a video-only and an audio-only stream without re-encoding."""
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        video_path,
+        "-i",
+        audio_path,
+        "-map",
+        "0:v:0",
+        "-map",
+        "1:a:0",
+        "-c",
+        "copy",
+        "-movflags",
+        "+faststart",
+        output_path,
+    ]
+    proc = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    _, stderr = await proc.communicate()
+    if proc.returncode != 0:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        raise RuntimeError(f"FFmpeg audio mux failed: {stderr.decode()}")
 
 
 async def download_tiktok(
@@ -532,13 +587,37 @@ async def download_tiktok(
 
             if not quiet:
                 print(f"\n[down] {fname}  ({item.media_type})")
-            await _download_media(
-                item.source_url,
-                dest,
-                referer=url,
-                cookies=response_cookies,
-                progress_callback=progress_callback,
-            )
+            if item.audio_url:
+                video_tmp = f"{dest}.video"
+                audio_tmp = f"{dest}.audio"
+                try:
+                    await _download_media(
+                        item.source_url,
+                        video_tmp,
+                        referer=url,
+                        cookies=response_cookies,
+                        progress_callback=progress_callback,
+                    )
+                    await _download_media(
+                        item.audio_url,
+                        audio_tmp,
+                        referer=url,
+                        cookies=response_cookies,
+                        progress_callback=progress_callback,
+                    )
+                    await _mux_audio(video_tmp, audio_tmp, dest)
+                finally:
+                    for tmp in (video_tmp, audio_tmp):
+                        if os.path.exists(tmp):
+                            os.remove(tmp)
+            else:
+                await _download_media(
+                    item.source_url,
+                    dest,
+                    referer=url,
+                    cookies=response_cookies,
+                    progress_callback=progress_callback,
+                )
             item.local_path = dest
             if not quiet:
                 print(f"[ok] -> {dest}")
