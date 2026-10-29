@@ -54,7 +54,7 @@ from bot.utils.bot_utils import (
 from bot.utils.db_utils import save2db2
 from bot.utils.events import SEQUENTIAL_AUTO, Event
 from bot.utils.log_utils import log, logger
-from bot.utils.modal_utils import upscale_batch
+from bot.utils.modal_utils import UPSCALE_MODELS, unknown_model_msg, upscale_batch
 from bot.utils.msg_store import (
     get_deleted_message_ids,
     get_messages,
@@ -118,8 +118,9 @@ async def tools(event, args, client):
             f"{pre}mp3 - *Convert a replied video to mp3, optionally trimmed*{s}"
             f"{pre}sanitize_video - *Re-encode a replied video that won't play*{s}"
             f"{pre}tikmate - *Download TikTok videos/images*{s}"
-            f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic else '_Currently not available!_'}{s}"
-            f"{pre}batch_upscale - {'*Upscale replied album images*' if conf.MODAL_UPSCALE_API else '_Currently not available!_'}{s}"
+            f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic or conf.MODAL_UPSCALE_API else '_Currently not available!_'}"
+            f"{' *(models: ' + ', '.join(UPSCALE_MODELS) + ')*' if conf.MODAL_UPSCALE_API else ''}{s}"
+            f"{pre}batch_upscale - {'*Upscale replied album images* *(models: ' + ', '.join(UPSCALE_MODELS) + ')*' if conf.MODAL_UPSCALE_API else '_Currently not available!_'}{s}"
             f"{s}"
             f"{pre}msg_ranking - *Get the group's message leaderboard*{s}"
             f"{pre}pin - *[Owner | Sudo | Admin] Pin a replied message*{s}"
@@ -1045,7 +1046,12 @@ async def upscale_image(event: Event, args: str, client):
     as a raw png and as a jpeg.
     Requests are queued; react with ❌ to the command to cancel
     a queued request (requester, Owner, Sudo or Admin).
-    Arguments: None
+    Arguments:
+        model (optional, needs the Modal api):
+            anime: for drawings and anime
+            hat: for real photos
+            face: restores faces
+            supir: [Owner | Sudo] rebuilds badly degraded photos (slow)
     """
     status_msg = None
     turn_id = f"{event.chat.id}:{event.id}"
@@ -1077,6 +1083,13 @@ async def upscale_image(event: Event, args: str, client):
             await status_msg.edit("*Cancelled*")
 
     try:
+        model = args.strip().casefold() or None
+        if model and model not in UPSCALE_MODELS:
+            return await event.reply(unknown_model_msg(model))
+        if model == "supir" and not user_is_privileged(user):
+            return await event.reply("*SUPIR is for the Owner and Sudo only.*")
+        if model and not conf.MODAL_UPSCALE_API:
+            return await event.reply("*Upscale models need the Modal api.*")
         if not event.reply_to_message:
             return await event.reply(
                 "*Command can only be used when replying to an image.*"
@@ -1112,10 +1125,14 @@ async def upscale_image(event: Event, args: str, client):
             await event.react("")
         # async with heavy_proc_lock:
         # Lock works now but eh i like the current implementation better
-        await status_msg.edit("*Upscaling please wait…*")
+        await status_msg.edit(
+            "*Upscaling with SUPIR, this can take a few minutes…*"
+            if model == "supir"
+            else "*Upscaling please wait…*"
+        )
 
         async def modal_upscale(img: bytes) -> bytes:
-            return (await upscale_batch([img], 1800))[0]
+            return (await upscale_batch([img], 1800, model))[0]
 
         async def local_upscale(img: bytes) -> bytes:
             device = torch.device(
@@ -1135,7 +1152,8 @@ async def upscale_image(event: Event, args: str, client):
                 raw = await modal_upscale(file)
             except Exception as e:  # noqa: BLE001
                 log(Exception)
-                if bot.disable_cic:
+                # The local fallback only has the default model
+                if bot.disable_cic or model:
                     await event.react("❌")
                     await status_msg.edit(f"*Error:*\n{e}")
                     status_msg = None
@@ -1190,7 +1208,8 @@ async def upscale_album(event: Event, args: str, client):
     Upscale the images in a replied album via Modal and send them back
     as raw png and jpeg albums.
     Only available when the Modal upscale API is configured.
-    Arguments: None
+    Arguments:
+        model (optional): anime, hat, face or supir, as in upscale
     """
     user = event.from_user.id
     if not user_is_privileged(user):
@@ -1201,6 +1220,11 @@ async def upscale_album(event: Event, args: str, client):
     try:
         if not conf.MODAL_UPSCALE_API:
             return await event.reply("*Modal api not configured*")
+        model = args.strip().casefold() or None
+        if model and model not in UPSCALE_MODELS:
+            return await event.reply(unknown_model_msg(model))
+        if model == "supir" and not user_is_privileged(user):
+            return await event.reply("*SUPIR is for the Owner and Sudo only.*")
         replied = event.reply_to_message
         if not replied:
             return await event.reply("Kindly reply to an album of images to upscale.")
@@ -1230,7 +1254,7 @@ async def upscale_album(event: Event, args: str, client):
             for i in range(0, len(files), 2):
                 pair = files[i : i + 2]
                 try:
-                    raws = await upscale_batch(pair, 1800)
+                    raws = await upscale_batch(pair, 1800, model)
                 except Exception:
                     await logger()
                     continue
