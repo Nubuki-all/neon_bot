@@ -2416,11 +2416,6 @@ async def to_media(event: Event, _, client):
     AUTO FUNCTION
     """
     user = event.from_user.id
-    if not user_is_privileged(user):
-        if not chat_is_allowed(event):
-            return
-        if not user_is_allowed(user):
-            return await event.react("⛔")
     try:
         if not event.document:
             return
@@ -2429,6 +2424,11 @@ async def to_media(event: Event, _, client):
             return
         if not ((caption := event.caption) and "(asm)" in caption.casefold()):
             return
+        if not user_is_privileged(user):
+            if not chat_is_allowed(event):
+                return
+            if not user_is_allowed(user):
+                return await event.react("⛔")
         caption = re.sub(r"\(asm\)", "", caption, count=1, flags=re.IGNORECASE).strip()
         is_gif = mimetype == "image/gif"
         target = event.reply_to_message or event
