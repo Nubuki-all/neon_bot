@@ -32,6 +32,7 @@ class Config:
             self.BANNED_USERS = set(banned_users.split())
             self.BLOCK_NSFW = config("BLOCK_NSFW", default=True, cast=bool)
             self.DISABLE_CIP = config("DISABLE_CIP", default=False, cast=bool)
+            self.ENABLE_CALLS = config("ENABLE_CALLS", default=False, cast=bool)
             self.PH_NUMBER = config("PH_NUMBER", default="")
             self.CB_DB = config("CHATBOT_DB", default=None)
             self.CMD_PREFIX = config("CMD_PREFIX", default=".")
@@ -81,6 +82,7 @@ class Runtime_Config:
         self.author_url = None
         self.auto_save_msg_is_running = False
         self.block_nsfw = False
+        self.calls = {}
         self.client = None
         self.current_games_dict = {}
         self.disable_cic = False

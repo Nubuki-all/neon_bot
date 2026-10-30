@@ -1,3 +1,5 @@
+from neonize.aioze.events import CallEndedEv, CallPlaybackFinishedEv
+
 from . import asyncio  # noqa  # pylint: disable=unused-import
 from . import (
     LOGS,
@@ -22,6 +24,12 @@ from .utils.os_utils import re_x
 from .utils.sudo_button_utils import poll_as_button_handler
 from .workers.handlers.afk import activate_afk, afk_helper
 from .workers.handlers.ani import airing, anime
+from .workers.handlers.call import (
+    call_end,
+    call_play,
+    on_call_ended,
+    on_playback_finished,
+)
 from .workers.handlers.chatbot import add_chatbot_handler
 from .workers.handlers.dev import bash, eval_message, get_logs
 from .workers.handlers.fun import getmeme
@@ -86,6 +94,16 @@ async def _(client: NewAClient, message: MessageEv):
     await on_message(client, message)
 
 
+@bot.client.event(CallEndedEv)
+async def _(client: NewAClient, message: CallEndedEv):
+    await on_call_ended(message)
+
+
+@bot.client.event(CallPlaybackFinishedEv)
+async def _(client: NewAClient, message: CallPlaybackFinishedEv):
+    await on_playback_finished(message)
+
+
 @bot.client.event(GroupInfoEv)
 async def _(client: NewAClient, message: GroupInfoEv):
     await gc_handler(message)
@@ -131,6 +149,16 @@ async def _(client: NewAClient, message: Event):
 @bot.register("bash")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, bash, require_args=True)
+
+
+@bot.register("call")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, call_play)
+
+
+@bot.register("endcall")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, call_end)
 
 
 @bot.register("meme")

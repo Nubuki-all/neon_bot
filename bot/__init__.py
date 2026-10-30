@@ -148,4 +148,4 @@ bot.block_nsfw = conf.BLOCK_NSFW
 bot.disable_cic = conf.DISABLE_CIP
 bot.tgp_client = TelegraphPoster(use_api=True, telegraph_api_url=conf.TELEGRAPH_API)
 
-bot.client = NewAClient(conf.WA_DB)
+bot.client = NewAClient(conf.WA_DB, enable_calls=conf.ENABLE_CALLS)
