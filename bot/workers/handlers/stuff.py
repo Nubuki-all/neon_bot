@@ -43,6 +43,8 @@ async def getcmds(event, args, client):
 {pre}logs - *[Owner] Get bot logs*
 {pre}ban - *[Owner | Sudo] Prevent a user from using bot*
 {pre}unban - *[Owner | Sudo] Unban a user*
+{pre}call - *[Owner | Sudo] Play replied audio or a link in a voice call (test)*
+{pre}endcall - *[Owner | Sudo] Hang up the voice call*
 {pre}rss - *[Owner | Sudo] Setup bot to auto post RSS feeds*
 {pre}update - *[Owner | Sudo] Update & restarts bot*
 {pre}restart - *[Owner | Sudo] Restarts bot*
