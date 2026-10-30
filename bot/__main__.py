@@ -1,3 +1,5 @@
+from neonize.aioze.events import CallEndedEv, CallPlaybackFinishedEv
+
 from . import asyncio  # noqa  # pylint: disable=unused-import
 from . import (
     LOGS,
@@ -16,8 +18,6 @@ from . import (
     traceback,
 )
 from .startup.after import on_startup
-from neonize.aioze.events import CallEndedEv, CallPlaybackFinishedEv
-
 from .utils.db_utils import restore_wa_db
 from .utils.events import CONCURRENT_AUTO, POLL, Event, event_handler, on_message
 from .utils.os_utils import re_x
