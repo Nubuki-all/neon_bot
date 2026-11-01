@@ -2958,14 +2958,68 @@ async def delete_reminders(event, args, client):
         await logger(Exception)
 
 
-async def auto_del_msg(event: Event, _, __):
+# Group admins per chat, refreshed every few minutes for role mutes
+ADMIN_CACHE_TTL = 300
+group_admins_cache: dict[str, tuple[float, set]] = {}
+
+
+async def group_admin_ids(event: Event, client) -> set:
+    """Every id (LID, phone number) the group's admins are known by"""
+    chat_id = event.chat.id
+    cached = group_admins_cache.get(chat_id)
+    if cached and time.time() - cached[0] < ADMIN_CACHE_TTL:
+        return cached[1]
+    info = await client.get_group_info(event.chat.jid)
+    admins = {
+        user
+        for p in info.Participants
+        if p.IsAdmin
+        for user in (p.JID.User, p.LID.User, p.PhoneNumber.User)
+        if user
+    }
+    group_admins_cache[chat_id] = (time.time(), admins)
+    return admins
+
+
+async def muted_by_role(event: Event, group_info: dict, client) -> bool:
+    """
+    Whether the sender is muted through a role: they're in a muted role, or
+    exempt roles are set and they're in none of them. Admins are never muted.
+    """
+    muted_roles = group_info.get("muted_roles")
+    except_roles = group_info.get("mute_except_roles")
+    if not (muted_roles or except_roles) or not event.chat.is_group:
+        return False
+    if event.outgoing:
+        return False
+    user = event.from_user.id
+    roles = group_info.get("roles", {})
+
+    def in_any(names) -> bool:
+        return any(user in roles.get(n, {}).get("members", []) for n in names)
+
+    if not (
+        (muted_roles and in_any(muted_roles))
+        or (except_roles and not in_any(except_roles))
+    ):
+        return False
+    try:
+        admins = await group_admin_ids(event, client)
+    except Exception:
+        # Never delete when we can't check for admins
+        await logger(Exception)
+        return False
+    return user not in admins
+
+
+async def auto_del_msg(event: Event, _, client):
     user = event.from_user.id
     if user_is_privileged(user):
         return
     chat_id = event.chat.id
     group_info: dict = bot.group_dict.setdefault(chat_id, {})
     muted: set = group_info.setdefault("muted", set())
-    if user in muted:
+    if user in muted or await muted_by_role(event, group_info, client):
         try:
             await event.delete()
             raise StopAutoHandlers("user is muted")

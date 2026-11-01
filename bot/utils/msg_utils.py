@@ -121,7 +121,8 @@ def tag_users(members: list) -> str:
 
 def user_is_admin(user: str, members: list) -> bool:
     for member in members:
-        if user == member.JID.User or user == member.PhoneNumber.User:
+        # user must be non-empty: unset JID fields have an empty User
+        if user and user in (member.JID.User, member.LID.User, member.PhoneNumber.User):
             return member.IsAdmin
 
 
