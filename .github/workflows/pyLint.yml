@@ -35,8 +35,8 @@ jobs:
 
       - name: lint with isort and black
         run: |
-          isort bot
-          black --fast bot
+          isort bot modal
+          black --fast bot modal
 
       # commit changes
       - uses: stefanzweifel/git-auto-commit-action@v7
@@ -52,4 +52,4 @@ jobs:
       # formatter failed above so the errors are annotated on the code
       - name: Check for errors (ruff)
         if: ${{ !cancelled() }}
-        run: ruff check --no-cache --select E9,F63,F7,F82 --output-format github bot
+        run: ruff check --no-cache --select E9,F63,F7,F82 --output-format github bot modal
