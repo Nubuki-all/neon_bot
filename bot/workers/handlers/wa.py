@@ -118,6 +118,7 @@ async def tools(event, args, client):
             f"{pre}mp3 - *Convert a replied video to mp3, optionally trimmed*{s}"
             f"{pre}sanitize_video - *Re-encode a replied video that won't play*{s}"
             f"{pre}tikmate - *Download TikTok videos/images*{s}"
+            f"{pre}autotranslate - *[Owner | Sudo | Admin in groups] Translate messages that aren't in the chat's language*{s}"
             f"{pre}upscale - {'*Upscale replied image*' if not bot.disable_cic or conf.MODAL_UPSCALE_API else '_Currently not available!_'}"
             f"{' *(models: ' + ', '.join(UPSCALE_MODELS) + ')*' if conf.MODAL_UPSCALE_API else ''}{s}"
             f"{pre}batch_upscale - {'*Upscale replied album images* *(models: ' + ', '.join(UPSCALE_MODELS) + ')*' if conf.MODAL_UPSCALE_API else '_Currently not available!_'}{s}"

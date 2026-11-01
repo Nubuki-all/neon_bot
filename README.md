@@ -47,6 +47,7 @@ A feature-rich WhatsApp bot built with the [neonize](https://github.com/Nubuki-a
 - **Reminders**: Get tagged on a replied message at a specified time.
 - **RSS Feeds**: Subscribe to RSS feeds and receive updates in your chats.
 - **URL Sanitization**: Strip tracking parameters from links.
+- **Auto Translation**: Messages that aren't in a chat's set language get a translated reply (language detected locally with py3langid, translated with Google Translate).
 - **Random Choice**: Let the bot pick from a list of options.
 - **Message Store**: Messages are stored locally (for undelete, objection, etc.) and cleaned up automatically after `MSG_STORE_STALE` seconds.
 
@@ -75,6 +76,7 @@ The default command prefix is `.`; change it with `CMD_PREFIX`. Use `.cmds`, `.t
 - `.tikmate [url]`: Download a TikTok video.
 - `.screenshot [url]`: Take a screenshot of a website.
 - `.sanitize [url]`: Sanitize a link or replied message.
+- `.autotranslate [language | off] [-i languages]`: Translate messages that aren't in the chat's language, optionally leaving some languages alone (e.g. `-i pcm`). Owner, sudo and admins in groups.
 - `.random [options]`: Pick a random choice.
 - `.repeat`: Repeat a replied message.
 

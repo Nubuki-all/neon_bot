@@ -15,6 +15,7 @@ humanize
 lxml[html_clean]
 multicolorcaptcha
 pymongo
+py3langid
 python-decouple
 python-ffmpeg
 pytz
