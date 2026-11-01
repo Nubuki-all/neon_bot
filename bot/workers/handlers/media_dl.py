@@ -215,17 +215,6 @@ async def youtube_reply(event: Event, args: str, client):
                 _img_format = "best"
                 listener = DummyListener(job[0])
                 ytdl = YoutubeDLHelper(listener)
-                # temporary patch for ytdl with cookies
-                if file_exists(".cookies.txt"):
-                    ytdl.opts.update(
-                        {
-                            "extractor_args": {
-                                "youtube": {
-                                    "player_client": ["default", "web_embedded"]
-                                }
-                            }
-                        }
-                    )
                 quality = ""
                 if "music" in listener.link:
                     audio = True
