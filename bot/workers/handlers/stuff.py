@@ -46,6 +46,7 @@ async def getcmds(event, args, client):
 {pre}call - *[Owner | Sudo] Play replied audio or a link in a voice call (test)*
 {pre}endcall - *[Owner | Sudo] Hang up the voice call*
 {pre}rss - *[Owner | Sudo] Setup bot to auto post RSS feeds*
+{pre}genshin on/off/codes - *Watch for Genshin Impact redeem codes*
 {pre}update - *[Owner | Sudo] Update & restarts bot*
 {pre}restart - *[Owner | Sudo] Restarts bot*
 {pre}ytdl_* - *[Owner | Sudo | Admin] Disables/Enables auto media download (anyone in PM)*

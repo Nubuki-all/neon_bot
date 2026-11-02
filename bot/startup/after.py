@@ -15,6 +15,7 @@ from bot.utils.rss_utils import scheduler
 from bot.utils.runtime import shutdown_services
 from bot.workers.auto.reminder import reschedule_all
 from bot.workers.auto.reminder import scheduler as reminder_scheduler
+from bot.workers.handlers.genshin import start_genshin_watcher
 
 
 async def onrestart():
@@ -131,6 +132,7 @@ async def on_startup():
         asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())
         asyncio.create_task(auto_clean_msg())
+        start_genshin_watcher()
         LOGS.info("Bot has started.")
     except Exception:
         await logger(Exception)

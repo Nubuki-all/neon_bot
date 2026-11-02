@@ -167,6 +167,7 @@ cython_debug/
 # Dbs
 *.pkl
 *.db
+.local_genshin_codes.json*
 
 # cookies
 .cookies.txt
