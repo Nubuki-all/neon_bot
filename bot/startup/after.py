@@ -1,3 +1,4 @@
+import json
 import signal
 
 import aiohttp
@@ -11,6 +12,7 @@ from bot.utils.msg_rank import scheduler2
 from bot.utils.msg_store import Base as sql_base
 from bot.utils.msg_store import auto_clean_msg, auto_save_msg, engine, migrate_msg_store
 from bot.utils.msg_utils import send_presence
+from bot.utils.os_utils import PR_RESULT_FILE, PR_STATE_FILE
 from bot.utils.rss_utils import scheduler
 from bot.utils.runtime import shutdown_services
 from bot.workers.auto.reminder import reschedule_all
@@ -27,12 +29,44 @@ async def onrestart():
                 msg = f"*Updated to >>>* {bot.version}"
             else:
                 msg = "*No major update found!*\n" f"Bot restarted! {enmoji()}"
+        elif sys.argv[1].startswith("prtest"):
+            msg = pr_test_msg()
         else:
             return
         chat_id, msg_id, server = map(str, sys.argv[2].split(":"))
         await bot.client.edit_message(
             jid.build_jid(chat_id, server), msg_id, Message(conversation=msg)
         )
+    except Exception:
+        await logger(Exception)
+
+
+def pr_test_msg():
+    """What became of a switch to a PR (see update.py)"""
+    if PR_STATE_FILE.is_file():
+        state = json.loads(PR_STATE_FILE.read_text())
+        return (
+            f"*Testing PR #{state['pr']}* ({state.get('sha', '?')})\n"
+            f"Send {conf.CMD_PREFIX}update to go back to the main code. "
+            "If I crash, I go back by myself."
+        )
+    result = json.loads(PR_RESULT_FILE.read_text())
+    PR_RESULT_FILE.unlink()
+    return f"*PR #{result['pr']} {result['reason']}.* Still on the main code."
+
+
+async def report_pr_result():
+    """Tell the chat that tested a PR why it was dropped (run.sh / update.py)"""
+    try:
+        if not PR_RESULT_FILE.is_file():
+            return
+        result = json.loads(PR_RESULT_FILE.read_text())
+        PR_RESULT_FILE.unlink()
+        chat_id, _, server = result["msg"].split(":")
+        text = f"*PR #{result['pr']} {result['reason']}*, back on the main code."
+        if result.get("log"):
+            text += f"\n\n```{result['log']}```"
+        await bot.client.send_message(jid.build_jid(chat_id, server), text)
     except Exception:
         await logger(Exception)
 
@@ -127,6 +161,7 @@ async def on_startup():
             await onrestart()
         else:
             await onstart(f"*I'm {enquip()} {enmoji()}*")
+        await report_pr_result()
         asyncio.create_task(update_presence())
         asyncio.create_task(backup_database())
         asyncio.create_task(auto_save_msg())

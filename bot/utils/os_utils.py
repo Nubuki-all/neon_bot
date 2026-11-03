@@ -12,6 +12,10 @@ from bot import version_file
 
 from .log_utils import log
 
+# Written by .update -pr and update.py; see update.py
+PR_STATE_FILE = Path(".pr_test")
+PR_RESULT_FILE = Path(".pr_result")
+
 dirs = ("comp/", "downloads/", "temp/", "trim/", "ytdl/")
 for dir_ in dirs:
     if not os.path.isdir(dir_):
@@ -51,7 +55,11 @@ def re_x(i=None, msg=None):
         os.execl(sys.executable, sys.executable, "-m", "bot", i, msg)
 
 
-def updater(msg=None):
+def updater(msg=None, mode="update"):
+    """
+    Run update.py and restart. mode is what the restarted bot reports:
+    "update" (whether the version changed) or "prtest" (the PR switched to).
+    """
     try:
         with open(version_file, "r") as file:
             ver = file.read()
@@ -69,7 +77,7 @@ def updater(msg=None):
         if msg:
             message = f"{msg.chat.id}:{msg.id}:{msg.chat.server}"
             os.execl(
-                sys.executable, sys.executable, "-m", "bot", f"update {vmsg}", message
+                sys.executable, sys.executable, "-m", "bot", f"{mode} {vmsg}", message
             )
         else:
             os.execl(sys.executable, sys.executable, "-m", "bot")

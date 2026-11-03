@@ -125,6 +125,7 @@ The default command prefix is `.`; change it with `CMD_PREFIX`. Use `.cmds`, `.t
 - `.pause [on/off]`: Make the bot ignore non-owners.
 - `.rss`: Manage RSS feed subscriptions.
 - `.update` / `.restart`: Update or restart the bot.
+- `.update -pr <number>`: Switch to a pull request's code to test it. `.update` goes back to the main code, and so does the bot by itself if it crashes on the pull request (when started with `run.sh`).
 - `.logs`: Get the bot logs.
 - `.eval [code]` / `.bash [cmd]`: Run Python code or shell commands.
 

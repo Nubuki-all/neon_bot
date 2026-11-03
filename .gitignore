@@ -173,3 +173,8 @@ cython_debug/
 
 # weights
 weights
+
+# PR testing (update.py, run.sh)
+.pr_test
+.pr_result
+.bot_stderr.log

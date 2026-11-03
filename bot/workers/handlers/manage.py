@@ -1,5 +1,6 @@
 import asyncio
 import itertools
+import json
 from inspect import getdoc
 
 from feedparser import parse as feedparse
@@ -21,7 +22,7 @@ from bot.utils.msg_utils import (
     user_is_privileged,
     user_is_sudoer,
 )
-from bot.utils.os_utils import re_x, updater
+from bot.utils.os_utils import PR_STATE_FILE, re_x, updater
 from bot.utils.rss_utils import schedule_rss, scheduler
 from bot.utils.runtime import shutdown_services
 
@@ -49,13 +50,41 @@ async def restart_handler(event, args, client):
 async def update_handler(event, args, client):
     """
     [Owner | Sudo] Pull the latest bot update and restart.
-    Arguments: None
+    While a PR is being tested, this goes back to the main code.
+    Arguments:
+        -pr <number> - Switch to a pull request's code to test it. If the bot
+            crashes while on it, it goes back to the main code by itself.
+        -pr - Show the pull request being tested
     """
     user = event.from_user.id
     if not user_is_owner(user):
         if not user_is_sudoer(user):
             return await event.react("🚫")
     try:
+        flag, _, pr = (args or "").strip().partition(" ")
+        if flag and flag != "-pr":
+            return await event.reply(getdoc(update_handler))
+        if flag == "-pr" and not pr:
+            if not PR_STATE_FILE.is_file():
+                return await event.reply("*Not testing a pull request.*")
+            state = json.loads(PR_STATE_FILE.read_text())
+            return await event.reply(
+                f"*Testing PR #{state['pr']}* ({state.get('sha', '?')})"
+            )
+        if flag == "-pr":
+            if not pr.strip().lstrip("#").isdigit():
+                return await event.reply("*Give the pull request's number.*")
+            pr = int(pr.strip().lstrip("#"))
+            reply = await event.reply(f"*Switching to PR #{pr}…*")
+            PR_STATE_FILE.write_text(
+                json.dumps(
+                    {"pr": pr, "msg": f"{reply.chat.id}:{reply.id}:{reply.chat.server}"}
+                )
+            )
+            await shutdown_services()
+            return updater(reply, mode="prtest")
+        # Plain update: leave any PR being tested
+        PR_STATE_FILE.unlink(missing_ok=True)
         upt_mess = "*Updating…*"
         reply = await event.reply(f"{upt_mess}")
         await shutdown_services()
