@@ -144,7 +144,7 @@ The bot can be configured via environment variables or a `.env` file (see `.env.
 | `BLOCK_NSFW` | `True` | Enable/disable NSFW filtering. |
 | `CMD_PREFIX` | `.` | Command prefix. |
 | `CHATBOT_DB` | | MongoDB URL for the chatbot; the chatbot is disabled if unset. |
-| `DATABASE_URL` | | MongoDB connection string. Without it, data is kept in a local SQLite file, `.local.db`. |
+| `DATABASE_URL` | | MongoDB connection string. Without it, data is kept in a local SQLite file, `.local.db`. Data from older versions is moved over on first start; the old MongoDB documents are kept, and old `.local_*.pkl` files are renamed to `.pkl.bak`. |
 | `DBNAME` | `Neon` | MongoDB database name. |
 | `DB_ID` | `0000` | Database document ID, used when `PH_NUMBER` is not set. |
 | `DEBUG` | `False` | Enable debug logging. |
