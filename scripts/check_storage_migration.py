@@ -90,8 +90,8 @@ def load_store_modules(repo, botobj, conf, local_db, logs):
     loaded = {}
     for name in ("store_codec", "store"):
         spec = importlib.util.spec_from_file_location(
-            f"bot.utils.{name}", os.path.join(repo, "bot", "utils", f"{name}.py")
-        )
+            f"bot.utils.{name}", os.path.join(
+                repo, "bot", "utils", f"{name}.py"))
         module = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
@@ -114,16 +114,22 @@ def differences(expected, actual, path, redact, out, limit=20):
     if len(out) >= limit:
         return
     if type(expected) is not type(actual):
-        out.append(f"{path}: {type(expected).__name__} became {type(actual).__name__}")
+        out.append(
+            f"{path}: {
+                type(expected).__name__} became {
+                type(actual).__name__}")
     elif isinstance(expected, dict):
         for k in expected.keys() - actual.keys():
             out.append(f"{path}[{redact.key(k)}]: missing after migration")
         for k in actual.keys() - expected.keys():
             out.append(f"{path}[{redact.key(k)}]: appeared after migration")
         for k in expected.keys() & actual.keys():
-            differences(
-                expected[k], actual[k], f"{path}[{redact.key(k)}]", redact, out, limit
-            )
+            differences(expected[k],
+                        actual[k],
+                        f"{path}[{redact.key(k)}]",
+                        redact,
+                        out,
+                        limit)
     elif isinstance(expected, (list, tuple)):
         if len(expected) != len(actual):
             out.append(f"{path}: length {len(expected)} became {len(actual)}")
@@ -183,10 +189,11 @@ def main():
             source, test = client[dbname], client[test_name]
             if test.list_collection_names():
                 sys.exit(
-                    f"Test database {test_name} isn't empty; drop it or pick another --test-db"
-                )
-            print(f"Copying this bot's old documents from {dbname} to {test_name}…")
-            store_mod = load_store_modules(args.repo, fresh_bot(), conf, None, logs)
+                    f"Test database {test_name} isn't empty; drop it or pick another --test-db")
+            print(
+                f"Copying this bot's old documents from {dbname} to {test_name}…")
+            store_mod = load_store_modules(
+                args.repo, fresh_bot(), conf, None, logs)
             expected = {}
             for collection in sorted(set(store_mod.LEGACY_MONGO.values())):
                 doc = source[collection].find_one({"_id": bot_id})
@@ -209,7 +216,8 @@ def main():
                 for doc in test["records"].find({"_id.bot": bot_id}):
                     store = doc["_id"]["store"]
                     count, largest = sizes.get(store, (0, 0))
-                    sizes[store] = (count + 1, max(largest, len(bson.encode(doc))))
+                    sizes[store] = (count +
+                                    1, max(largest, len(bson.encode(doc))))
                 return sizes
 
         else:
@@ -255,7 +263,8 @@ def main():
         data_store.load()
 
         # 3. Saving unchanged data must write nothing (stores without old data,
-        # like gift's defaults, are written on their first save; that's expected)
+        # like gift's defaults, are written on their first save; that's
+        # expected)
         writes = []
         write = data_store.backend.write
         data_store.backend.write = lambda s, up, de: (
@@ -306,11 +315,14 @@ def main():
             for line in logs.errors[:20]:
                 # Error messages name positions, which can include ids
                 print(
-                    f"  {line if args.show_keys else re.sub(r'[0-9]{6,}', '<id>', line)}"
-                )
+                    f"  {
+                        line if args.show_keys else re.sub(
+                            r'[0-9]{6,}',
+                            '<id>',
+                            line)}")
         print(
-            f"\n{'No problems found.' if not problems else f'{problems} problem(s) found.'}"
-        )
+            f"\n{
+                'No problems found.' if not problems else f'{problems} problem(s) found.'}")
         if url and args.keep:
             print(f"Kept the test database {test_name}.")
     finally:
