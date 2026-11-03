@@ -59,6 +59,7 @@ from .workers.handlers.media_dl import youtube_reply
 from .workers.handlers.objection import insession, render_objection
 from .workers.handlers.role import roles
 from .workers.handlers.stuff import gc_info, getcmds, hello, up
+from .workers.handlers.translate import auto_translate, autotranslate
 from .workers.handlers.wa import gc_handler, handle_self_join, sticker_reply
 
 ## Client Event Handlers ##
@@ -160,6 +161,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register("endcall")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, call_end)
+
+
+@bot.register("autotranslate")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, autotranslate, client)
 
 
 @bot.register("meme")
@@ -336,6 +342,11 @@ async def _(client: NewAClient, message: Event):
 @bot.register(CONCURRENT_AUTO)
 async def _(client: NewAClient, message: Event):
     await afk_helper(message, None, client)
+
+
+@bot.register(CONCURRENT_AUTO)
+async def _(client: NewAClient, message: Event):
+    await auto_translate(message, None, client)
 
 
 @bot.register(CONCURRENT_AUTO)

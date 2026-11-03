@@ -1062,9 +1062,12 @@ async def auto_del_as_mute(event: Event, args: str, client):
     Arguments:
         -a user_id/@mention ... - Mute one or more members (the bot must be a group admin)
         -rm user_id/@mention ... - Unmute one or more members
-        -c - Clear the muted list
+        -role <role_name> - Mute every member of a role; with -rm, unmute it
+        -except <role_name> - Mute everyone who isn't in the role; with -rm, stop.
+            With more than one such role, members of any of them can talk.
+        -c - Clear the muted list and all role mutes
     With -a or -rm you can reply to the member's message instead of passing ids.
-    Owner, sudoers and group admins cannot be muted.
+    Owner, sudoers and group admins cannot be muted, by name or through a role.
 
     user_id: phone number with country code (with leading +, no spaces) or lid if known
     """
@@ -1083,9 +1086,13 @@ async def auto_del_as_mute(event: Event, args: str, client):
         ["-a", "store_true"],
         ["-rm", "store_true"],
         ["-c", "store_true"],
+        "-role",
+        "-except",
         to_parse=args,
         get_unknown=True,
     )
+    if arg.role or getattr(arg, "except"):
+        return await mute_role(event, arg, group_info)
     if arg.a:
         if not user_is_admin(bot.client.me.JID.User, group_info.Participants):
             return await event.reply("*I need to be admin for that to work*")
@@ -1151,8 +1158,10 @@ async def auto_del_as_mute(event: Event, args: str, client):
 
         if arg.c:
             muted.clear()
+            gc_dict.pop("muted_roles", None)
+            gc_dict.pop("mute_except_roles", None)
             await save2db2(bot.group_dict, "groups")
-            return await event.reply("*Cleared the muted list*")
+            return await event.reply("*Cleared the muted list and role mutes*")
         for user in args.split() or [event.reply_to_message.from_user.id]:
             try:
                 user = user.lstrip("@")
@@ -1161,6 +1170,50 @@ async def auto_del_as_mute(event: Event, args: str, client):
                 await event.reply(f"Could not handle user with id: {user}")
         if modified:
             await save2db2(bot.group_dict, "groups")
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+
+
+async def mute_role(event: Event, arg, group_info):
+    """Mutes or unmutes a role's members (-role), or everyone outside a role (-except)"""
+    try:
+        except_role = getattr(arg, "except")
+        if arg.role and except_role:
+            return await event.reply("*Use -role or -except, not both.*")
+        name = (arg.role or except_role).casefold()
+        key = "muted_roles" if arg.role else "mute_except_roles"
+        gc_dict: dict = bot.group_dict.setdefault(event.chat.id, {})
+        names: set = gc_dict.setdefault(key, set())
+        who = (
+            f"members of role *{name}*"
+            if arg.role
+            else f"everyone outside role *{name}*"
+        )
+        if arg.rm:
+            if name not in names:
+                return await event.reply(f"*Messages from {who} aren't being deleted.*")
+            names.discard(name)
+            await save2db2(bot.group_dict, "groups")
+            return await event.reply(f"*Messages from {who} are no longer deleted.*")
+        if name not in gc_dict.get("roles", {}):
+            return await event.reply(f"*Role with name: {name} doesn't exist!*")
+        if not user_is_admin(bot.client.me.JID.User, group_info.Participants):
+            return await event.reply("*I need to be admin for that to work*")
+        if name in names:
+            return await event.reply(f"*Messages from {who} are already deleted.*")
+        names.add(name)
+        await save2db2(bot.group_dict, "groups")
+        others = len(names) - 1
+        also = (
+            f"\n_Members of {others} other exempt role(s) can still talk._"
+            if except_role and others
+            else ""
+        )
+        await event.reply(
+            f"*Messages from {who} will be deleted.*\n"
+            f"_Admins, owner and sudoers are never muted._{also}"
+        )
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -1180,6 +1233,12 @@ async def list_muted(event: Event, args: str | None, client):
             resp = "*No members were muted.*"
         else:
             resp = f"*List of muted members:*{msg}"
+        if muted_roles := group_info.get("muted_roles"):
+            resp += "\n\n*Muted roles:*" + "".join(f"\n- {r}" for r in muted_roles)
+        if except_roles := group_info.get("mute_except_roles"):
+            resp += "\n\n*Everyone is muted except members of:*" + "".join(
+                f"\n- {r}" for r in except_roles
+            )
 
         for text in split_text(resp):
             event = await event.reply(text)

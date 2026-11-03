@@ -48,6 +48,7 @@ A feature-rich WhatsApp bot built with the [neonize](https://github.com/Nubuki-a
 - **RSS Feeds**: Subscribe to RSS feeds and receive updates in your chats.
 - **Genshin Codes**: Get the current Genshin Impact redeem codes, and have new ones posted to chats automatically.
 - **URL Sanitization**: Strip tracking parameters from links.
+- **Auto Translation**: Messages that aren't in a chat's set language get a translated reply (language detected locally with py3langid, translated with Google Translate).
 - **Random Choice**: Let the bot pick from a list of options.
 - **Message Store**: Messages are stored locally (for undelete, objection, etc.) and cleaned up automatically after `MSG_STORE_STALE` seconds.
 
@@ -77,6 +78,7 @@ The default command prefix is `.`; change it with `CMD_PREFIX`. Use `.cmds`, `.t
 - `.tikmate [url]`: Download a TikTok video.
 - `.screenshot [url]`: Take a screenshot of a website.
 - `.sanitize [url]`: Sanitize a link or replied message.
+- `.autotranslate [language | off] [-i languages]`: Translate messages that aren't in the chat's language, optionally leaving some languages alone (e.g. `-i pcm`). Owner, sudo and admins in groups.
 - `.random [options]`: Pick a random choice.
 - `.repeat`: Repeat a replied message.
 
@@ -90,14 +92,18 @@ The default command prefix is `.`; change it with `CMD_PREFIX`. Use `.cmds`, `.t
 - `.setwelcome` / `.unsetwelcome`: Set or remove a custom welcome message.
 - `.setrules` / `.delrules` / `.rules`: Set, delete, or view group rules.
 - `.roles [-l | role_name]`: List role commands, list roles, or show a role.
-- `.new_role` / `.edit_role` / `.del_role`: Create, edit, or delete a role.
+- `.new_role` / `.edit_role` / `.del_role`: Create, edit, or delete a role. Roles can have a description (`-d`) and be closed (`-c`), so members are added by the creator or an admin instead of joining.
+- `.transfer_role`: Make another member the role's creator.
 - `.join_role` / `.exit_role`: Join or leave a role.
+- `.my_roles`: List the roles you're in.
+- `.role_tags <role> [on|off]`: Stop or resume getting tagged by a role without leaving it.
 - `.add2role` / `.rm_from_role`: Add or remove users from a role.
+- `@role_name` (or `@role_names`) in a group message tags the role's members; when the message replies to another, the tag says who sent it; each role can be tagged once a minute, and users can create up to 10 roles per group (admins, owner and sudo are exempt from both).
 - `.msg_ranking`: View the group message leaderboard.
 - `.amr_enable [weekly/monthly]` / `.amr_disable`: Toggle automatic message ranking.
 - `.pin` / `.unpin`: Pin or unpin a replied message.
 - `.purge`: Mass delete messages.
-- `.mute [-a/-rm/-c]`: Manage users whose messages are auto-deleted.
+- `.mute [-a/-rm/-c] [-role <role> | -except <role>]`: Manage users whose messages are auto-deleted; `-role` mutes a role's members and `-except` mutes everyone outside a role. Admins, owner and sudo are never muted.
 - `.enable_atd` / `.disable_atd`: Toggle auto-deleting mass tags.
 - `.ytdl_enable` / `.ytdl_disable`: Toggle the auto downloader in a chat.
 - `.enable` / `.disable`: Enable or disable bot replies in a group.
