@@ -29,7 +29,9 @@ from bot.fun.stickers import ran_stick
 from bot.others.exceptions import StopAutoHandlers, StopHandlers
 from bot.pkgs.tikmate_dl import TikmateAsync
 from bot.utils.bot_utils import (
+    CommentsUnavailable,
     LimitedDict,
+    comment_site,
     get_date_from_isostr,
     get_fps,
     get_mediainfo,
@@ -40,8 +42,6 @@ from bot.utils.bot_utils import (
     png_to_jpg,
     post_to_tgph,
     read_binary,
-    CommentsUnavailable,
-    comment_site,
     same_week,
     screenshot_comments,
     screenshot_page,
@@ -780,9 +780,7 @@ async def screenshot_comments_(event, args, client):
                 return await event.reply("*No link found in your message*")
         urls = [url for url in urls if comment_site(url)]
         if not urls:
-            return await event.reply(
-                "*No X or YouTube link found*"
-            )
+            return await event.reply("*No X or YouTube link found*")
         await event.react("🌐")
         for url in urls:
             try:
