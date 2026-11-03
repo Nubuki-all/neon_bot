@@ -15,7 +15,8 @@ A feature-rich WhatsApp bot built with the [neonize](https://github.com/Pah-0/ne
 - **Compress**: Compress videos.
 - **Inspect**: Get a video's FPS or full mediainfo.
 - **Repair**: Make some unplayable videos playable.
-- **Screenshot**: Generate screenshots of websites from a URL.
+- **Screenshot**: Generate screenshots of websites from a URL, or long screenshots of a YouTube or X post's comments.
+- **TL;DR**: Summarise (`.tldr`) or explain in simple words (`.eli5`) a replied message or image, through a Modal endpoint.
 
 ### 🎨 Sticker & Image Tools
 - **Sticker Creation**: Convert images, videos, and GIFs into stickers.
@@ -159,6 +160,8 @@ The bot can be configured via environment variables or a `.env` file (see `.env.
 | `IGNORE_PM` | `True` | Ignore private messages. Has no effect if `ALLOWED_CHATS` is set. |
 | `KLIPY_API_KEY` | | API key for GIF and meme search. |
 | `LOG_GROUP` | | Chat ID to send logs and errors to (`id` or `id:server`). |
+| `MODAL_TLDR_API` | | URL of the Modal app in `modal/modal_tldr.py`, for `.tldr` and `.eli5`. Deploy it with `modal deploy modal/modal_tldr.py` after creating a `tldr-auth-token` secret with an `API_TOKEN`. |
+| `MODAL_TLDR_TOKEN` | | The `API_TOKEN` of `MODAL_TLDR_API`. |
 | `MODAL_UPSCALE_API` | | URL of a Modal upscaling endpoint. |
 | `MODAL_UPSCALE_TOKEN` | | Token for `MODAL_UPSCALE_API`. |
 | `MSG_STORE` | `sqlite+aiosqlite:///msg_store.db` | SQLAlchemy async URL of the local message store. |

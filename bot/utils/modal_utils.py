@@ -1,4 +1,5 @@
 import asyncio
+import base64
 
 import httpx
 
@@ -61,3 +62,29 @@ async def upscale_batch(
 
         upscaled_results = await asyncio.gather(*tasks)
         return list(upscaled_results)
+
+
+async def explain(
+    mode: str, text: str, image: bytes | None = None, timeout_seconds: float = 600.0
+) -> str:
+    """
+    Summarise ("tldr") or simplify ("eli5") text and/or an image with the
+    Modal app in modal/modal_tldr.py. A cold start loads the model first,
+    which can take a couple of minutes.
+
+    Raises:
+        httpx.HTTPStatusError: If the server returns a 4xx/5xx status code.
+        httpx.RequestError: If a network connection issue or timeout occurs.
+    """
+    headers = {"Authorization": f"Bearer {conf.MODAL_TLDR_TOKEN}"}
+    payload = {
+        "mode": mode,
+        "text": text,
+        "image": base64.b64encode(image).decode() if image else None,
+    }
+    timeout = httpx.Timeout(timeout_seconds)
+    # Modal answers requests that run past 150s with a redirect to the result
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        response = await client.post(conf.MODAL_TLDR_API, json=payload, headers=headers)
+        response.raise_for_status()
+        return response.json()["text"]

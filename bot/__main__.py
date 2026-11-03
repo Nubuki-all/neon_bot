@@ -59,6 +59,7 @@ from .workers.handlers.media_dl import youtube_reply
 from .workers.handlers.objection import insession, render_objection
 from .workers.handlers.role import roles
 from .workers.handlers.stuff import gc_info, getcmds, hello, up
+from .workers.handlers.tldr import eli5, tldr
 from .workers.handlers.translate import auto_translate, autotranslate
 from .workers.handlers.wa import gc_handler, handle_self_join, sticker_reply
 
@@ -166,6 +167,16 @@ async def _(client: NewAClient, message: Event):
 @bot.register("autotranslate")
 async def _(client: NewAClient, message: Event):
     await event_handler(message, autotranslate, client)
+
+
+@bot.register("tldr")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, tldr, client)
+
+
+@bot.register("eli5")
+async def _(client: NewAClient, message: Event):
+    await event_handler(message, eli5, client)
 
 
 @bot.register("meme")
