@@ -21,11 +21,35 @@ CODE_FEEDS = (
 GIFT_CHECK_INTERVAL = 30 * 60
 # Codes go into links, so entries that don't look like a code are dropped
 _valid_code = re.compile(r"[A-Za-z0-9]{4,64}")
+# "Mora*10000" (seria.moe) or "Mora ×10000" (ennead.cc)
+_reward_amount = re.compile(r"\s*[*×x]\s*(\d+)\s*$")
+
+
+def parse_rewards(rewards) -> list[str]:
+    """
+    Rewards as ["Mora ×10,000", ...] from either feed: a ";"-separated
+    string with "*" before the amount, or a list using "×".
+    """
+    if isinstance(rewards, str):
+        rewards = rewards.split(";")
+    if not isinstance(rewards, list):
+        return []
+    parsed = []
+    for reward in map(str, rewards):
+        reward = reward.strip()
+        if not reward:
+            continue
+        match = _reward_amount.search(reward)
+        if match:
+            name = reward[: match.start()].strip()
+            reward = f"{name} ×{int(match.group(1)):,}"
+        parsed.append(reward)
+    return parsed
 
 
 def parse_codes(data: dict) -> list[dict]:
     """
-    Active codes as [{"code", "rewards"}] from either feed's format;
+    Active codes as [{"code", "rewards": [str]}] from either feed's format;
     expired, other games' and malformed entries are dropped.
     """
     if not isinstance(data, dict) or data.get("game", "genshin") != "genshin":
@@ -44,10 +68,8 @@ def parse_codes(data: dict) -> list[dict]:
         code = str(entry.get("code") or "").strip()
         if not _valid_code.fullmatch(code):
             continue
-        rewards = entry.get("rewards") or ""
-        if isinstance(rewards, list):
-            rewards = ", ".join(map(str, rewards))
-        codes.setdefault(code.casefold(), {"code": code, "rewards": str(rewards)})
+        rewards = parse_rewards(entry.get("rewards"))
+        codes.setdefault(code.casefold(), {"code": code, "rewards": rewards})
     return list(codes.values())
 
 
@@ -73,7 +95,8 @@ def get_msg_from_codes(codes: list, auto: bool = False):
             quote(
                 code['code'],
                 safe='')}"
-        msg += f"*{no}.* {link}\n*Reward:* {code['rewards'] or 'Unknown'}"
+        rewards = "\n".join(f"• {r}" for r in code["rewards"]) or "• Unknown"
+        msg += f"*{no}.* {link}\n{rewards}"
         msg += "\n\n"
     msg += "_I'm a bot and this action was performed automatically._" if auto else ""
     return msg.strip()
