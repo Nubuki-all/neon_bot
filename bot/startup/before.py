@@ -65,6 +65,7 @@ if conf.DATABASE_URL:
     load_db(rssdb, "rss", bot.rss_dict, "dict")
     load_db(userdb, "groups", bot.group_dict, "dict")
     load_db(userdb, "users", bot.user_dict, "dict")
+    load_db(rssdb, "gift", bot.gift_dict, "dict")
 
 
 else:

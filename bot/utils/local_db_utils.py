@@ -13,6 +13,7 @@ LEGACY_FILES = {
     "rss": ".local_rssdb.pkl",
     "reminders": ".local_remdb.pkl",
     "users": ".local_users.pkl",
+    "gift": ".local_giftdb.pkl",
 }
 
 
@@ -25,6 +26,7 @@ def stores() -> dict:
         "rss": bot.rss_dict,
         "reminders": bot.remind_dict,
         "users": bot.user_dict,
+        "gift": bot.gift_dict,
     }
 
 

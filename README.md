@@ -46,6 +46,7 @@ A feature-rich WhatsApp bot built with the [neonize](https://github.com/Nubuki-a
 - **AFK**: Set an AFK status; messages that tag or reply to you are forwarded to your DM.
 - **Reminders**: Get tagged on a replied message at a specified time.
 - **RSS Feeds**: Subscribe to RSS feeds and receive updates in your chats.
+- **Genshin Codes**: Get the current Genshin Impact redeem codes, and have new ones posted to chats automatically.
 - **URL Sanitization**: Strip tracking parameters from links.
 - **Random Choice**: Let the bot pick from a list of options.
 - **Message Store**: Messages are stored locally (for undelete, objection, etc.) and cleaned up automatically after `MSG_STORE_STALE` seconds.
@@ -61,6 +62,7 @@ The default command prefix is `.`; change it with `CMD_PREFIX`. Use `.cmds`, `.t
 - `.fun`: Show help for entertainment features.
 - `.gc_info`: Get the group chat's owner.
 - `.afk [reason]`: Mark yourself as AFK.
+- `.gicodes [-add/-rm <chat> | -get]`: Get the current Genshin Impact redeem codes; owner and sudo pick chats where new codes are posted automatically.
 
 ### Media & Tools
 - `.sticker`: Convert replied media to a sticker.
