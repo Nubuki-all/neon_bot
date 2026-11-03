@@ -2457,6 +2457,7 @@ async def to_media(event: Event, _, client):
         caption = re.sub(r"\(asm\)", "", caption, count=1, flags=re.IGNORECASE).strip()
         is_gif = mimetype == "image/gif"
         target = event.reply_to_message or event
+        target.lid_address = event.lid_address
         async with event.react("📥"):
             file = await event.download()
         if mimetype.startswith("image"):
