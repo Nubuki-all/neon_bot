@@ -1,5 +1,7 @@
 import asyncio
+import base64
 import datetime
+import io
 import itertools
 import json
 import logging
@@ -20,7 +22,7 @@ import pytz
 import requests
 import zendriver as zd
 from ffmpeg.asyncio import FFmpeg
-from PIL import Image
+from PIL import Image, ImageChops
 
 from bot import LOGS, bot, telegraph_errors, time
 from bot.others.exceptions import NormalizeVidError
@@ -516,23 +518,9 @@ async def screenshot_page(
     """
     Generate screenshot from a url.
     """
-    b_args = [
-        "--window-size=1920,1080",
-        "--force-device-scale-factor=2",
-        "--force-dark-mode",
-    ]
-    if not force_dark:
-        b_args.pop(2)
     browser = None
     try:
-        browser = await zd.start(headless=True, browser_args=b_args)
-        if os.path.exists(".cookies.txt"):
-            cookies = parse_netscape_cookies(".cookies.txt")
-            for cookie in cookies:
-                try:
-                    await browser.cookies.set_all([cookie])
-                except Exception as e:
-                    _log_.warning(f"Failed to set cookie {cookie.name}: {e}")
+        browser = await _start_browser(force_dark)
         page = await browser.get(url)
         await page
         await asyncio.sleep(5)
@@ -545,17 +533,296 @@ async def screenshot_page(
                 await page.save_screenshot(path)
         else:
             await page.save_screenshot(path)
-        try:
-            await save_cookies_txt(browser)
-        except Exception:
-            _log_.error(traceback.format_exc())
     finally:
         if browser:
-            try:
-                await browser.stop()
-            except Exception:
-                _log_.error(traceback.format_exc())
+            await _stop_browser(browser)
     output = await read_binary(path)
+    return await png_to_jpg(output) if low_quality else output
+
+
+async def _start_browser(force_dark: bool = True):
+    """Start a headless browser with the shared cookies loaded."""
+    b_args = [
+        "--window-size=1920,1080",
+        "--force-device-scale-factor=2",
+        "--force-dark-mode",
+    ]
+    if not force_dark:
+        b_args.pop(2)
+    browser = await zd.start(headless=True, browser_args=b_args)
+    try:
+        if os.path.exists(".cookies.txt"):
+            cookies = parse_netscape_cookies(".cookies.txt")
+            for cookie in cookies:
+                try:
+                    await browser.cookies.set_all([cookie])
+                except Exception as e:
+                    _log_.warning(f"Failed to set cookie {cookie.name}: {e}")
+    except Exception:
+        await _stop_browser(browser)
+        raise
+    return browser
+
+
+async def _stop_browser(browser):
+    """Save the (possibly refreshed) cookies back, then stop the browser."""
+    try:
+        await save_cookies_txt(browser)
+    except Exception:
+        _log_.error(traceback.format_exc())
+    try:
+        await browser.stop()
+    except Exception:
+        _log_.error(traceback.format_exc())
+
+
+# Per site:
+#   hosts: hostnames the site is served from
+#   open: JS run after load to show the comments (optional)
+#   items: JS expression giving the top-level comment elements in page order
+#   replies: selector for replies nested in a comment, which get cut off
+COMMENT_SITES = {
+    "youtube": {
+        "hosts": ("youtube.com", "youtu.be"),
+        "open": "document.querySelector('ytd-comments#comments')?.scrollIntoView()",
+        "items": "document.querySelectorAll('ytd-comment-thread-renderer')",
+        "replies": "#replies",
+    },
+    # Replies are tweets too: skip the post itself (it links to its own
+    # status), ads (no timestamp) and the "Discover more" tweets after them
+    "x": {
+        "hosts": ("x.com", "twitter.com"),
+        "open": None,
+        "items": """
+            (() => {
+                const id = (location.pathname.match(/status\\/(\\d+)/) || [])[1];
+                const end = Array.from(
+                    document.querySelectorAll("[data-testid='cellInnerDiv'] h2")
+                ).find(h => /discover more/i.test(h.textContent));
+                return Array.from(
+                    document.querySelectorAll("article[data-testid='tweet']")
+                ).filter(a =>
+                    a.querySelector('time')
+                    && !a.querySelector(`a[href*='/status/${id}'] time`)
+                    && !(end && end.compareDocumentPosition(a)
+                        & Node.DOCUMENT_POSITION_FOLLOWING)
+                );
+            })()
+        """,
+        "replies": None,
+    },
+}
+
+LOGIN_WALL_MARKERS = (
+    "/i/flow/login",
+    "/login",
+)
+
+
+class CommentsUnavailable(Exception):
+    pass
+
+
+def _content_bbox(image, bg):
+    """Bounding box of what differs from the background colour `bg`."""
+    diff = ImageChops.difference(image, Image.new("RGB", image.size, bg))
+    # Ignore near-background noise (anti-aliasing, faint separators)
+    return diff.convert("L").point(lambda v: 255 if v > 16 else 0).getbbox()
+
+
+def _is_blank(image):
+    return not _content_bbox(image, image.getpixel((1, 1)))
+
+
+def comment_site(url: str):
+    """Return the COMMENT_SITES key for a URL, or None if unsupported."""
+    host = (urlparse(url).hostname or "").lower()
+    for site, conf in COMMENT_SITES.items():
+        if any(host == h or host.endswith(f".{h}") for h in conf["hosts"]):
+            return site
+
+
+def _comments_url(site: str, url: str):
+    # Shorts and youtu.be links don't show comments inline; use the watch page
+    if site == "youtube":
+        parsed = urlparse(url)
+        video_id = None
+        if parsed.hostname and parsed.hostname.endswith("youtu.be"):
+            video_id = parsed.path.strip("/").split("/")[0]
+        elif parsed.path.startswith("/shorts/"):
+            video_id = parsed.path.split("/")[2]
+        if video_id:
+            return f"https://www.youtube.com/watch?v={video_id}"
+    return url
+
+
+async def screenshot_comments(
+    url: str,
+    count: int = 5,
+    force_dark: bool = True,
+    low_quality: bool = False,
+):
+    """
+    Screenshot the first `count` top-level comments of a post on one of
+    COMMENT_SITES, stacked into one image.
+    """
+    site = comment_site(url)
+    if not site:
+        raise CommentsUnavailable("Unsupported site")
+    conf = COMMENT_SITES[site]
+    # Placeholders shown while comments load have no text
+    items = f"Array.from({conf['items']}).filter(e => e.innerText.trim())"
+    reply_sel = json.dumps(conf["replies"])
+    browser = None
+    shots = []
+    try:
+        browser = await _start_browser(force_dark)
+        page = await browser.get(_comments_url(site, url))
+        await page
+        await asyncio.sleep(5)
+
+        location = await page.evaluate("location.href")
+        if any(m in location for m in LOGIN_WALL_MARKERS):
+            raise CommentsUnavailable("Login required")
+        if conf["open"]:
+            await page.evaluate(conf["open"])
+            await asyncio.sleep(3)
+
+        # Comments load lazily: keep scrolling the newest one into view
+        found = 0
+        for _ in range(15):
+            found = await page.evaluate(f"""
+                (() => {{
+                    const items = {items};
+                    if (items.length) items[items.length - 1].scrollIntoView({{block: 'center'}});
+                    else window.scrollBy(0, window.innerHeight / 2);
+                    return items.length;
+                }})()
+            """)
+            if found >= count:
+                break
+            await asyncio.sleep(2)
+        if not found:
+            captcha = await page.evaluate(
+                "!!document.querySelector(\"[id*='captcha' i], [class*='captcha' i]\")"
+                "?.getClientRects().length"
+            )
+            if captcha:
+                raise CommentsUnavailable("The site asked to solve a captcha")
+            raise CommentsUnavailable("No comments found")
+        await page.evaluate("window.scrollTo(0, 0)")
+        await asyncio.sleep(1)
+        # Show the first comments once so lazily loaded icons/avatars load
+        for i in range(min(found, count)):
+            await page.evaluate(f"{items}[{i}]?.scrollIntoView({{block: 'center'}})")
+            await asyncio.sleep(0.5)
+        await asyncio.sleep(2)
+
+        # Keep sticky headers/players from covering the comments. Visibility
+        # is inherited, so leave alone the ones the comments sit inside.
+        await page.evaluate(f"""
+            (() => {{
+                const first = {items}[0];
+                document.querySelectorAll('*').forEach(el => {{
+                    const pos = window.getComputedStyle(el).position;
+                    if ((pos === 'fixed' || pos === 'sticky') && !el.contains(first))
+                        el.style.visibility = 'hidden';
+                }});
+                window.__shotKeys = new Set();
+            }})()
+        """)
+
+        # Take the comments one at a time, picking the first one not taken
+        # yet: X unloads tweets scrolled past, so indexes don't stay valid
+        misses = 0
+        while len(shots) < count and misses < 5:
+            picked = await page.evaluate(f"""
+                (() => {{
+                    const items = {items};
+                    const key = el => el.innerText.slice(0, 300);
+                    const el = items.find(e => !window.__shotKeys.has(key(e)));
+                    if (!el) {{
+                        if (items.length) items[items.length - 1].scrollIntoView({{block: 'center'}});
+                        return null;
+                    }}
+                    window.__shotKeys.add(key(el));
+                    window.__shotEl = el;
+                    el.scrollIntoView({{block: 'start'}});
+                    return true;
+                }})()
+            """)
+            if not picked:
+                misses += 1
+                await asyncio.sleep(2)
+                continue
+            misses = 0
+            # Let lazily loaded icons/avatars in the comment render
+            await asyncio.sleep(1)
+            # Page coordinates of the comment, cut off above its first reply
+            rect = await page.evaluate(f"""
+                (() => {{
+                    const el = window.__shotEl;
+                    if (!el || !el.isConnected) return null;
+                    const r = el.getBoundingClientRect();
+                    let bottom = r.bottom;
+                    const replySel = {reply_sel};
+                    const reply = replySel && el.querySelector(replySel);
+                    if (reply) bottom = Math.min(bottom, reply.getBoundingClientRect().top);
+                    return JSON.stringify({{
+                        x: r.left + window.scrollX,
+                        y: r.top + window.scrollY,
+                        width: r.width,
+                        height: Math.min(bottom - r.top, window.innerHeight),
+                    }});
+                }})()
+            """)
+            if not rect:
+                continue
+            rect = json.loads(rect)
+            if rect["width"] < 10 or rect["height"] < 10:
+                continue
+            data = await page.send(
+                zd.cdp.page.capture_screenshot(
+                    format_="png",
+                    clip=zd.cdp.page.Viewport(
+                        x=rect["x"],
+                        y=rect["y"],
+                        width=rect["width"],
+                        height=rect["height"],
+                        scale=1,
+                    ),
+                    # Capturing beyond the viewport resizes it, which makes
+                    # X re-render (and drop) the tweets being captured
+                    capture_beyond_viewport=False,
+                )
+            )
+            shot = Image.open(io.BytesIO(base64.b64decode(data))).convert("RGB")
+            if _is_blank(shot):
+                continue
+            shots.append(shot)
+    finally:
+        if browser:
+            await _stop_browser(browser)
+
+    if not shots:
+        raise CommentsUnavailable("Comments didn't render")
+    gap = 16
+    width = max(s.width for s in shots)
+    height = sum(s.height for s in shots) + gap * (len(shots) - 1)
+    bg = shots[0].getpixel((1, 1))
+    stitched = Image.new("RGB", (width, height), bg)
+    y = 0
+    for s in shots:
+        stitched.paste(s, (0, y))
+        y += s.height + gap
+    # Trim the empty space to the right of the comments
+    bbox = _content_bbox(stitched, bg)
+    if bbox:
+        stitched = stitched.crop((0, 0, min(bbox[2] + 32, width), height))
+    path = tempfile.mktemp(suffix=".png", prefix="comments_")
+    stitched.save(path)
+    output = await read_binary(path)
+    os.remove(path)
     return await png_to_jpg(output) if low_quality else output
 
 

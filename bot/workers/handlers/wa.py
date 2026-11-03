@@ -40,7 +40,10 @@ from bot.utils.bot_utils import (
     png_to_jpg,
     post_to_tgph,
     read_binary,
+    CommentsUnavailable,
+    comment_site,
     same_week,
+    screenshot_comments,
     screenshot_page,
     split_text,
     sync_to_async,
@@ -131,6 +134,7 @@ async def tools(event, args, client):
             f"{pre}repeat - *Repeat a replied message*{s}"
             f"{pre}sanitize - *Remove tracking from links in a message*{s}"
             f"{pre}screenshot - *Screenshot webpage(s) from link(s)*{s}"
+            f"{pre}screenshot_comments - *Screenshot comments of X or YouTube post(s)*{s}"
             f"{s}"
             f"*Reminders:*{s}"
             f"{pre}remindme - *Get reminded of a (replied) message at a set time*{s}"
@@ -722,6 +726,74 @@ async def screenshot(event, args, client):
                 await event.reply(f"Screenshot generation failed for: {url}")
             else:
                 await event.reply_photo(image, caption="Screenshot from webpage")
+            await asyncio.sleep(3)
+    except Exception:
+        await logger(Exception)
+        await event.react("❌")
+    finally:
+        await event.react("")
+
+
+async def screenshot_comments_(event, args, client):
+    """
+    Screenshot the top comments of every X or
+    YouTube post linked in a replied message.
+    Without a reply, uses the link(s) given as argument.
+    Arguments:
+      -n <number>: number of comments (default 5, max 20)
+      -l: low quality image
+      -d: disable dark mode (dark mode is on by default)
+    """
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not chat_is_allowed(event):
+            return
+        if not user_is_allowed(user):
+            return await event.react("⛔")
+    try:
+        replied = event.reply_to_message
+        if not (replied or args):
+            return await event.reply(f"{screenshot_comments_.__doc__}")
+        arg, args = get_args(
+            ["-n", "store"],
+            ["-l", "store_true"],
+            ["-d", "store_false"],
+            to_parse=args or "",
+            get_unknown=True,
+        )
+        count = 5
+        if arg.n:
+            if not arg.n.isdigit() or not 0 < int(arg.n) <= 20:
+                return await event.reply("*-n must be a number from 1 to 20*")
+            count = int(arg.n)
+        extractor = URLExtract()
+        if replied:
+            msg = replied.caption or replied.text or ""
+            urls = extractor.find_urls(msg)
+            if not urls:
+                return await event.reply(
+                    f"*No link found in @{replied.from_user.id}'s message*"
+                )
+        else:
+            urls = extractor.find_urls(args or "")
+            if not urls:
+                return await event.reply("*No link found in your message*")
+        urls = [url for url in urls if comment_site(url)]
+        if not urls:
+            return await event.reply(
+                "*No X or YouTube link found*"
+            )
+        await event.react("🌐")
+        for url in urls:
+            try:
+                image = await screenshot_comments(url, count, arg.d, arg.l)
+            except CommentsUnavailable as e:
+                await event.reply(f"Couldn't get comments for: {url}\n_{e}_")
+            except Exception:
+                await logger(Exception)
+                await event.reply(f"Comments screenshot failed for: {url}")
+            else:
+                await event.reply_photo(image, caption=f"Comments from {url}")
             await asyncio.sleep(3)
     except Exception:
         await logger(Exception)
@@ -3097,6 +3169,7 @@ bot.add_handler(delete_rules, "delrules")
 bot.add_handler(list_filters, "filters")
 bot.add_handler(sanitize_url, "sanitize")
 bot.add_handler(screenshot, "screenshot")
+bot.add_handler(screenshot_comments_, "screenshot_comments")
 bot.add_handler(upscale_image, "upscale")
 bot.add_handler(msg_ranking, "msg_ranking")
 bot.add_handler(stickerize_image, "sticker")
