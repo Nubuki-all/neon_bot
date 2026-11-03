@@ -130,10 +130,17 @@ def _parse_pin_data(pin_data: dict) -> List[DownloadResult]:
                             )
                         ]
 
-            # Check page‑level image
+            # Check page‑level image. Its "originals" URL can carry the wrong
+            # extension (.jpg for a .png original) and 403, so use the pin's
+            # own "orig" when it's the same image.
             page_img = page.get("image")
             if page_img:
                 originals = page_img.get("images", {}).get("originals")
+                orig = (pin_data.get("images") or {}).get("orig")
+                if orig and page.get("image_signature") == pin_data.get(
+                    "image_signature"
+                ):
+                    originals = orig
                 if originals:
                     return [
                         DownloadResult(
@@ -311,7 +318,12 @@ async def download_pinterest(
         # Download each item (usually one)
         for i, item in enumerate(items):
             suffix = f"_{i}" if len(items) > 1 else ""
-            ext = "mp4" if item.media_type == "video" else "jpg"
+            if item.media_type == "video":
+                ext = "mp4"
+            else:
+                # Originals can be png/gif/webp; keep the URL's extension
+                path = urllib.parse.urlparse(item.source_url).path
+                ext = os.path.splitext(path)[1].lstrip(".").lower() or "jpg"
             fname = f"{pin_id}{suffix}.{ext}"
             dest = os.path.join(output_dir, fname)
 
