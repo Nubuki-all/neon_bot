@@ -22,6 +22,7 @@ db_cluster = {
     "note": nfdb,
     "reminders": remdb,
     "rss": rssdb,
+    "gift": rssdb,
     "users": userdb,
     "groups": userdb,
 }

@@ -1,6 +1,15 @@
 import pickle
 
-from bot import bot, local_fdb, local_gcdb, local_ndb, local_rdb, local_remdb, local_udb
+from bot import (
+    bot,
+    local_fdb,
+    local_gcdb,
+    local_gdb,
+    local_ndb,
+    local_rdb,
+    local_remdb,
+    local_udb,
+)
 
 from .os_utils import file_exists
 
@@ -36,6 +45,11 @@ def load_local_db():
             local_dict = pickle.load(file)
         bot.user_dict.update(local_dict)
 
+    if file_exists(local_gdb):
+        with open(local_gdb, "rb") as file:
+            local_dict = pickle.load(file)
+        bot.gift_dict.update(local_dict)
+
 
 def save2db_lcl2(db):
     if db == "groups":
@@ -56,3 +70,6 @@ def save2db_lcl2(db):
     elif db == "users":
         with open(local_udb, "wb") as file:
             pickle.dump(bot.user_dict, file)
+    elif db == "gift":
+        with open(local_gdb, "wb") as file:
+            pickle.dump(bot.gift_dict, file)

@@ -32,6 +32,7 @@ async def getcmds(event, args, client):
 {pre}afk - *Enable AFK mode*
 {pre}anime - *Fetch anime info from anilist*
 {pre}airing - *Fetch anime airing info from anilist*
+{pre}gicodes - *Get Genshin Impact redeem codes ([Owner | Sudo] -add/-rm/-get chats to auto-post new ones)*
 {pre}insession - *Start an Ace Attorney objection session*
 {pre}renderobj - *Render an objection session into a video*
 {pre}werewolf - *Play a game of Werewolf*
