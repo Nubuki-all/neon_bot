@@ -1,5 +1,5 @@
 #    This file is part of the neon_bot distribution.
-#    Copyright (c) 2024 Nubuki-all
+#    Copyright (c) 2024 Pah-0
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -11,7 +11,7 @@
 #    General Public License for more details.
 #
 # License can be found in <
-# https://github.com/Nubuki-all/neon_bot/blob/WA/License> .
+# https://github.com/Pah-0/neon_bot/blob/WA/License> .
 
 # isort: off #  noqa
 import faulthandler  # noqa  # pylint: disable=unused-import

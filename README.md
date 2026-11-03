@@ -1,6 +1,6 @@
 # neon_bot
 
-A feature-rich WhatsApp bot built with the [neonize](https://github.com/Nubuki-all/neonize) library, designed to provide media downloading, group management, image processing, and fun utilities.
+A feature-rich WhatsApp bot built with the [neonize](https://github.com/Pah-0/neonize) library, designed to provide media downloading, group management, image processing, and fun utilities.
 
 ## Features
 
@@ -168,7 +168,7 @@ The bot can be configured via environment variables or a `.env` file (see `.env.
 | `RSS_DELAY` | `60` | Seconds between RSS feed checks. |
 | `TELEGRAPH_API` | `https://api.telegra.ph` | Telegraph API URL. |
 | `UPSTREAM_BRANCH` | `main` | Branch to update from. |
-| `UPSTREAM_REPO` | `https://github.com/Nubuki-all/neon_bot` | Repository to update from. |
+| `UPSTREAM_REPO` | `https://github.com/Pah-0/neon_bot` | Repository to update from. |
 | `WA_DB` | `db.sqlite3` | Path or URL of the WhatsApp session database. |
 | `WA_DB_BACKUP_INTERVAL` | `43200` | Seconds between `WA_DB` backups. |
 
@@ -178,7 +178,7 @@ The bot can be configured via environment variables or a `.env` file (see `.env.
 
 1.  Clone the repository:
     ```bash
-    git clone https://github.com/Nubuki-all/neon_bot.git
+    git clone https://github.com/Pah-0/neon_bot.git
     cd neon_bot
     ```
 2.  Install dependencies:

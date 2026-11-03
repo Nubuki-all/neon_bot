@@ -4,7 +4,7 @@ Tries the storage migration on a copy of the bot's data, without touching it.
 Run it inside the bot's container, from the bot's folder (so it finds .env),
 pointing --repo at a checkout of the new storage code:
 
-    git clone --depth 1 -b feat/sqlite-local-db https://github.com/Nubuki-all/neon_bot /tmp/neon-pr17
+    git clone --depth 1 -b feat/sqlite-local-db https://github.com/Pah-0/neon_bot /tmp/neon-pr17
     cd /bot
     python3 /tmp/neon-pr17/scripts/check_storage_migration.py --repo /tmp/neon-pr17
 

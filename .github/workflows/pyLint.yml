@@ -44,9 +44,9 @@ jobs:
           commit_message: 'pyLint: auto-fixes'
           commit_options: '--no-verify'
           repository: .
-          commit_user_name: Nubuki-all
-          commit_user_email: 121189493+Nubuki-all@users.noreply.github.com
-          commit_author: Nubuki-all <121189493+Nubuki-all@users.noreply.github.com>
+          commit_user_name: Pah-0
+          commit_user_email: 121189493+Pah-0@users.noreply.github.com
+          commit_author: Pah-0 <121189493+Pah-0@users.noreply.github.com>
 
       # fails the run on syntax errors and undefined names; runs even if a
       # formatter failed above so the errors are annotated on the code

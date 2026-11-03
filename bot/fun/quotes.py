@@ -13,7 +13,7 @@ def enquotes():
     while not res:
         try:
             if (time.time() - start) >= 20:
-                return f"{em} **Nubuki-all:** `The feature 'quote' is currently broken, and has therefore been temporarily disabled.`"
+                return f"{em} **Pah-0:** `The feature 'quote' is currently broken, and has therefore been temporarily disabled.`"
             r = RandomWords()
             w = r.get_random_word()
             res = quote(w, limit=1)
