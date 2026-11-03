@@ -72,12 +72,8 @@ from neonize.utils import jid, log
 from .config import bot, conf
 
 heavy_proc_lock = asyncio.Lock()
-local_fdb = ".local_filterdb.pkl"
-local_gcdb = ".local_groups.pkl"
-local_rdb = ".local_rssdb.pkl"
-local_remdb = ".local_remdb.pkl"
-local_udb = ".local_users.pkl"
-local_ndb = ".local_notedb.pkl"
+# Used instead of DATABASE_URL when it isn't set
+local_db = ".local.db"
 log_file_name = "logs.txt"
 msg_store_lock = asyncio.Lock()
 rss_dict_lock = asyncio.Lock()

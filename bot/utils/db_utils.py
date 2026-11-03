@@ -40,9 +40,10 @@ async def save2db(db, update, retries=3):
 
 
 async def save2db2(data: dict | str, db: str):
-    if not database:
-        return await sync_to_async(save2db_lcl2, db)
+    # Pickled here, not in a worker thread, so the dict can't change mid-pickle
     p_data = pickle.dumps(data)
+    if not database:
+        return await sync_to_async(save2db_lcl2, db, p_data)
     _update = {db: p_data}
     await save2db(db_cluster.get(db), _update)
 

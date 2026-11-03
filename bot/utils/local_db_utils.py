@@ -1,58 +1,77 @@
+import os
 import pickle
+import sqlite3
+from contextlib import closing
 
-from bot import bot, local_fdb, local_gcdb, local_ndb, local_rdb, local_remdb, local_udb
+from bot import LOGS, bot, local_db
 
-from .os_utils import file_exists
+# Pickle files used before the SQLite store; imported once, then kept as .bak
+LEGACY_FILES = {
+    "groups": ".local_groups.pkl",
+    "note": ".local_notedb.pkl",
+    "filter": ".local_filterdb.pkl",
+    "rss": ".local_rssdb.pkl",
+    "reminders": ".local_remdb.pkl",
+    "users": ".local_users.pkl",
+}
+
+
+def stores() -> dict:
+    """save2db2's db names and the dict each one holds"""
+    return {
+        "groups": bot.group_dict,
+        "note": bot.notes_dict,
+        "filter": bot.filters_dict,
+        "rss": bot.rss_dict,
+        "reminders": bot.remind_dict,
+        "users": bot.user_dict,
+    }
+
+
+def connect():
+    conn = sqlite3.connect(local_db, timeout=30)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS store (name TEXT PRIMARY KEY, data BLOB NOT NULL)"
+    )
+    return conn
+
+
+def write(conn, name: str, p_data: bytes):
+    conn.execute(
+        "INSERT INTO store (name, data) VALUES (?, ?) "
+        "ON CONFLICT(name) DO UPDATE SET data = excluded.data",
+        (name, p_data),
+    )
+
+
+def import_legacy_files(conn):
+    """Moves data from the old pickle files into the store, keeping the files as .bak"""
+    found = [(n, p) for n, p in LEGACY_FILES.items() if os.path.exists(p)]
+    if not found:
+        return
+    with conn:
+        for name, path in found:
+            # Already imported when a rename failed after the commit
+            if conn.execute("SELECT 1 FROM store WHERE name = ?", (name,)).fetchone():
+                continue
+            with open(path, "rb") as file:
+                write(conn, name, pickle.dumps(pickle.load(file)))
+    for name, path in found:
+        os.replace(path, path + ".bak")
+        LOGS.info(f"Moved {path} into {local_db}; the old file is now {path}.bak")
 
 
 def load_local_db():
-    if file_exists(local_gcdb):
-        with open(local_gcdb, "rb") as file:
-            local_dict = pickle.load(file)
-        bot.group_dict.update(local_dict)
-
-    if file_exists(local_ndb):
-        with open(local_ndb, "rb") as file:
-            local_dict = pickle.load(file)
-        bot.notes_dict.update(local_dict)
-
-    if file_exists(local_fdb):
-        with open(local_fdb, "rb") as file:
-            local_dict = pickle.load(file)
-        bot.filters_dict.update(local_dict)
-
-    if file_exists(local_rdb):
-        with open(local_rdb, "rb") as file:
-            local_dict = pickle.load(file)
-        bot.rss_dict.update(local_dict)
-
-    if file_exists(local_remdb):
-        with open(local_remdb, "rb") as file:
-            local_dict = pickle.load(file)
-        bot.remind_dict.update(local_dict)
-
-    if file_exists(local_udb):
-        with open(local_udb, "rb") as file:
-            local_dict = pickle.load(file)
-        bot.user_dict.update(local_dict)
+    with closing(connect()) as conn:
+        import_legacy_files(conn)
+        rows = conn.execute("SELECT name, data FROM store").fetchall()
+    known = stores()
+    for name, p_data in rows:
+        if name in known:
+            known[name].update(pickle.loads(p_data))
 
 
-def save2db_lcl2(db):
-    if db == "groups":
-        with open(local_gcdb, "wb") as file:
-            pickle.dump(bot.group_dict, file)
-    elif db == "note":
-        with open(local_ndb, "wb") as file:
-            pickle.dump(bot.notes_dict, file)
-    elif db == "filter":
-        with open(local_fdb, "wb") as file:
-            pickle.dump(bot.filters_dict, file)
-    elif db == "rss":
-        with open(local_rdb, "wb") as file:
-            pickle.dump(bot.rss_dict, file)
-    elif db == "reminders":
-        with open(local_remdb, "wb") as file:
-            pickle.dump(bot.remind_dict, file)
-    elif db == "users":
-        with open(local_udb, "wb") as file:
-            pickle.dump(bot.user_dict, file)
+def save2db_lcl2(db: str, p_data: bytes):
+    """Saves an already pickled dict; pickling happens on the event loop, not here"""
+    with closing(connect()) as conn, conn:
+        write(conn, db, p_data)
