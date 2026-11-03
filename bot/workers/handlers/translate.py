@@ -4,6 +4,8 @@ import urllib.request
 from functools import cache
 from urllib.parse import urlencode
 
+import httpx
+
 from bot.config import bot
 from bot.utils.bot_utils import sync_to_async
 from bot.utils.db_utils import save2db2
@@ -79,6 +81,13 @@ MIN_LETTERS = 12
 MIN_CONFIDENCE = 0.8
 MAX_CHARS = 5000
 GOOGLE_URL = "https://translate.googleapis.com/translate_a/single"
+# The translate.google.com page's own API; used when GOOGLE_URL fails
+WEB_URL = "https://translate.google.com/_/TranslateWebserverUi/data/batchexecute"
+WEB_RPC = "MkEWBc"
+WEB_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Referer": "https://translate.google.com",
+}
 
 _noise = re.compile(r"https?://\S+|www\.\S+|@\d+|```.*?```|[*_~`>]", re.S)
 _mention = re.compile(r"@(\d{5,16})")
@@ -123,10 +132,42 @@ def _post_translate(text: str, target: str) -> list:
         return json.loads(resp.read())
 
 
+async def translate_web(text: str, target: str) -> str:
+    """Translates through the translate.google.com page's API"""
+    compact = {"separators": (",", ":")}
+    request = json.dumps([[text, "auto", TARGETS[target], True], [None]], **compact)
+    params = {
+        "rpcids": WEB_RPC,
+        "bl": "boq_translate-webserver_20201207.13_p0",
+        "soc-app": 1,
+        "soc-platform": 1,
+        "soc-device": 1,
+        "rt": "c",
+    }
+    data = {"f.req": json.dumps([[[WEB_RPC, request, None, "generic"]]], **compact)}
+    async with httpx.AsyncClient(headers=WEB_HEADERS, timeout=20) as client:
+        resp = await client.post(WEB_URL, params=params, data=data)
+        resp.raise_for_status()
+    # The reply is ")]}'" then a JSON chunk per line, the result as JSON in it
+    for line in resp.text.splitlines():
+        if not line.startswith("["):
+            continue
+        for entry in json.loads(line):
+            if entry[:2] == ["wrb.fr", WEB_RPC] and entry[2]:
+                result = json.loads(entry[2])[1][0][0]
+                # Parts carry their own line breaks; some languages need spaces
+                return (" " if result[3] else "").join(part[0] for part in result[5])
+    raise ValueError("No translation in the reply")
+
+
 async def translate(text: str, target: str) -> str:
-    # urllib, not aiohttp: Google answers aiohttp's requests with 429
-    data = await sync_to_async(_post_translate, text, target)
-    return "".join(part[0] for part in data[0] if part and part[0])
+    try:
+        # urllib, not aiohttp or httpx: Google answers those with 429 here
+        data = await sync_to_async(_post_translate, text, target)
+        return "".join(part[0] for part in data[0] if part and part[0])
+    except Exception as e:
+        log(e=f"Google's gtx endpoint failed ({e}); using the web page API", debug=True)
+        return await translate_web(text, target)
 
 
 def same_text(a: str, b: str) -> bool:
