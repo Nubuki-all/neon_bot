@@ -140,6 +140,20 @@ def differences(expected, actual, path, redact, out, limit=20):
         out.append(f"{path}: {type(expected).__name__} value changed")
 
 
+def drop_test_db(client, name):
+    from pymongo.errors import OperationFailure
+
+    try:
+        client.drop_database(name)
+    except OperationFailure:
+        # Some hosts (e.g. Atlas users without dropDatabase) only allow
+        # dropping collections; the database goes once they're all gone
+        db = client[name]
+        for collection in db.list_collection_names():
+            db[collection].drop()
+    print(f"Deleted the test database {name}.")
+
+
 def stores_of(botobj):
     return {
         "groups": botobj.group_dict,
@@ -204,7 +218,7 @@ def main():
                 if doc and doc.get(name):
                     expected[name] = pickle.loads(doc[name])
             if not args.keep:
-                cleanup.append(lambda: client.drop_database(test_name))
+                cleanup.append(lambda: drop_test_db(client, test_name))
 
             def open_backend(store_mod):
                 return store_mod.MongoBackend(test, bot_id)
