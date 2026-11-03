@@ -88,6 +88,7 @@ class Runtime_Config:
         self.disable_cic = False
         self.docker_deployed = False
         self.filters_dict = {}
+        self.gift_dict = {"codes": [], "chats": []}
         self.group_dict = {}
         self.games_dict = {}
         self.ignore_pm = False
