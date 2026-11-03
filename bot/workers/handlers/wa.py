@@ -7,6 +7,7 @@ import re
 import time
 import uuid
 from collections import defaultdict
+from contextlib import aclosing
 from dataclasses import dataclass
 from datetime import datetime as dt
 from os.path import splitext as split_ext
@@ -736,11 +737,11 @@ async def screenshot(event, args, client):
 
 async def screenshot_comments_(event, args, client):
     """
-    Screenshot the top comments of every X or
+    Take a long screenshot of the top comments of every X or
     YouTube post linked in a replied message.
     Without a reply, uses the link(s) given as argument.
     Arguments:
-      -n <number>: number of comments (default 5, max 20)
+      -n <number>: number of comments (default 10, max 50)
       -l: low quality image
       -d: disable dark mode (dark mode is on by default)
     """
@@ -761,10 +762,10 @@ async def screenshot_comments_(event, args, client):
             to_parse=args or "",
             get_unknown=True,
         )
-        count = 5
+        count = 10
         if arg.n:
-            if not arg.n.isdigit() or not 0 < int(arg.n) <= 20:
-                return await event.reply("*-n must be a number from 1 to 20*")
+            if not arg.n.isdigit() or not 0 < int(arg.n) <= 50:
+                return await event.reply("*-n must be a number from 1 to 50*")
             count = int(arg.n)
         extractor = URLExtract()
         if replied:
@@ -783,15 +784,23 @@ async def screenshot_comments_(event, args, client):
             return await event.reply("*No X or YouTube link found*")
         await event.react("🌐")
         for url in urls:
+            # Long screenshots come in parts; send each as soon as it's ready
             try:
-                image = await screenshot_comments(url, count, arg.d, arg.l)
+                async with aclosing(
+                    screenshot_comments(url, count, arg.d, arg.l)
+                ) as parts:
+                    part = 0
+                    async for image in parts:
+                        part += 1
+                        caption = f"Comments from {url}"
+                        if part > 1:
+                            caption += f" (part {part})"
+                        await event.reply_photo(image, caption=caption)
             except CommentsUnavailable as e:
                 await event.reply(f"Couldn't get comments for: {url}\n_{e}_")
             except Exception:
                 await logger(Exception)
                 await event.reply(f"Comments screenshot failed for: {url}")
-            else:
-                await event.reply_photo(image, caption=f"Comments from {url}")
             await asyncio.sleep(3)
     except Exception:
         await logger(Exception)

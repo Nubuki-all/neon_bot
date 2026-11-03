@@ -580,16 +580,21 @@ async def _stop_browser(browser):
 #   hosts: hostnames the site is served from
 #   open: JS run after load to show the comments (optional)
 #   items: JS expression giving the top-level comment elements in page order
-#   replies: selector for replies nested in a comment, which get cut off
+#   expand: JS function given a comment, opening its truncated text (optional)
 COMMENT_SITES = {
     "youtube": {
         "hosts": ("youtube.com", "youtu.be"),
         "open": "document.querySelector('ytd-comments#comments')?.scrollIntoView()",
         "items": "document.querySelectorAll('ytd-comment-thread-renderer')",
-        "replies": "#replies",
+        "expand": """
+            el => el.querySelectorAll('#more').forEach(b => {
+                if (b.offsetParent && !b.hidden) b.click();
+            })
+        """,
     },
     # Replies are tweets too: skip the post itself (it links to its own
-    # status), ads (no timestamp) and the "Discover more" tweets after them
+    # status), ads (no timestamp) and the "Discover more" tweets after them.
+    # "Show more" on a long reply opens its own page, so it isn't expanded.
     "x": {
         "hosts": ("x.com", "twitter.com"),
         "open": None,
@@ -609,7 +614,7 @@ COMMENT_SITES = {
                 );
             })()
         """,
-        "replies": None,
+        "expand": None,
     },
 }
 
@@ -656,15 +661,83 @@ def _comments_url(site: str, url: str):
     return url
 
 
+async def _capture_region(page, x, y, width, height):
+    """
+    Capture a region given in page coordinates, a screen at a time.
+    Capturing beyond the viewport resizes it, which makes X re-render
+    (and drop) the tweets being captured, so every part is scrolled to.
+    """
+    view = await page.evaluate("window.innerHeight")
+    parts = []
+    top = y
+    while top < y + height:
+        part = min(view, y + height - top)
+        await page.evaluate(f"window.scrollTo(0, {top})")
+        await asyncio.sleep(0.3)
+        data = await page.send(
+            zd.cdp.page.capture_screenshot(
+                format_="png",
+                clip=zd.cdp.page.Viewport(
+                    x=x, y=top, width=width, height=part, scale=1
+                ),
+                capture_beyond_viewport=False,
+            )
+        )
+        parts.append(Image.open(io.BytesIO(base64.b64decode(data))).convert("RGB"))
+        top += part
+    if len(parts) == 1:
+        return parts[0]
+    image = Image.new("RGB", (parts[0].width, sum(p.height for p in parts)))
+    offset = 0
+    for p in parts:
+        image.paste(p, (0, offset))
+        offset += p.height
+    return image
+
+
+# Long screenshots are sent in parts about this tall (in pixels), split
+# between comments, so each part can be sent as soon as it's captured
+COMMENTS_PART_HEIGHT = 4000
+
+
+async def _stitch_comments(shots: list, low_quality: bool, min_width: int = 0):
+    """
+    Stack captured comments into one image, trimmed to the content but no
+    narrower than `min_width`. Returns the image and its width.
+    """
+    width = max(s.width for s in shots)
+    height = sum(s.height for s in shots)
+    bg = shots[0].getpixel((1, 1))
+    stitched = Image.new("RGB", (width, height), bg)
+    y = 0
+    for s in shots:
+        stitched.paste(s, (0, y))
+        y += s.height
+    # Trim the empty space to the right of the comments
+    bbox = _content_bbox(stitched, bg)
+    if bbox:
+        trim = min(max(bbox[2] + 32, min_width), width)
+        stitched = stitched.crop((0, 0, trim, height))
+    path = tempfile.mktemp(suffix=".png", prefix="comments_")
+    stitched.save(path)
+    output = await read_binary(path)
+    os.remove(path)
+    if low_quality:
+        output = await png_to_jpg(output)
+    return output, stitched.width
+
+
 async def screenshot_comments(
     url: str,
-    count: int = 5,
+    count: int = 10,
     force_dark: bool = True,
     low_quality: bool = False,
 ):
     """
-    Screenshot the first `count` top-level comments of a post on one of
-    COMMENT_SITES, stacked into one image.
+    Take a long screenshot of the first `count` top-level comments of a
+    post on one of COMMENT_SITES, as they appear on the page.
+    Yields it in parts of about COMMENTS_PART_HEIGHT as they're captured;
+    use with contextlib.aclosing so the browser is closed if not finished.
     """
     site = comment_site(url)
     if not site:
@@ -672,9 +745,13 @@ async def screenshot_comments(
     conf = COMMENT_SITES[site]
     # Placeholders shown while comments load have no text
     items = f"Array.from({conf['items']}).filter(e => e.innerText.trim())"
-    reply_sel = json.dumps(conf["replies"])
+    expand = conf["expand"] or "el => {}"
     browser = None
     shots = []
+    taken = 0
+    # Parts keep at least the width of the ones before, so the text is
+    # the same size in each when they're viewed one at a time
+    part_width = 0
     try:
         browser = await _start_browser(force_dark)
         page = await browser.get(_comments_url(site, url))
@@ -690,7 +767,7 @@ async def screenshot_comments(
 
         # Comments load lazily: keep scrolling the newest one into view
         found = 0
-        for _ in range(15):
+        for _ in range(10 + count):
             found = await page.evaluate(f"""
                 (() => {{
                     const items = {items};
@@ -735,11 +812,11 @@ async def screenshot_comments(
         # Take the comments one at a time, picking the first one not taken
         # yet: X unloads tweets scrolled past, so indexes don't stay valid
         misses = 0
-        while len(shots) < count and misses < 5:
+        while taken < count and misses < 5:
             picked = await page.evaluate(f"""
                 (() => {{
                     const items = {items};
-                    const key = el => el.innerText.slice(0, 300);
+                    const key = el => el.innerText.slice(0, 150);
                     const el = items.find(e => !window.__shotKeys.has(key(e)));
                     if (!el) {{
                         if (items.length) items[items.length - 1].scrollIntoView({{block: 'center'}});
@@ -748,6 +825,7 @@ async def screenshot_comments(
                     window.__shotKeys.add(key(el));
                     window.__shotEl = el;
                     el.scrollIntoView({{block: 'start'}});
+                    ({expand})(el);
                     return true;
                 }})()
             """)
@@ -756,23 +834,28 @@ async def screenshot_comments(
                 await asyncio.sleep(2)
                 continue
             misses = 0
-            # Let lazily loaded icons/avatars in the comment render
-            await asyncio.sleep(1)
-            # Page coordinates of the comment, cut off above its first reply
+            # Let the expanded text and lazily loaded icons/avatars render
+            await asyncio.sleep(1.5)
+            # Page coordinates from the top of the comment to the top of the
+            # next one, so the spacing between them is kept. If something
+            # skipped (like an ad) sits in between, stop at the comment.
             rect = await page.evaluate(f"""
                 (() => {{
                     const el = window.__shotEl;
                     if (!el || !el.isConnected) return null;
+                    const items = {items};
+                    const next = items[items.indexOf(el) + 1];
                     const r = el.getBoundingClientRect();
                     let bottom = r.bottom;
-                    const replySel = {reply_sel};
-                    const reply = replySel && el.querySelector(replySel);
-                    if (reply) bottom = Math.min(bottom, reply.getBoundingClientRect().top);
+                    if (next) {{
+                        const top = next.getBoundingClientRect().top;
+                        if (top >= r.bottom && top - r.bottom < 48) bottom = top;
+                    }}
                     return JSON.stringify({{
                         x: r.left + window.scrollX,
                         y: r.top + window.scrollY,
                         width: r.width,
-                        height: Math.min(bottom - r.top, window.innerHeight),
+                        height: bottom - r.top,
                     }});
                 }})()
             """)
@@ -781,49 +864,28 @@ async def screenshot_comments(
             rect = json.loads(rect)
             if rect["width"] < 10 or rect["height"] < 10:
                 continue
-            data = await page.send(
-                zd.cdp.page.capture_screenshot(
-                    format_="png",
-                    clip=zd.cdp.page.Viewport(
-                        x=rect["x"],
-                        y=rect["y"],
-                        width=rect["width"],
-                        height=rect["height"],
-                        scale=1,
-                    ),
-                    # Capturing beyond the viewport resizes it, which makes
-                    # X re-render (and drop) the tweets being captured
-                    capture_beyond_viewport=False,
-                )
+            shot = await _capture_region(
+                page, rect["x"], rect["y"], rect["width"], rect["height"]
             )
-            shot = Image.open(io.BytesIO(base64.b64decode(data))).convert("RGB")
             if _is_blank(shot):
                 continue
             shots.append(shot)
+            taken += 1
+            if sum(s.height for s in shots) >= COMMENTS_PART_HEIGHT:
+                image, part_width = await _stitch_comments(
+                    shots, low_quality, part_width
+                )
+                yield image
+                shots = []
+        if shots:
+            image, part_width = await _stitch_comments(shots, low_quality, part_width)
+            yield image
     finally:
         if browser:
             await _stop_browser(browser)
 
-    if not shots:
+    if not taken:
         raise CommentsUnavailable("Comments didn't render")
-    gap = 16
-    width = max(s.width for s in shots)
-    height = sum(s.height for s in shots) + gap * (len(shots) - 1)
-    bg = shots[0].getpixel((1, 1))
-    stitched = Image.new("RGB", (width, height), bg)
-    y = 0
-    for s in shots:
-        stitched.paste(s, (0, y))
-        y += s.height + gap
-    # Trim the empty space to the right of the comments
-    bbox = _content_bbox(stitched, bg)
-    if bbox:
-        stitched = stitched.crop((0, 0, min(bbox[2] + 32, width), height))
-    path = tempfile.mktemp(suffix=".png", prefix="comments_")
-    stitched.save(path)
-    output = await read_binary(path)
-    os.remove(path)
-    return await png_to_jpg(output) if low_quality else output
 
 
 async def save_cookies_txt(browser, path=".cookies.txt"):
