@@ -1,7 +1,8 @@
+import json
 import re
+import urllib.request
 from functools import cache
-
-import aiohttp
+from urllib.parse import urlencode
 
 from bot.config import bot
 from bot.utils.bot_utils import sync_to_async
@@ -113,13 +114,18 @@ async def detect(text: str) -> str | None:
     return lang
 
 
-async def translate(text: str, target: str) -> str:
+def _post_translate(text: str, target: str) -> list:
     params = {"client": "gtx", "sl": "auto", "tl": TARGETS[target], "dt": "t"}
-    timeout = aiohttp.ClientTimeout(total=20)
-    async with aiohttp.ClientSession(timeout=timeout) as session:
-        async with session.post(GOOGLE_URL, params=params, data={"q": text}) as resp:
-            resp.raise_for_status()
-            data = await resp.json(content_type=None)
+    request = urllib.request.Request(
+        f"{GOOGLE_URL}?{urlencode(params)}", data=urlencode({"q": text}).encode()
+    )
+    with urllib.request.urlopen(request, timeout=20) as resp:
+        return json.loads(resp.read())
+
+
+async def translate(text: str, target: str) -> str:
+    # urllib, not aiohttp: Google answers aiohttp's requests with 429
+    data = await sync_to_async(_post_translate, text, target)
     return "".join(part[0] for part in data[0] if part and part[0])
 
 
