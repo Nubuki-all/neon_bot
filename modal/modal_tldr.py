@@ -1,6 +1,7 @@
 import base64
 import io
 import os
+import re
 
 import modal
 
@@ -17,15 +18,16 @@ TEXT_MODEL_DIR = "/models/qwen3"
 VISION_MODEL = "Qwen/Qwen3-VL-8B-Instruct-FP8"
 VISION_MODEL_DIR = "/models/qwen3-vl"
 MAX_MODEL_LEN = 16384
-# Tokens kept free in the context for the reply, and for the prompt and an
-# image; the message's text is cut to fit what's left
-MAX_REPLY_TOKENS = 700
+# Tokens kept free in the context for each mode's reply (rewrites run as
+# long as the message; summaries don't), and for the prompt and an image;
+# the message's text is cut to fit what's left
+REPLY_TOKENS = {"tldr": 700, "eli5": 1500, "razor": 1500}
 PROMPT_AND_IMAGE_TOKENS = 1700
 # Modes the text model thinks through before answering, which it needs to
 # find and replace jargon instead of copying it. The reasoning comes out of
-# the reply's tokens, so these get more.
+# the reply's tokens, so these get this many more.
 THINKING_MODES = {"eli5"}
-MAX_THINKING_REPLY_TOKENS = 3000
+THINKING_TOKENS = 1500
 # Big images are scaled down to about this many pixels before the model
 # sees them, which bounds how much of the context an image takes up
 MAX_IMAGE_PIXELS = 1280 * 28 * 28
@@ -131,7 +133,7 @@ def run_llm(llm, mode: str, text: str, image: bytes | None = None, think=False):
         content.append(
             {"type": "image_url", "image_url": {"url": image_data_url(image)}}
         )
-    max_tokens = MAX_THINKING_REPLY_TOKENS if think else MAX_REPLY_TOKENS
+    max_tokens = REPLY_TOKENS[mode] + (THINKING_TOKENS if think else 0)
     tokenizer = llm.get_tokenizer()
     budget = MAX_MODEL_LEN - max_tokens - PROMPT_AND_IMAGE_TOKENS
     tokens = tokenizer.encode(text)
@@ -158,7 +160,8 @@ def run_llm(llm, mode: str, text: str, image: bytes | None = None, think=False):
         # reply
         reply = reply.split("</think>", 1)[1] if "</think>" in reply else ""
     # Markdown habits WhatsApp doesn't use: "  " line breaks and **bold**
-    reply = reply.replace("**", "*")
+    # and "* " or "- " bullets, which WhatsApp shows as is or as bold
+    reply = re.sub(r"(?m)^(\s*)[*-] ", r"\1• ", reply.replace("**", "*"))
     return "\n".join(line.rstrip() for line in reply.strip().splitlines())
 
 
