@@ -78,6 +78,12 @@ TARGETS = {
 
 # Short or ambiguous messages ("ok", "lol") are left alone
 MIN_LETTERS = 12
+# A Chinese or Japanese character or a Korean syllable says about as much as a
+# short word, so each counts as this many letters
+WIDE_LETTER = 3
+_wide = re.compile(
+    r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff]"
+)
 MIN_CONFIDENCE = 0.8
 MAX_CHARS = 5000
 GOOGLE_URL = "https://translate.googleapis.com/translate_a/single"
@@ -115,7 +121,9 @@ def family(code: str) -> str:
 async def detect(text: str) -> str | None:
     """The message's language, or None when it's too short or unclear"""
     text = _noise.sub(" ", text)
-    if sum(c.isalpha() for c in text) < MIN_LETTERS:
+    letters = sum(c.isalpha() for c in text)
+    letters += (WIDE_LETTER - 1) * len(_wide.findall(text))
+    if letters < MIN_LETTERS:
         return None
     lang, prob = await sync_to_async(identifier().classify, text)
     if prob < MIN_CONFIDENCE or lang not in LANGUAGES:
