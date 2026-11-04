@@ -154,7 +154,8 @@ def run_llm(llm, mode: str, text: str, image: bytes | None = None, think=False):
     result = llm.chat(messages, params, **kwargs)
     reply = result[0].outputs[0].text
     if think:
-        # The reasoning comes first; ran out of tokens before an answer: no reply
+        # The reasoning comes first; ran out of tokens before an answer: no
+        # reply
         reply = reply.split("</think>", 1)[1] if "</think>" in reply else ""
     # Markdown habits WhatsApp doesn't use: "  " line breaks and **bold**
     reply = reply.replace("**", "*")
