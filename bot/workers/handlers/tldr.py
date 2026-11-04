@@ -1,7 +1,7 @@
 import httpx
 
 from bot.config import conf
-from bot.utils.bot_utils import LimitedDict, get_sha256
+from bot.utils.bot_utils import KeyedLock, LimitedDict, get_sha256
 from bot.utils.log_utils import logger
 from bot.utils.modal_utils import explain
 from bot.utils.msg_utils import chat_is_allowed, user_is_allowed, user_is_privileged
@@ -14,6 +14,8 @@ MAX_IMAGE_SIZE = 17939583
 # Replies by (mode, text hash, image hash), so asking again about the same
 # message doesn't wake the model up
 tldr_cache = LimitedDict()
+# The same request while one is running waits for it, see KeyedLock
+tldr_locks = KeyedLock()
 
 
 async def _explain_replied(event, mode: str, usage: str):
@@ -41,16 +43,17 @@ async def _explain_replied(event, mode: str, usage: str):
             return await event.reply("*Replied image is too large.*")
         text = text[:MAX_TEXT]
         key = (mode, get_sha256(text), replied.media.fileSHA256 if is_image else b"")
-        if reply := tldr_cache.get(key):
+        async with tldr_locks(key):
+            if reply := tldr_cache.get(key):
+                tldr_cache[key] = reply
+                return await event.reply(reply)
+            async with event.react("🧠"):
+                image = await replied.download() if is_image else None
+                reply = await explain(mode, text, image)
+            if not reply:
+                return await event.reply("*Got an empty reply, try again.*")
             tldr_cache[key] = reply
-            return await event.reply(reply)
-        async with event.react("🧠"):
-            image = await replied.download() if is_image else None
-            reply = await explain(mode, text, image)
-        if not reply:
-            return await event.reply("*Got an empty reply, try again.*")
-        tldr_cache[key] = reply
-        await event.reply(reply)
+            await event.reply(reply)
     except httpx.HTTPError:
         await logger(Exception)
         await event.reply("*Couldn't reach the model, try again later.*")
