@@ -21,6 +21,11 @@ MAX_MODEL_LEN = 16384
 # image; the message's text is cut to fit what's left
 MAX_REPLY_TOKENS = 700
 PROMPT_AND_IMAGE_TOKENS = 1700
+# Modes the text model thinks through before answering, which it needs to
+# find and replace jargon instead of copying it. The reasoning comes out of
+# the reply's tokens, so these get more.
+THINKING_MODES = {"eli5"}
+MAX_THINKING_REPLY_TOKENS = 3000
 # Big images are scaled down to about this many pixels before the model
 # sees them, which bounds how much of the context an image takes up
 MAX_IMAGE_PIXELS = 1280 * 28 * 28
@@ -118,7 +123,7 @@ def load_llm(model_dir: str, **kwargs):
     )
 
 
-def run_llm(llm, mode: str, text: str, image: bytes | None = None, **chat_kwargs):
+def run_llm(llm, mode: str, text: str, image: bytes | None = None, think=False):
     from vllm import SamplingParams
 
     content = []
@@ -126,8 +131,9 @@ def run_llm(llm, mode: str, text: str, image: bytes | None = None, **chat_kwargs
         content.append(
             {"type": "image_url", "image_url": {"url": image_data_url(image)}}
         )
+    max_tokens = MAX_THINKING_REPLY_TOKENS if think else MAX_REPLY_TOKENS
     tokenizer = llm.get_tokenizer()
-    budget = MAX_MODEL_LEN - MAX_REPLY_TOKENS - PROMPT_AND_IMAGE_TOKENS
+    budget = MAX_MODEL_LEN - max_tokens - PROMPT_AND_IMAGE_TOKENS
     tokens = tokenizer.encode(text)
     if len(tokens) > budget:
         text = tokenizer.decode(tokens[:budget]) + "\n[…cut off]"
@@ -136,10 +142,22 @@ def run_llm(llm, mode: str, text: str, image: bytes | None = None, **chat_kwargs
         {"role": "system", "content": PROMPTS[mode]},
         {"role": "user", "content": content},
     ]
-    params = SamplingParams(temperature=0.3, max_tokens=MAX_REPLY_TOKENS)
-    result = llm.chat(messages, params, **chat_kwargs)
+    if think:
+        # Qwen's recommended sampling for thinking
+        params = SamplingParams(
+            temperature=0.6, top_p=0.95, top_k=20, max_tokens=max_tokens
+        )
+    else:
+        params = SamplingParams(temperature=0.3, max_tokens=max_tokens)
+    # Only Qwen3's chat template reads this; the VL model's ignores it
+    kwargs = {"chat_template_kwargs": {"enable_thinking": think}}
+    result = llm.chat(messages, params, **kwargs)
+    reply = result[0].outputs[0].text
+    if think:
+        # The reasoning comes first; ran out of tokens before an answer: no reply
+        reply = reply.split("</think>", 1)[1] if "</think>" in reply else ""
     # Markdown habits WhatsApp doesn't use: "  " line breaks and **bold**
-    reply = result[0].outputs[0].text.replace("**", "*")
+    reply = reply.replace("**", "*")
     return "\n".join(line.rstrip() for line in reply.strip().splitlines())
 
 
@@ -173,10 +191,8 @@ class TextModel:
     @modal.method()
     def explain(self, mode: str, text: str) -> str:
         # Qwen3 writes out its reasoning first unless told not to, which
-        # isn't needed here and would slow every reply
-        return run_llm(
-            self.llm, mode, text, chat_template_kwargs={"enable_thinking": False}
-        )
+        # only some modes need, as it slows the reply
+        return run_llm(self.llm, mode, text, think=mode in THINKING_MODES)
 
 
 @app.cls(
