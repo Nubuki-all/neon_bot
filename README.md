@@ -16,7 +16,7 @@ A feature-rich WhatsApp bot built with the [neonize](https://github.com/Pah-0/ne
 - **Inspect**: Get a video's FPS or full mediainfo.
 - **Repair**: Make some unplayable videos playable.
 - **Screenshot**: Generate screenshots of websites from a URL, or long screenshots of a YouTube or X post's comments.
-- **TL;DR**: Summarise (`.tldr`) or explain in simple words (`.eli5`) a replied message or image, through a Modal endpoint.
+- **TL;DR**: Summarise (`.tldr`), rewrite in simple words (`.eli5`) or say the way Genshin's Razor would (`.razor`) a replied message or image, through a Modal endpoint.
 
 ### 🎨 Sticker & Image Tools
 - **Sticker Creation**: Convert images, videos, and GIFs into stickers.

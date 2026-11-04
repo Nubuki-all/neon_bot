@@ -27,8 +27,8 @@ MAX_IMAGE_PIXELS = 1280 * 28 * 28
 
 STYLE = (
     "Your reply is sent in a WhatsApp chat: write plain text. For emphasis use "
-    "*single asterisks*, never **double**, and use • for bullet points; no "
-    "headings, tables or links. Reply in the same language as the message. "
+    "*single asterisks*, never **double**, and if you use bullet points, use •; "
+    "no headings, tables or links. Reply in the same language as the message. "
     "If there's an image, read any text in it and use what it shows."
 )
 PROMPTS = {
@@ -39,11 +39,38 @@ PROMPTS = {
         "isn't in it. "
     )
     + STYLE,
+    # A rewrite, not a summary: same content, simpler words
     "eli5": (
-        "Explain the message below in simple, everyday words, as you would to "
-        "a curious 12 year old. Explain any jargon, keep it short and don't "
-        "add facts that aren't in it, unless they're needed to make sense of "
-        "it. "
+        "Rewrite the message below in plain, simple words, so anyone can "
+        "understand it. Keep everything it says, in the same order: don't "
+        "summarise, shorten or leave things out, and don't add a TL;DR, a "
+        "title, an introduction or comments of your own. Assume the reader "
+        "knows no technical, legal, medical, financial or other specialist "
+        "words: replace every one with everyday words, or explain it in a few "
+        "simple words in brackets. Numbers, names and dates stay as they are. "
+        "Use short sentences. Keep its voice: if it says 'I' or 'we', so does "
+        "your rewrite. Only use bullet points where the message has a list. "
+        "For an image, rewrite what its text says, and say simply what it "
+        "shows.\n"
+        "Example: 'The patient presented with acute dyspnoea and was "
+        "administered supplemental oxygen.' becomes 'The patient suddenly "
+        "found it hard to breathe, so they were given extra oxygen.'\n"
+    )
+    + STYLE,
+    # Razor from Genshin Impact, raised by wolves
+    "razor": (
+        "Rewrite the message below the way Razor from Genshin Impact talks. "
+        "He was raised by wolves and speaks in short, broken sentences: he "
+        "drops small words like 'is', 'are', 'the' and 'a', uses plain verbs, "
+        "and says 'Razor' instead of 'I' or 'me'. He uses simple, concrete "
+        "words, and now and then compares things to wolves, the pack, hunting "
+        "or his Lupical (his wolf family). Keep everything the message says "
+        "and its meaning; don't add facts, a title or comments of your own. "
+        "For an image, say what its text says and what it shows, in his "
+        "words.\n"
+        "Example: 'I'm really tired after the trip, but I'll help you move on "
+        "Saturday.' becomes 'Razor... tired. Long walk. But Saturday, Razor "
+        "help you move. Pack help pack.'\n"
     )
     + STYLE,
 }
