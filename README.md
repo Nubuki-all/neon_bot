@@ -161,7 +161,7 @@ The bot can be configured via environment variables or a `.env` file (see `.env.
 | `IGNORE_PM` | `True` | Ignore private messages. Has no effect if `ALLOWED_CHATS` is set. |
 | `KLIPY_API_KEY` | | API key for GIF and meme search. |
 | `LOG_GROUP` | | Chat ID to send logs and errors to (`id` or `id:server`). |
-| `MODAL_TLDR_API` | | URL of the Modal app in `modal/modal_tldr.py`, for `.tldr` and `.eli5`. Deploy it with `modal deploy modal/modal_tldr.py` after creating a `tldr-auth-token` secret with an `API_TOKEN`. |
+| `MODAL_TLDR_API` | | URL of the Modal app in `modal/modal_tldr.py`, for `.tldr`, `.eli5` and `.razor`. Deploy it with `modal deploy modal/modal_tldr.py` after creating a `tldr-auth-token` secret with an `API_TOKEN`. |
 | `MODAL_TLDR_TOKEN` | | The `API_TOKEN` of `MODAL_TLDR_API`. |
 | `MODAL_UPSCALE_API` | | URL of a Modal upscaling endpoint. |
 | `MODAL_UPSCALE_TOKEN` | | Token for `MODAL_UPSCALE_API`. |
