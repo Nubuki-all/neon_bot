@@ -74,3 +74,12 @@ async def eli5(event, args, client):
     starts up.
     """
     await _explain_replied(event, "eli5", eli5.__doc__)
+
+
+async def razor(event, args, client):
+    """
+    Rewrite the replied message the way Razor from Genshin Impact talks:
+    its text, an image (read with any text in it) or both. The first use
+    after a while is slow, as the model starts up.
+    """
+    await _explain_replied(event, "razor", razor.__doc__)

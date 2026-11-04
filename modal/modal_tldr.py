@@ -1,6 +1,7 @@
 import base64
 import io
 import os
+import re
 
 import modal
 
@@ -17,18 +18,24 @@ TEXT_MODEL_DIR = "/models/qwen3"
 VISION_MODEL = "Qwen/Qwen3-VL-8B-Instruct-FP8"
 VISION_MODEL_DIR = "/models/qwen3-vl"
 MAX_MODEL_LEN = 16384
-# Tokens kept free in the context for the reply, and for the prompt and an
-# image; the message's text is cut to fit what's left
-MAX_REPLY_TOKENS = 700
+# Tokens kept free in the context for each mode's reply (rewrites run as
+# long as the message; summaries don't), and for the prompt and an image;
+# the message's text is cut to fit what's left
+REPLY_TOKENS = {"tldr": 700, "eli5": 1500, "razor": 1500}
 PROMPT_AND_IMAGE_TOKENS = 1700
+# Modes the text model thinks through before answering, which it needs to
+# find and replace jargon instead of copying it. The reasoning comes out of
+# the reply's tokens, so these get this many more.
+THINKING_MODES = {"eli5"}
+THINKING_TOKENS = 1500
 # Big images are scaled down to about this many pixels before the model
 # sees them, which bounds how much of the context an image takes up
 MAX_IMAGE_PIXELS = 1280 * 28 * 28
 
 STYLE = (
     "Your reply is sent in a WhatsApp chat: write plain text. For emphasis use "
-    "*single asterisks*, never **double**, and use • for bullet points; no "
-    "headings, tables or links. Reply in the same language as the message. "
+    "*single asterisks*, never **double**, and if you use bullet points, use •; "
+    "no headings, tables or links. Reply in the same language as the message. "
     "If there's an image, read any text in it and use what it shows."
 )
 PROMPTS = {
@@ -39,11 +46,38 @@ PROMPTS = {
         "isn't in it. "
     )
     + STYLE,
+    # A rewrite, not a summary: same content, simpler words
     "eli5": (
-        "Explain the message below in simple, everyday words, as you would to "
-        "a curious 12 year old. Explain any jargon, keep it short and don't "
-        "add facts that aren't in it, unless they're needed to make sense of "
-        "it. "
+        "Rewrite the message below in plain, simple words, so anyone can "
+        "understand it. Keep everything it says, in the same order: don't "
+        "summarise, shorten or leave things out, and don't add a TL;DR, a "
+        "title, an introduction or comments of your own. Assume the reader "
+        "knows no technical, legal, medical, financial or other specialist "
+        "words: replace every one with everyday words, or explain it in a few "
+        "simple words in brackets. Numbers, names and dates stay as they are. "
+        "Use short sentences. Keep its voice: if it says 'I' or 'we', so does "
+        "your rewrite. Only use bullet points where the message has a list. "
+        "For an image, rewrite what its text says, and say simply what it "
+        "shows.\n"
+        "Example: 'The patient presented with acute dyspnoea and was "
+        "administered supplemental oxygen.' becomes 'The patient suddenly "
+        "found it hard to breathe, so they were given extra oxygen.'\n"
+    )
+    + STYLE,
+    # Razor from Genshin Impact, raised by wolves
+    "razor": (
+        "Rewrite the message below the way Razor from Genshin Impact talks. "
+        "He was raised by wolves and speaks in short, broken sentences: he "
+        "drops small words like 'is', 'are', 'the' and 'a', uses plain verbs, "
+        "and says 'Razor' instead of 'I' or 'me'. He uses simple, concrete "
+        "words, and now and then compares things to wolves, the pack, hunting "
+        "or his Lupical (his wolf family). Keep everything the message says "
+        "and its meaning; don't add facts, a title or comments of your own. "
+        "For an image, say what its text says and what it shows, in his "
+        "words.\n"
+        "Example: 'I'm really tired after the trip, but I'll help you move on "
+        "Saturday.' becomes 'Razor... tired. Long walk. But Saturday, Razor "
+        "help you move. Pack help pack.'\n"
     )
     + STYLE,
 }
@@ -91,7 +125,7 @@ def load_llm(model_dir: str, **kwargs):
     )
 
 
-def run_llm(llm, mode: str, text: str, image: bytes | None = None, **chat_kwargs):
+def run_llm(llm, mode: str, text: str, image: bytes | None = None, think=False):
     from vllm import SamplingParams
 
     content = []
@@ -99,8 +133,9 @@ def run_llm(llm, mode: str, text: str, image: bytes | None = None, **chat_kwargs
         content.append(
             {"type": "image_url", "image_url": {"url": image_data_url(image)}}
         )
+    max_tokens = REPLY_TOKENS[mode] + (THINKING_TOKENS if think else 0)
     tokenizer = llm.get_tokenizer()
-    budget = MAX_MODEL_LEN - MAX_REPLY_TOKENS - PROMPT_AND_IMAGE_TOKENS
+    budget = MAX_MODEL_LEN - max_tokens - PROMPT_AND_IMAGE_TOKENS
     tokens = tokenizer.encode(text)
     if len(tokens) > budget:
         text = tokenizer.decode(tokens[:budget]) + "\n[…cut off]"
@@ -109,10 +144,24 @@ def run_llm(llm, mode: str, text: str, image: bytes | None = None, **chat_kwargs
         {"role": "system", "content": PROMPTS[mode]},
         {"role": "user", "content": content},
     ]
-    params = SamplingParams(temperature=0.3, max_tokens=MAX_REPLY_TOKENS)
-    result = llm.chat(messages, params, **chat_kwargs)
+    if think:
+        # Qwen's recommended sampling for thinking
+        params = SamplingParams(
+            temperature=0.6, top_p=0.95, top_k=20, max_tokens=max_tokens
+        )
+    else:
+        params = SamplingParams(temperature=0.3, max_tokens=max_tokens)
+    # Only Qwen3's chat template reads this; the VL model's ignores it
+    kwargs = {"chat_template_kwargs": {"enable_thinking": think}}
+    result = llm.chat(messages, params, **kwargs)
+    reply = result[0].outputs[0].text
+    if think:
+        # The reasoning comes first; ran out of tokens before an answer: no
+        # reply
+        reply = reply.split("</think>", 1)[1] if "</think>" in reply else ""
     # Markdown habits WhatsApp doesn't use: "  " line breaks and **bold**
-    reply = result[0].outputs[0].text.replace("**", "*")
+    # and "* " or "- " bullets, which WhatsApp shows as is or as bold
+    reply = re.sub(r"(?m)^(\s*)[*-] ", r"\1• ", reply.replace("**", "*"))
     return "\n".join(line.rstrip() for line in reply.strip().splitlines())
 
 
@@ -146,10 +195,8 @@ class TextModel:
     @modal.method()
     def explain(self, mode: str, text: str) -> str:
         # Qwen3 writes out its reasoning first unless told not to, which
-        # isn't needed here and would slow every reply
-        return run_llm(
-            self.llm, mode, text, chat_template_kwargs={"enable_thinking": False}
-        )
+        # only some modes need, as it slows the reply
+        return run_llm(self.llm, mode, text, think=mode in THINKING_MODES)
 
 
 @app.cls(

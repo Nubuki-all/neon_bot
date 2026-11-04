@@ -68,9 +68,9 @@ async def explain(
     mode: str, text: str, image: bytes | None = None, timeout_seconds: float = 600.0
 ) -> str:
     """
-    Summarise ("tldr") or simplify ("eli5") text and/or an image with the
-    Modal app in modal/modal_tldr.py. A cold start loads the model first,
-    which can take a couple of minutes.
+    Summarise ("tldr"), simplify ("eli5") or Razor-ify ("razor") text
+    and/or an image with the Modal app in modal/modal_tldr.py. A cold start
+    loads the model first, which can take a couple of minutes.
 
     Raises:
         httpx.HTTPStatusError: If the server returns a 4xx/5xx status code.
