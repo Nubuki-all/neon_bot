@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 import httpx
 
 from bot.config import bot
-from bot.utils.bot_utils import sync_to_async
+from bot.utils.bot_utils import KeyedLock, LimitedDict, sync_to_async
 from bot.utils.db_utils import save2db2
 from bot.utils.log_utils import log, logger
 from bot.utils.msg_utils import (
@@ -85,7 +85,10 @@ _wide = re.compile(
     r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uac00-\ud7af\uf900-\ufaff]"
 )
 MIN_CONFIDENCE = 0.8
+# Longest text sent to Google at once; longer parts go in pieces
 MAX_CHARS = 5000
+# Longer messages aren't translated
+MAX_MESSAGE = 20000
 GOOGLE_URL = "https://translate.googleapis.com/translate_a/single"
 # The translate.google.com page's own API; used when GOOGLE_URL fails
 WEB_URL = "https://translate.google.com/_/TranslateWebserverUi/data/batchexecute"
@@ -95,8 +98,15 @@ WEB_HEADERS = {
     "Referer": "https://translate.google.com",
 }
 
+# The bot's translation reply to each recent message, by (chat, message id), so
+# it can be updated when the message is edited
+replies = LimitedDict(maxsize=256)
+# An edit that comes in while the message is still being translated waits
+reply_locks = KeyedLock()
+
 _noise = re.compile(r"https?://\S+|www\.\S+|@\d+|```.*?```|[*_~`>]", re.S)
 _mention = re.compile(r"@(\d{5,16})")
+_quote = re.compile(r"(?m)^>(?=[^\s>])")
 
 
 @cache
@@ -118,17 +128,50 @@ def family(code: str) -> str:
     return FAMILY.get(code, code)
 
 
-async def detect(text: str) -> str | None:
-    """The message's language, or None when it's too short or unclear"""
+def classify(text: str) -> str | None:
+    """The text's language, or None when it's too short or unclear"""
     text = _noise.sub(" ", text)
     letters = sum(c.isalpha() for c in text)
     letters += (WIDE_LETTER - 1) * len(_wide.findall(text))
     if letters < MIN_LETTERS:
         return None
-    lang, prob = await sync_to_async(identifier().classify, text)
+    lang, prob = identifier().classify(text)
     if prob < MIN_CONFIDENCE or lang not in LANGUAGES:
         return None
     return lang
+
+
+def language_parts(text: str) -> list[tuple[str | None, str]]:
+    """
+    The text split into runs of lines in one language, as (language, text),
+    so a message that's partly in the chat's language or mixes several only
+    has its foreign parts translated. Lines too short to tell join the run
+    they're in.
+    """
+    runs = []
+    for line in text.splitlines():
+        lang = classify(line)
+        lang = lang and family(lang)
+        if runs and (lang is None or runs[-1][0] in (None, lang)):
+            runs[-1][0] = runs[-1][0] or lang
+            runs[-1][1].append(line)
+        else:
+            runs.append([lang, [line]])
+    # Each run is classified again as a whole, which is surer than its lines
+    return [(classify("\n".join(lines)), "\n".join(lines)) for _, lines in runs]
+
+
+def pieces(text: str) -> list[str]:
+    """The text in pieces of up to MAX_CHARS, split between lines if it can be"""
+    result = [""]
+    for line in text.splitlines(keepends=True):
+        while len(line) > MAX_CHARS:
+            result += [line[:MAX_CHARS], ""]
+            line = line[MAX_CHARS:]
+        if len(result[-1]) + len(line) > MAX_CHARS:
+            result.append("")
+        result[-1] += line
+    return [piece for piece in result if piece.strip()]
 
 
 def _post_translate(text: str, target: str) -> list:
@@ -182,43 +225,70 @@ def same_text(a: str, b: str) -> bool:
     return " ".join(a.casefold().split()) == " ".join(b.casefold().split())
 
 
-async def auto_translate(event, _, client):
-    """
-    Automatic handler (not a command): replies with a translation when a message
-    isn't in the chat's language (see autotranslate).
-    """
-    try:
-        if event.outgoing or event.is_edit:
+async def translation_for(event, text: str | None) -> str | None:
+    """The translation reply for a message's text, or None when there's none"""
+    settings = bot.group_dict.get(event.chat.id, {}).get("auto_translate")
+    if not settings or not text or len(text) > MAX_MESSAGE:
+        return
+    if text.split()[0] in function_dict:
+        return
+    user = event.from_user.id
+    if not user_is_privileged(user):
+        if not (chat_is_allowed(event) and user_is_allowed(user)):
             return
-        settings = bot.group_dict.get(event.chat.id, {}).get("auto_translate")
-        if not settings:
-            return
-        text = event.text or event.caption
-        if not text or len(text) > MAX_CHARS:
-            return
-        if text.split()[0] in function_dict:
-            return
-        user = event.from_user.id
-        if not user_is_privileged(user):
-            if not (chat_is_allowed(event) and user_is_allowed(user)):
-                return
-        target = settings["lang"]
-        lang = await detect(text)
-        if not lang or family(lang) == target:
-            return
-        if family(lang) in settings.get("ignore", []):
-            return
+    target, ignore = settings["lang"], settings.get("ignore", [])
+    langs, translations = [], []
+    for lang, part in await sync_to_async(language_parts, text):
+        if not lang or family(lang) == target or family(lang) in ignore:
+            continue
         try:
-            translated = await translate(text, target)
+            translated = "\n".join(
+                [(await translate(p, target)).strip("\n") for p in pieces(part)]
+            )
         except Exception:
             # Not worth a log chat message for every message
             return log(Exception, warning=True)
         # Unchanged text means Google saw it as the target language already
-        if not translated or same_text(translated, text):
+        if not translated or same_text(translated, part):
+            continue
+        if LANGUAGES[lang] not in langs:
+            langs.append(LANGUAGES[lang])
+        translations.append(translated.strip())
+    if not translations:
+        return
+    # Keep @mentions from pinging people again, and WhatsApp quotes ("> "),
+    # which Google sometimes runs into the text, as quotes
+    translated = _mention.sub("@⁠\\1", "\n\n".join(translations))
+    translated = _quote.sub("> ", translated)
+    names = ", ".join(langs[:-1]) + (" and " if len(langs) > 1 else "") + langs[-1]
+    return f"🌐 _Translated from {names}:_\n{translated}"
+
+
+async def auto_translate(event, _, client):
+    """
+    Automatic handler (not a command): replies with a translation when a message
+    isn't in the chat's language (see autotranslate). When the message is
+    edited, the translation is updated, or removed if it's no longer needed.
+    """
+    try:
+        if event.outgoing:
             return
-        # Keep @mentions from pinging people again
-        translated = _mention.sub("@⁠\\1", translated)
-        await event.reply(f"🌐 _Translated from {LANGUAGES[lang]}:_\n{translated}")
+        text = event.text or event.caption
+        key = (event.chat.id, event.edited_id if event.is_edit else event.id)
+        async with reply_locks(key):
+            old = replies.get(key)
+            reply = await translation_for(event, text)
+            if old and reply:
+                try:
+                    return await old.edit(reply)
+                except Exception:
+                    log(Exception, warning=True)
+            elif old:
+                # Edited into the chat's language, a command or too little text
+                replies.pop(key, None)
+                return await old.delete()
+            if reply:
+                replies[key] = await event.reply(reply)
     except Exception:
         await logger(Exception)
 

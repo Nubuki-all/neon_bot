@@ -49,7 +49,7 @@ A feature-rich WhatsApp bot built with the [neonize](https://github.com/Pah-0/ne
 - **RSS Feeds**: Subscribe to RSS feeds and receive updates in your chats.
 - **Genshin Codes**: Get the current Genshin Impact redeem codes, and have new ones posted to chats automatically.
 - **URL Sanitization**: Strip tracking parameters from links.
-- **Auto Translation**: Messages that aren't in a chat's set language get a translated reply (language detected locally with py3langid, translated with Google Translate).
+- **Auto Translation**: Messages that aren't in a chat's set language get a translated reply, kept up to date when the message is edited (language detected locally with py3langid, translated with Google Translate).
 - **Random Choice**: Let the bot pick from a list of options.
 - **Message Store**: Messages are stored locally (for undelete, objection, etc.) and cleaned up automatically after `MSG_STORE_STALE` seconds.
 
