@@ -150,9 +150,10 @@ try:
             print('Successfully updated with latest commit from UPSTREAM_REPO')
         else:
             print('Something went wrong while updating,maybe invalid upstream repo?')
-    # A PR (or going back from one) can change the requirements
+    # Any update (or a PR, or going back from one) can change the
+    # requirements
     if (update is not None or switched) and (
-        AUPR or (pr_state and requirements_hash() != old_requirements)
+        AUPR or requirements_hash() != old_requirements
     ):
         bashrun(["pip3", "install", "-r", "requirements.txt"])
     if update_check.is_file():
