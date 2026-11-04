@@ -1219,9 +1219,22 @@ class KeyedLock:
     """
     One asyncio.Lock per key, made on first use and dropped once nobody holds
     or waits for it. Wrapping a cache check, the work and the cache store in
-    it makes a second request for the same key wait for the first, then find
+    it makes later requests for the same key wait for the first, then find
     its result cached, instead of doing the work again alongside it.
+
+    The context gives a handle whose release() lets go early, e.g. on a cache
+    hit, so the requests that were waiting can send their copies in parallel.
     """
+
+    class Held:
+        def __init__(self, lock: asyncio.Lock):
+            self._lock = lock
+            self.held = True
+
+        def release(self):
+            if self.held:
+                self.held = False
+                self._lock.release()
 
     def __init__(self):
         self._locks = {}
@@ -1231,8 +1244,12 @@ class KeyedLock:
         entry = self._locks.setdefault(key, [asyncio.Lock(), 0])
         entry[1] += 1
         try:
-            async with entry[0]:
-                yield
+            await entry[0].acquire()
+            held = self.Held(entry[0])
+            try:
+                yield held
+            finally:
+                held.release()
         finally:
             entry[1] -= 1
             if not entry[1]:

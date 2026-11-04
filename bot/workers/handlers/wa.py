@@ -241,8 +241,10 @@ async def sanitize_video(event: Event, args: str, client):
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         comp_sha = replied.media.fileSHA256
-        async with cache_locks(("sanitize", comp_sha)):
+        async with cache_locks(("sanitize", comp_sha)) as lock:
             if media := sanitized_video_cache.get(comp_sha):
+                # Cached: others waiting can send their copies at the same time
+                lock.release()
                 try:
                     async with event.react("📥"):
                         file = await dd_media(media, MediaType.MediaDocument)
@@ -536,8 +538,10 @@ async def compress(event, args, client):
             if args
             else replied.media.fileSHA256
         ) + (b"--hevc" if hevc else b"")
-        async with cache_locks(("compress", comp_sha)):
+        async with cache_locks(("compress", comp_sha)) as lock:
             if media := compress_cache.get(comp_sha):
+                # Cached: others waiting can send their copies at the same time
+                lock.release()
                 try:
                     async with event.react("📥"):
                         file = await dd_media(media, MediaType.MediaDocument)
