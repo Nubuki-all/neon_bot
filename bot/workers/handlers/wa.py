@@ -31,6 +31,7 @@ from bot.others.exceptions import StopAutoHandlers, StopHandlers
 from bot.pkgs.tikmate_dl import TikmateAsync
 from bot.utils.bot_utils import (
     CommentsUnavailable,
+    KeyedLock,
     LimitedDict,
     comment_site,
     get_date_from_isostr,
@@ -95,6 +96,11 @@ Image.MAX_IMAGE_PIXELS = 400_000_000
 compress_cache = LimitedDict()
 sanitized_video_cache = LimitedDict()
 mediainfo_cache = LimitedDict()
+# (image hash, model, "modal" | "local") -> (raw media, raw sent as document,
+# jpeg media) of the upscale's two replies
+upscale_cache = LimitedDict()
+# Requests for the same media wait for each other, see KeyedLock
+cache_locks = KeyedLock()
 purge_sessions = {}
 
 
@@ -235,53 +241,56 @@ async def sanitize_video(event: Event, args: str, client):
         elif not replied.video:
             return await event.reply("*Replied message is not a video.*")
         comp_sha = replied.media.fileSHA256
-        if media := sanitized_video_cache.get(comp_sha):
-            try:
-                async with event.react("📥"):
-                    file = await dd_media(media, MediaType.MediaDocument)
-                async with event.react("📤"):
-                    file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
-                    file_name += ".mp4"
-                    if len(file) > 100000000:
-                        e = await event.reply_document(file, file_name, file_name)
-                    else:
-                        e = await event.reply_video(file, file_name)
+        async with cache_locks(("sanitize", comp_sha)):
+            if media := sanitized_video_cache.get(comp_sha):
+                try:
+                    async with event.react("📥"):
+                        file = await dd_media(media, MediaType.MediaDocument)
+                    async with event.react("📤"):
+                        file_name = f_name or "video_" + dt.now().isoformat(
+                            "_", "seconds"
+                        )
+                        file_name += ".mp4"
+                        if len(file) > 100000000:
+                            e = await event.reply_document(file, file_name, file_name)
+                        else:
+                            e = await event.reply_video(file, file_name)
+                    sanitized_video_cache[comp_sha] = e.media
+                    return
+                except Exception:
+                    await logger(Exception)
+                    sanitized_video_cache.pop(comp_sha)
+            async with event.react("📥"):
+                file = await replied.download()
+
+            _id = f"{event.chat.id}:{event.id}"
+            in_ = f"temp/{_id}{ext}"
+            out_ = f"temp/{_id}-1.mp4"
+            cmd_str = f"ffmpeg -fflags +genpts+igndts -err_detect ignore_err -max_error_rate 1.0 -i {in_} -map 0:v -map 0:a? -c:v libx264 -c:a copy -movflags +faststart {out_} -y"
+
+            await write_binary(in_, file)
+
+            async with event.react("⏲️"), comp_sem:
+                process, _stdout, stderr = await enshell(cmd_str)
+            if process.returncode != 0:
+                raise RuntimeError(
+                    # type: ignore
+                    f"stderr: {stderr} Return code: {process.returncode}"
+                )
+            s_remove(in_)
+            async with event.react("📤"):
+                file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
+                file_name += ".mp4"
+                file_sz = size_of(out_)
+                if file_sz > 2 << 30:
+                    s_remove(out_)
+                    return await event.reply("*Upload failed, Video is too large!*")
+                if file_sz > 100000000:
+                    e = await event.reply_document(out_, file_name, file_name)
+                else:
+                    e = await event.reply_video(out_, f_name)
                 sanitized_video_cache[comp_sha] = e.media
-                return
-            except Exception:
-                await logger(Exception)
-                sanitized_video_cache.pop(comp_sha)
-        async with event.react("📥"):
-            file = await replied.download()
-
-        _id = f"{event.chat.id}:{event.id}"
-        in_ = f"temp/{_id}{ext}"
-        out_ = f"temp/{_id}-1.mp4"
-        cmd_str = f"ffmpeg -fflags +genpts+igndts -err_detect ignore_err -max_error_rate 1.0 -i {in_} -map 0:v -map 0:a? -c:v libx264 -c:a copy -movflags +faststart {out_} -y"
-
-        await write_binary(in_, file)
-
-        async with event.react("⏲️"), comp_sem:
-            process, _stdout, stderr = await enshell(cmd_str)
-        if process.returncode != 0:
-            raise RuntimeError(
-                # type: ignore
-                f"stderr: {stderr} Return code: {process.returncode}"
-            )
-        s_remove(in_)
-        async with event.react("📤"):
-            file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
-            file_name += ".mp4"
-            file_sz = size_of(out_)
-            if file_sz > 2 << 30:
-                s_remove(out_)
-                return await event.reply("*Upload failed, Video is too large!*")
-            if file_sz > 100000000:
-                e = await event.reply_document(out_, file_name, file_name)
-            else:
-                e = await event.reply_video(out_, f_name)
-            sanitized_video_cache[comp_sha] = e.media
-        s_remove(out_)
+            s_remove(out_)
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -433,50 +442,51 @@ async def vinfo(event: Event, args: str, client):
                 return False
 
         comp_sha = replied.media.fileSHA256
-        info = mediainfo_cache.get(comp_sha)
-        if info:
+        async with cache_locks(("mediainfo", comp_sha)):
+            info = mediainfo_cache.get(comp_sha)
+            if info:
+                if await _process(info):
+                    return
+            else:
+                info = VideoInfo()
+            _id = f"{event.chat.id}:{event.id}"
+            fn = f"comp/{_id}{ext}"
+            async with event.react("📥"):
+                file = await replied.download()
+            await write_binary(fn, file)
+
+            async def _populate(i: VideoInfo):
+                if not i.fps:
+                    try:
+                        i.fps = round(float(await get_fps(fn)), 2)
+                    except Exception:
+                        await logger(Exception)
+                if not i.media_info:
+                    try:
+                        i.media_info = await get_mediainfo(fn, full=True)
+                    except Exception:
+                        await logger(Exception)
+                if not i.media_info_link:
+                    try:
+                        content = await get_mediainfo(fn, html=True)
+                        if len(content) > 65536:
+                            content = (
+                                content[:65430]
+                                + "<strong>...<strong><br><br><strong>(TRUNCATED DUE TO CONTENT EXCEEDING MAX LENGTH)<strong>"
+                            )
+                        i.media_info_link = (
+                            await post_to_tgph(
+                                "Mediainfo", content, bot.client.me.PushName, ""
+                            )
+                        )["url"]
+                    except Exception:
+                        await logger(Exception)
+
+            await _populate(info)
+            mediainfo_cache[comp_sha] = info
             if await _process(info):
                 return
-        else:
-            info = VideoInfo()
-        _id = f"{event.chat.id}:{event.id}"
-        fn = f"comp/{_id}{ext}"
-        async with event.react("📥"):
-            file = await replied.download()
-        await write_binary(fn, file)
-
-        async def _populate(i: VideoInfo):
-            if not i.fps:
-                try:
-                    i.fps = round(float(await get_fps(fn)), 2)
-                except Exception:
-                    await logger(Exception)
-            if not i.media_info:
-                try:
-                    i.media_info = await get_mediainfo(fn, full=True)
-                except Exception:
-                    await logger(Exception)
-            if not i.media_info_link:
-                try:
-                    content = await get_mediainfo(fn, html=True)
-                    if len(content) > 65536:
-                        content = (
-                            content[:65430]
-                            + "<strong>...<strong><br><br><strong>(TRUNCATED DUE TO CONTENT EXCEEDING MAX LENGTH)<strong>"
-                        )
-                    i.media_info_link = (
-                        await post_to_tgph(
-                            "Mediainfo", content, bot.client.me.PushName, ""
-                        )
-                    )["url"]
-                except Exception:
-                    await logger(Exception)
-
-        await _populate(info)
-        mediainfo_cache[comp_sha] = info
-        if await _process(info):
-            return
-        await event.react("😖")
+            await event.react("😖")
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -526,70 +536,73 @@ async def compress(event, args, client):
             if args
             else replied.media.fileSHA256
         ) + (b"--hevc" if hevc else b"")
-        if media := compress_cache.get(comp_sha):
-            try:
-                async with event.react("📥"):
-                    file = await dd_media(media, MediaType.MediaDocument)
-                async with event.react("📤"):
-                    file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
-                    file_name += ".mkv"
-                    e = await event.reply_document(file, file_name, file_name)
-                compress_cache[comp_sha] = e.media
-                return
-            except Exception:
-                await logger(Exception)
-                compress_cache.pop(comp_sha)
+        async with cache_locks(("compress", comp_sha)):
+            if media := compress_cache.get(comp_sha):
+                try:
+                    async with event.react("📥"):
+                        file = await dd_media(media, MediaType.MediaDocument)
+                    async with event.react("📤"):
+                        file_name = f_name or "video_" + dt.now().isoformat(
+                            "_", "seconds"
+                        )
+                        file_name += ".mkv"
+                        e = await event.reply_document(file, file_name, file_name)
+                    compress_cache[comp_sha] = e.media
+                    return
+                except Exception:
+                    await logger(Exception)
+                    compress_cache.pop(comp_sha)
 
-        async with event.react("📥"):
-            file = await replied.download()
+            async with event.react("📥"):
+                file = await replied.download()
 
-        _id = f"{event.chat.id}:{event.id}"
-        in_ = f"comp/{_id}{ext}"
-        out_ = f"comp/{_id}-1.mkv"
-        a_quality = {"480p": "32k", "720p": "64k", "1080p": "128k"}
-        crf_quality = {"1080p": "35"}
-        title_ = (replied.caption or "").split("\n")[-1]
-        video_codec = "libx265" if hevc else "libsvtav1"
-        video_params = (
-            "-crf 30"
-            if hevc
-            else f'-preset 9 -g 240 -svtav1-params tune=1:film-grain=0 -crf {crf_quality.get(args, "42")}'
-        )
-
-        quality = {
-            "480p": 480,
-            "720p": 720,
-            "1080p": 1080,
-        }
-
-        height = quality.get(args, 480)
-
-        cmd_str = f'''ffmpeg -i "{in_}" \
-        -map 0:v? -map 0:a? -map 0:s? -map 0:t? \
-        -metadata title="{title_} | MiNi" \
-        -c:v {video_codec} \
-        {video_params} \
-        -vf "scale='if(gt(iw,ih),-2,{height})':'if(gt(iw,ih),{height},-2)'" \
-        -pix_fmt yuv420p \
-        -c:a libopus -ac 2 -vbr 2 -ab {a_quality.get(args, "32k")} \
-        -c:s copy \
-        "{out_}"'''
-        await write_binary(in_, file)
-
-        async with event.react("⏲️"), comp_sem:
-            process, _stdout, stderr = await enshell(cmd_str)
-        if process.returncode != 0:
-            raise RuntimeError(
-                # type: ignore
-                f"stderr: {stderr} Return code: {process.returncode}"
+            _id = f"{event.chat.id}:{event.id}"
+            in_ = f"comp/{_id}{ext}"
+            out_ = f"comp/{_id}-1.mkv"
+            a_quality = {"480p": "32k", "720p": "64k", "1080p": "128k"}
+            crf_quality = {"1080p": "35"}
+            title_ = (replied.caption or "").split("\n")[-1]
+            video_codec = "libx265" if hevc else "libsvtav1"
+            video_params = (
+                "-crf 30"
+                if hevc
+                else f'-preset 9 -g 240 -svtav1-params tune=1:film-grain=0 -crf {crf_quality.get(args, "42")}'
             )
-        s_remove(in_)
-        async with event.react("📤"):
-            file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
-            file_name += ".mkv"
-            e = await event.reply_document(out_, file_name, file_name)
-            compress_cache[comp_sha] = e.media
-        s_remove(out_)
+
+            quality = {
+                "480p": 480,
+                "720p": 720,
+                "1080p": 1080,
+            }
+
+            height = quality.get(args, 480)
+
+            cmd_str = f'''ffmpeg -i "{in_}" \
+            -map 0:v? -map 0:a? -map 0:s? -map 0:t? \
+            -metadata title="{title_} | MiNi" \
+            -c:v {video_codec} \
+            {video_params} \
+            -vf "scale='if(gt(iw,ih),-2,{height})':'if(gt(iw,ih),{height},-2)'" \
+            -pix_fmt yuv420p \
+            -c:a libopus -ac 2 -vbr 2 -ab {a_quality.get(args, "32k")} \
+            -c:s copy \
+            "{out_}"'''
+            await write_binary(in_, file)
+
+            async with event.react("⏲️"), comp_sem:
+                process, _stdout, stderr = await enshell(cmd_str)
+            if process.returncode != 0:
+                raise RuntimeError(
+                    # type: ignore
+                    f"stderr: {stderr} Return code: {process.returncode}"
+                )
+            s_remove(in_)
+            async with event.react("📤"):
+                file_name = f_name or "video_" + dt.now().isoformat("_", "seconds")
+                file_name += ".mkv"
+                e = await event.reply_document(out_, file_name, file_name)
+                compress_cache[comp_sha] = e.media
+            s_remove(out_)
     except Exception:
         await logger(Exception)
         await event.react("❌")
@@ -1189,6 +1202,34 @@ async def upscale_image(event: Event, args: str, client):
             )
         if replied.media.fileLength > 17939583:
             return await sticker_reply(event, args, client, True)
+        # Upscaling takes minutes of GPU (or CPU) time; resending is cheap
+        backend = "modal" if conf.MODAL_UPSCALE_API else "local"
+        cache_key = (replied.media.fileSHA256, model or "", backend)
+
+        async def _send_cached() -> bool:
+            if not (cached := upscale_cache.get(cache_key)):
+                return False
+            raw_media, raw_is_doc, jpeg_media = cached
+            try:
+                if raw_is_doc:
+                    raw = await dd_media(raw_media, MediaType.MediaDocument)
+                    msg = await event.reply_document(
+                        raw, "upscaled.png", "Upscaled image: Raw"
+                    )
+                else:
+                    raw = await dd_media(raw_media, MediaType.MediaImage)
+                    msg = await event.reply_photo(raw, "Upscaled image: Raw")
+                jpeg = await dd_media(jpeg_media, MediaType.MediaImage)
+                jpeg_msg = await msg.reply_photo(jpeg, "Upscaled image: Jpeg")
+            except Exception:
+                await logger(Exception)
+                upscale_cache.pop(cache_key, None)
+                return False
+            upscale_cache[cache_key] = (msg.media, raw_is_doc, jpeg_msg.media)
+            return True
+
+        if await _send_cached():
+            return
         turn().add(turn_id)
         status_msg = await event.reply("*…*")
         if replied.caption and replied.caption.startswith("Upscaled image:"):
@@ -1206,6 +1247,9 @@ async def upscale_image(event: Event, args: str, client):
             if not await wait_for_turn(turn_id):
                 return
             await event.react("")
+            # The same image may have been upscaled while this one waited
+            if await _send_cached():
+                return
         # async with heavy_proc_lock:
         # Lock works now but eh i like the current implementation better
         await status_msg.edit(
@@ -1242,17 +1286,23 @@ async def upscale_image(event: Event, args: str, client):
                     status_msg = None
                     return
                 raw = await local_upscale(file)
+                backend = "local"
         else:
             raw = await local_upscale(file)
         sz = len(raw)
+        raw_is_doc = sz > 100000000
         if sz > 2 << 30:
             msg = await event.reply("Can not send raw; file too large")
-        elif sz > 100000000:
+        elif raw_is_doc:
             msg = await event.reply_document(raw, "upscaled.png", "Upscaled image: Raw")
         else:
             msg = await event.reply_photo(raw, "Upscaled image: Raw")
         raw = await upscaled_png_to_jpg(raw)
-        await msg.reply_photo(raw, "Upscaled image: Jpeg")
+        jpeg_msg = await msg.reply_photo(raw, "Upscaled image: Jpeg")
+        if sz <= 2 << 30:
+            # Keyed by what actually made it: Modal can fall back to local
+            key = (cache_key[0], cache_key[1], backend)
+            upscale_cache[key] = (msg.media, raw_is_doc, jpeg_msg.media)
     except Exception as e:
         await logger(Exception)
         await event.react("❌")

@@ -12,6 +12,7 @@ import traceback
 from collections import OrderedDict, deque
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from fractions import Fraction
 from functools import partial
 from hashlib import sha256
@@ -1212,6 +1213,30 @@ async def normalize_for_whatsapp(
     _, stderr, rc = await _run(*cmd)
     if rc != 0:
         raise NormalizeVidError(f"ffmpeg failed: {stderr.decode()}")
+
+
+class KeyedLock:
+    """
+    One asyncio.Lock per key, made on first use and dropped once nobody holds
+    or waits for it. Wrapping a cache check, the work and the cache store in
+    it makes a second request for the same key wait for the first, then find
+    its result cached, instead of doing the work again alongside it.
+    """
+
+    def __init__(self):
+        self._locks = {}
+
+    @asynccontextmanager
+    async def __call__(self, key):
+        entry = self._locks.setdefault(key, [asyncio.Lock(), 0])
+        entry[1] += 1
+        try:
+            async with entry[0]:
+                yield
+        finally:
+            entry[1] -= 1
+            if not entry[1]:
+                del self._locks[key]
 
 
 class LimitedDict(OrderedDict):
