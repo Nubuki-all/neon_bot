@@ -104,6 +104,17 @@ async def auto_rank():
         await logger(Exception)
 
 
+async def save_msg_ranking():
+    """Saves the counts rec_msg_ranking added since the last save"""
+    if not bot.msg_leaderboard_counter:
+        return
+    bot.msg_leaderboard_counter = 0
+    try:
+        await save2db2(bot.group_dict, "groups")
+    except Exception:
+        await logger(Exception)
+
+
 def update_users_rank(chat_id):
     group = bot.group_dict.setdefault(chat_id, {})
     msg_rank_dict = group.setdefault("msg_ranking", {})
@@ -131,6 +142,17 @@ scheduler2.add_job(
     func=auto_rank,
     trigger="cron",
     hour=20,
+    misfire_grace_time=None,
+    max_instances=1,
+)
+
+# Counts change with every group message; saving them on a timer keeps
+# that from rewriting the group records every few seconds
+scheduler2.add_job(
+    id="save_msg_ranking",
+    func=save_msg_ranking,
+    trigger="interval",
+    minutes=10,
     misfire_grace_time=None,
     max_instances=1,
 )

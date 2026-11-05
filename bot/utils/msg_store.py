@@ -17,7 +17,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from bot import base_msg, msg_store_lock
 from bot.config import bot, conf
-from bot.utils.db_utils import save2db2
 from bot.utils.events import Event
 from bot.utils.log_utils import logger
 from bot.utils.msg_utils import construct_event
@@ -301,9 +300,6 @@ async def auto_save_msg():
 
             try:
                 await save_messages(snapshot)
-                if bot.msg_leaderboard_counter > 50:
-                    await save2db2(bot.group_dict, "groups")
-                    bot.msg_leaderboard_counter = 0
             except Exception as e:
                 await logger(e)
 
