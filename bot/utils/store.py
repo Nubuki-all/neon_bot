@@ -301,10 +301,10 @@ def connect_mongo(url: str):
             client.admin.command("ping")
             return client
         except ConnectionFailure as e:
+            reason = str(e)[:200]
             LOGS.warning(
-                f"MongoDB unreachable (attempt {attempt}), retrying in {delay}s: " f"{
-                    str(e)[
-                        :200]}"
+                f"MongoDB unreachable (attempt {attempt}), "
+                f"retrying in {delay}s: {reason}"
             )
         time.sleep(delay)
         delay, attempt = min(delay * 2, 300), attempt + 1
