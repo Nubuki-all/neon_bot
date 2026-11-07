@@ -302,8 +302,9 @@ def connect_mongo(url: str):
             return client
         except ConnectionFailure as e:
             LOGS.warning(
-                f"MongoDB unreachable (attempt {attempt}), retrying in {delay}s: "
-                f"{str(e)[:200]}"
+                f"MongoDB unreachable (attempt {attempt}), retrying in {delay}s: " f"{
+                    str(e)[
+                        :200]}"
             )
         time.sleep(delay)
         delay, attempt = min(delay * 2, 300), attempt + 1
