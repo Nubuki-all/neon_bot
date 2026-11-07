@@ -17,6 +17,7 @@ import json
 import os
 import pickle
 import sqlite3
+import time
 from contextlib import closing
 
 from bot import LOGS, bot, conf, local_db
@@ -283,11 +284,35 @@ class DataStore:
             LOGS.error(f"Not saved: {e}")
 
 
+def connect_mongo(url: str):
+    """
+    A MongoClient that has answered a ping. While the server can't be
+    reached (an Atlas outage or failover), keeps retrying with backoff
+    instead of letting startup crash. Other errors, such as bad
+    credentials, are raised at once.
+    """
+    from pymongo import MongoClient
+    from pymongo.errors import ConnectionFailure
+
+    client = MongoClient(url)
+    delay, attempt = 5, 1
+    while True:
+        try:
+            client.admin.command("ping")
+            return client
+        except ConnectionFailure as e:
+            reason = str(e)[:200]
+            LOGS.warning(
+                f"MongoDB unreachable (attempt {attempt}), "
+                f"retrying in {delay}s: {reason}"
+            )
+        time.sleep(delay)
+        delay, attempt = min(delay * 2, 300), attempt + 1
+
+
 def open_store() -> DataStore:
     if conf.DATABASE_URL:
-        from pymongo import MongoClient
-
-        db = MongoClient(conf.DATABASE_URL)[conf.DBNAME]
+        db = connect_mongo(conf.DATABASE_URL)[conf.DBNAME]
         backend = MongoBackend(db, conf.PH_NUMBER or conf.DB_ID)
     else:
         backend = SQLiteBackend(local_db)
